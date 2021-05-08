@@ -4,7 +4,7 @@ on: workflow_dispatch
 
 jobs:
   prod:
-    name: Build and deploy
+    name: build-deploy-prod
     runs-on: ubuntu-latest
     env:
         function-name: ichi-api-updater
@@ -24,6 +24,10 @@ jobs:
         run: |
           npm i
           npm run build
+
+      - name: lint
+        run: |
+          npm run lint
 
       - name: zip results
         run: |

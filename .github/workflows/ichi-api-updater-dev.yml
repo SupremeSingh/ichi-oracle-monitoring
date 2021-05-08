@@ -9,7 +9,7 @@ on:
 jobs:
   dev:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
-    name: Build and deploy
+    name: build-deploy-dev
     runs-on: ubuntu-latest
     env:
         function-name: ichi-api-updater
@@ -30,6 +30,10 @@ jobs:
         run: |
           npm i
           npm run build
+
+      - name: lint
+        run: |
+          npm run lint
 
       - name: zip results
         run: |
@@ -54,14 +58,6 @@ jobs:
         with:
           name: ${{env.function-name}}
           path: ${{env.function-name}}.zip
-  stage:
-    needs: dev
-    environment:
-     name: stage
-    #  url: https://jobsandenvironments.azurewebsites.net/
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
 
       # Locally this works fine, but in Github actions it flat out doesn't want to work, always returns a length of 0
       # - name: Test lambda
