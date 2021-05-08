@@ -1,5 +1,11 @@
-import { updateToken } from './updatetoken';
+import { APIGatewayProxyEvent } from 'aws-lambda';
+import { handler } from './index';
 
 (async () => {
-  await updateToken('token-dev', 'ichi');
+  const result = await handler({
+    pathParameters: {
+      name: 'ichi'
+    }
+  } as unknown as APIGatewayProxyEvent);
+  console.log(result);
 })();
