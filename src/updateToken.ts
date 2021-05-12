@@ -1,7 +1,8 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { BigNumber, ContractInterface, ethers } from 'ethers';
-import ichiAbi from './abis/ichiAbi.json';
+import ichiAbi from './abis/ICHI_ABI.json';
+import { configMainnet, configKovan } from './config';
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
@@ -15,9 +16,9 @@ AWS.config.update({
 const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
 
 const RPC_HOST = `https://mainnet.infura.io/v3/${infuraId}`;
-const ICHI = '0x903bEF1736CDdf2A537176cf3C64579C3867A881';
-const farmV1 = '0xcC50953A743B9CE382f423E37b07Efa6F9d9B000';
-const farmV2 = '0x275dFE03bc036257Cd0a713EE819Dbd4529739c8';
+const ICHI = configMainnet.ichi;
+const farmV1 = configMainnet.farming_V1;
+const farmV2 = configMainnet.farming_V2;
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging

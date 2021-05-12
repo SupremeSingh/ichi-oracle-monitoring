@@ -7,5 +7,4 @@ import { handler } from './index';
       name: 'ichi'
     }
   } as unknown as APIGatewayProxyEvent);
-  console.log(result);
 })();
