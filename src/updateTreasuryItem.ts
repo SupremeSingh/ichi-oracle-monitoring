@@ -1,12 +1,13 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { BigNumber, ContractInterface, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import { configMainnet, configKovan } from './config';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import ERC20_ABI from './abis/ERC20_ABI.json';
 import ONELINK_ABI from './abis/oneLINK_ABI.json';
 import ONEETH_ABI from './abis/oneETH_ABI.json';
+import { getPoolRecord } from './getPoolRecord';
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
@@ -118,17 +119,57 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
     oneToken_stimulus_price = await oneToken.getStimulusUSD();
   }
 
-  const reserve0 = Number(oneToken_BPT_LP) / 10 ** 18;
+  const reserveBPT = Number(oneToken_BPT_LP) / 10 ** 18;
   const oneToken_BPT_Position = {
     name: { S: "oneTokens Farm" },
-    reserve0: { N: reserve0.toString() },
+    reserve0: { N: reserveBPT.toString() },
     token0: { S: "ICHIBPT" }
   };
-  let oneToken_from_all_pools = reserve0;
+  let oneToken_from_all_pools = reserveBPT;
 
   let oneTokenCollateralPostions = [];
+  let oneTokenStimulusPostions = [];
 
-  if (reserve0 > 0) {
+  let farmPositionsUSDValue = 0;
+
+  // =================================================================================
+  // special oneETH logic in this section
+
+  let oneETH_4_96_Farming_Position = await farming_V2.userInfo(
+    3,
+    configMainnet.oneETH
+  );
+  let oneETH_4_96_LP = oneETH_4_96_Farming_Position.amount;
+
+  let oneETH_4_96_PoolRecord = await getPoolRecord(1003, ichiPrice);
+  
+  let totalOneETHLP = oneETH_4_96_PoolRecord['totalPoolLP'];
+  let percentOwnership = Number(oneETH_4_96_LP) / Number(totalOneETHLP);
+
+  let reserve0 = oneETH_4_96_PoolRecord['reserve0Raw'];
+  let reserve1 = oneETH_4_96_PoolRecord['reserve1Raw'];
+  let token0 = oneETH_4_96_PoolRecord['token0'];
+  let token1 = oneETH_4_96_PoolRecord['token1'];
+  let tvl = oneETH_4_96_PoolRecord['tvl'];
+  let usdValue = Number(tvl) * percentOwnership;
+
+  let oneETH_4_96_Position = {
+    name: { S: "SMART ICHI-ETH Farm" },
+    LP: { N: (Number(oneETH_4_96_LP) / 10 ** 18).toString() },
+    percentOwnership: { N: (percentOwnership * 100).toString() },
+    usdValue: { N: usdValue.toString() },
+    reserve0: { N: (Number(reserve0) * percentOwnership).toString() },
+    reserve1: { N: (Number(reserve1) * percentOwnership).toString() },
+    token0: { S: token0 },
+    token1: { S: token1 }
+  };
+
+  farmPositionsUSDValue = farmPositionsUSDValue + usdValue;
+  oneTokenStimulusPostions.push({ M: oneETH_4_96_Position });
+
+  // =================================================================================
+
+  if (reserveBPT > 0) {
     oneTokenCollateralPostions.push({ M: oneToken_BPT_Position });
   }
 
@@ -138,6 +179,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
   let oneToken_stimulus_usd =
     ((Number(oneToken_stimulus_price) / 10 ** 9) * Number(oneToken_stimulus)) /
     10 ** stimulusDecimals +
+    farmPositionsUSDValue +
     Number(ichiPrice) * (oneToken_ichi / 10 ** 9);
 
   let usdc_price = 1000000000; // hardcoded until we have a better way to get this price
@@ -175,7 +217,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
       collateralUSD: oneToken_collateral_only,
       stimulus: oneToken_stimulus_list,
       stimulusUSD: oneToken_stimulus_usd,
-      stimulusAllocation: [],
+      stimulusPositions: oneTokenStimulusPostions,
       withdrawFee: Number(oneToken_withdrawFee) / 10 ** 11,
       treasuryBacked: oneToken_treasury_backed,
       reserveRatio: oneToken_stimulus_usd / oneToken_treasury_backed
@@ -201,7 +243,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
         'collateralUSD = :collateralUSD, ' +
         'stimulus = :stimulus, ' +
         'stimulusUSD = :stimulusUSD, ' +
-        'stimulusAllocation = :stimulusAllocation, ' +
+        'stimulusPositions = :stimulusPositions, ' +
         'withdrawFee = :withdrawFee, ' + 
         'treasuryBacked = :treasuryBacked, ' + 
         'reserveRatio = :reserveRatio',
@@ -214,7 +256,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
         ':collateralUSD': { N: Number(oneToken_collateral_only).toString() },
         ':stimulus' : { L: oneToken_stimulus_list },
         ':stimulusUSD': { N: Number(oneToken_stimulus_usd).toString() },
-        ':stimulusAllocation' : { L: [] },
+        ':stimulusPositions' : { L: oneTokenStimulusPostions },
         ':withdrawFee': { N: (Number(oneToken_withdrawFee) / 10 ** 11).toString() },
         ':treasuryBacked': { N: Number(oneToken_treasury_backed).toString() },
         ':reserveRatio': { N: Number(oneToken_stimulus_usd / oneToken_treasury_backed).toString() }
