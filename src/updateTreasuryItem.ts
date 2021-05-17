@@ -67,6 +67,15 @@ const getOneTokenAttributes = async function(tokenName) {
       abi_type: 'ONEETH',
       base_name: 'eth'
     }
+  if (tokenName == 'oneLINK')
+    return {
+      address: configMainnet.oneLINK,
+      stimulus_address: configMainnet.link,
+      stimulus_name: 'LINK',
+      stimulus_decimals: 18,
+      abi_type: 'ONELINK',
+      base_name: 'link'
+    }
   return {};
 };
 
@@ -132,45 +141,102 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
 
   let farmPositionsUSDValue = 0;
 
+  let oneToken_burned_tokens = 0;
+
   // =================================================================================
   // special oneETH logic in this section
 
-  let oneETH_4_96_Farming_Position = await farming_V2.userInfo(
-    3,
-    configMainnet.oneETH
-  );
-  let oneETH_4_96_LP = oneETH_4_96_Farming_Position.amount;
-
-  let oneETH_4_96_PoolRecord = await getPoolRecord(1003, ichiPrice);
+  if (itemName == 'oneETH') {
+    let oneETH_4_96_Farming_Position = await farming_V2.userInfo(
+      3,
+      configMainnet.oneETH
+    );
+    let oneETH_4_96_LP = oneETH_4_96_Farming_Position.amount;
   
-  let totalOneETHLP = oneETH_4_96_PoolRecord['totalPoolLP'];
-  let percentOwnership = Number(oneETH_4_96_LP) / Number(totalOneETHLP);
-
-  let reserve0 = oneETH_4_96_PoolRecord['reserve0Raw'];
-  let reserve1 = oneETH_4_96_PoolRecord['reserve1Raw'];
-  let token0 = oneETH_4_96_PoolRecord['token0'];
-  let token1 = oneETH_4_96_PoolRecord['token1'];
-  let tvl = oneETH_4_96_PoolRecord['tvl'];
-  let usdValue = Number(tvl) * percentOwnership;
-
-  let oneETH_4_96_Position = {
-    name: { S: "SMART ICHI-ETH Farm" },
-    LP: { N: (Number(oneETH_4_96_LP) / 10 ** 18).toString() },
-    percentOwnership: { N: (percentOwnership * 100).toString() },
-    usdValue: { N: usdValue.toString() },
-    reserve0: { N: (Number(reserve0) * percentOwnership).toString() },
-    reserve1: { N: (Number(reserve1) * percentOwnership).toString() },
-    token0: { S: token0 },
-    token1: { S: token1 }
-  };
-
-  farmPositionsUSDValue = farmPositionsUSDValue + usdValue;
-  oneTokenStimulusPostions.push({ M: oneETH_4_96_Position });
+    let oneETH_4_96_PoolRecord = await getPoolRecord(1003, ichiPrice);
+    
+    let totalOneETHLP = oneETH_4_96_PoolRecord['totalPoolLP'];
+    let percentOwnership = Number(oneETH_4_96_LP) / Number(totalOneETHLP);
+  
+    let reserve0 = oneETH_4_96_PoolRecord['reserve0Raw'];
+    let reserve1 = oneETH_4_96_PoolRecord['reserve1Raw'];
+    let token0 = oneETH_4_96_PoolRecord['token0'];
+    let token1 = oneETH_4_96_PoolRecord['token1'];
+    let tvl = oneETH_4_96_PoolRecord['tvl'];
+    let usdValue = Number(tvl) * percentOwnership;
+  
+    let oneETH_4_96_Position = {
+      name: { S: "SMART ICHI-ETH Farm" },
+      LP: { N: (Number(oneETH_4_96_LP) / 10 ** 18).toString() },
+      percentOwnership: { N: (percentOwnership * 100).toString() },
+      usdValue: { N: usdValue.toString() },
+      reserve0: { N: (Number(reserve0) * percentOwnership).toString() },
+      reserve1: { N: (Number(reserve1) * percentOwnership).toString() },
+      token0: { S: token0 },
+      token1: { S: token1 }
+    };
+  
+    farmPositionsUSDValue = farmPositionsUSDValue + usdValue;
+    oneTokenStimulusPostions.push({ M: oneETH_4_96_Position });
+  }
 
   // =================================================================================
 
+  // =================================================================================
+  // special oneLINK logic in this section
+
+  if (itemName == 'oneLINK') {
+    // temp fix for oneLINK (removing price of burned stablecoins for a specific address from the total)
+    oneToken_burned_tokens = await oneToken.getBurnedStablecoin('0x549C0421c69Be943A2A60e76B19b4A801682cBD3');
+    //let oneLINK_USDC_num = Number(oneLINK_USDC) / 10 ** 6 - Number(oneLINK_burned_tokens) / 10 ** 9;
+  
+    let oneLINK_67_33_Farming_Position = await farming_V2.userInfo(
+      8,
+      configMainnet.oneLINK
+    );
+    let oneLINK_67_33_LP = oneLINK_67_33_Farming_Position.amount;
+
+    let oneLINK_67_33_PoolRecord = await getPoolRecord(1008, ichiPrice);
+    
+    let totalOneLINKLP = oneLINK_67_33_PoolRecord['totalPoolLP'];
+    let percentOwnership = Number(oneLINK_67_33_LP) / Number(totalOneLINKLP);
+
+    let reserve0 = oneLINK_67_33_PoolRecord['reserve0Raw'];
+    let reserve1 = oneLINK_67_33_PoolRecord['reserve1Raw'];
+    let token0 = oneLINK_67_33_PoolRecord['token0'];
+    let token1 = oneLINK_67_33_PoolRecord['token1'];
+    let tvl = oneLINK_67_33_PoolRecord['tvl'];
+    let usdValue = Number(tvl) * percentOwnership;
+
+    let oneLINK_67_33_Position = {
+      name:  { S: "67/33 ICHI-LINK Farm" },
+      LP:  { N: (Number(oneLINK_67_33_LP) / 10 ** 18).toString() },
+      percentOwnership: { N: (percentOwnership * 100).toString() },
+      usdValue: { N: usdValue.toString() },
+      reserve0: { N: (Number(reserve0) * percentOwnership).toString() },
+      reserve1: { N: (Number(reserve1) * percentOwnership).toString() },
+      token0: { S: token0 },
+      token1: { S: token1 }
+    };
+
+    farmPositionsUSDValue = farmPositionsUSDValue + usdValue;
+    oneTokenStimulusPostions.push({ M: oneLINK_67_33_Position });
+  }
+
+  // =================================================================================
+
+
   if (reserveBPT > 0) {
     oneTokenCollateralPostions.push({ M: oneToken_BPT_Position });
+  }
+
+  if (Number(oneToken_burned_tokens) > 0) {
+    let unredeemedCollateralPosition = {
+      name: { S: "unredeemed "+itemName },
+      reserve0: { N: (Number(oneToken_burned_tokens) / 10 ** 9).toString() },
+      token0: { S: "USDC" }
+    };
+    oneTokenCollateralPostions.push({ M: unredeemedCollateralPosition });
   }
 
   const oneToken_withdrawFee = await oneToken.withdrawFee();
@@ -191,10 +257,14 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
 
   let oneToken_treasury_backed = 
     ((Number(oneToken_SUPPLY) / 10 ** 9) * (1 - Number(oneToken_withdrawFee) / 10 ** 11)) - 
-    oneToken_collateral_only;
+    oneToken_collateral_only +
+    Number(oneToken_burned_tokens) / 10 ** 9;
 
     let oneToken_collateral_list = [];
-    oneToken_collateral_list.push({ M: { name: { S: "USDC" }, balance: { N: oneToken_collateral_USDC_only.toString() } }});
+    oneToken_collateral_list.push({ M: { 
+      name: { S: "USDC" }, 
+      balance: { N: (oneToken_collateral_USDC_only - oneToken_burned_tokens / 10 ** 9).toString() } 
+    }});
 
     if (oneToken_ICHIBPT > 0) {
       oneToken_collateral_list.push({ M: { name: { S: "ICHIBPT" }, balance: { N: (Number(oneToken_ICHIBPT) / 10 ** 18).toString() } }});
@@ -235,7 +305,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
         }
       },
       UpdateExpression: 'set ' + 
-        'base_name = :base_name, ' + 
+        'baseName = :baseName, ' + 
         'usdc = :usdc, ' + 
         'circulation = :circulation, ' + 
         'collateral = :collateral, ' +
@@ -248,7 +318,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
         'treasuryBacked = :treasuryBacked, ' + 
         'reserveRatio = :reserveRatio',
       ExpressionAttributeValues: {
-        ':base_name': { S: baseName},
+        ':baseName': { S: baseName},
         ':usdc': { N: (Number(oneToken_USDC) / 10 ** 6).toString() },
         ':circulation': { N: (Number(oneToken_SUPPLY) / 10 ** 9).toString() },
         ':collateral' : { L: oneToken_collateral_list },

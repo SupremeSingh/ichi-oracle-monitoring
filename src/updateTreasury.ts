@@ -10,8 +10,7 @@ const lookUpTokenPrices = async function(id_array) {
 };
 
 export const updateTreasury = async (tableName: string) => {
-  let treasuryTokens = ['oneBTC','oneVBTC','oneWING','oneETH'];
-//  let treasuryTokens = ['oneETH'];
+  let treasuryTokens = ['oneBTC','oneVBTC','oneWING','oneETH','oneLINK'];
 
   let ichiPrice = await lookUpTokenPrices([configMainnet.ichi]);
 
