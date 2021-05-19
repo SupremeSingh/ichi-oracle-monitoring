@@ -128,7 +128,7 @@ export const updateFarm = async (tableName: string, poolId: number, ichiPrice: s
       poolId: {
         N: Number(poolId).toString()
       }
-    },
+    }, 
     UpdateExpression: 'set ' + 
       'farmPoolId = :farmPoolId, ' + 
       'searchName = :searchName, ' + 
@@ -143,6 +143,7 @@ export const updateFarm = async (tableName: string, poolId: number, ichiPrice: s
       'totalPoolLP = :totalPoolLP, ' + 
       'dailyAPY = :dailyAPY, ' + 
       'weeklyAPY = :weeklyAPY, ' + 
+      'monthlyAPY = :monthlyAPY, ' + 
       'yearlyAPY = :yearlyAPY, ' + 
       'isExternal = :isExternal, ' + 
       'isUpcoming = :isUpcoming, ' + 
@@ -164,6 +165,7 @@ export const updateFarm = async (tableName: string, poolId: number, ichiPrice: s
       ':totalPoolLP': { S: pool['totalPoolLP'] },
       ':dailyAPY': { N: Number(pool['dailyAPY']).toString() },
       ':weeklyAPY': { N: Number(pool['weeklyAPY']).toString() },
+      ':monthlyAPY': { N: Number(pool['monthlyAPY']).toString() },
       ':yearlyAPY': { N: Number(pool['yearlyAPY']).toString() },
       ':isExternal': { BOOL: isExternal },
       ':isUpcoming': { BOOL: isUpcoming },
