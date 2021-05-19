@@ -28,6 +28,69 @@ const configMainnet = {
   _1inch_ICHI_LP: "0x1dcE26F543E591c27717e25294AEbbF59AD9f3a5",
 };
 
+const tokens = {
+  ichi: {
+    address: "0x903bEF1736CDdf2A537176cf3C64579C3867A881",
+    decimals: 9,
+    isOneToken: false
+  },
+  pWING: {
+    address: "0xDb0f18081b505A7DE20B18ac41856BCB4Ba86A1a",
+    decimals: 9,
+    isOneToken: false
+  },
+  wBTC: {
+    address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    decimals: 8,
+    isOneToken: false
+  },
+  wETH: {
+    address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    decimals: 18,
+    isOneToken: false
+  },
+  vBTC: {
+    address: "0xe1406825186D63980fd6e2eC61888f7B91C4bAe4",
+    decimals: 18,
+    isOneToken: false
+  },
+  link: {
+    address: "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+    decimals: 18,
+    isOneToken: false
+  },
+  USDC: {
+    address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    decimals: 6,
+    isOneToken: false
+  },
+  oneETH: { 
+    address: "0xEc0d77a58528a218cBf41Fa6E1585c8D7A085868",
+    decimals: 9,
+    isOneToken: true
+  },
+  oneBTC: { 
+    address: "0xC88F47067dB2E25851317A2FDaE73a22c0777c37",
+    decimals: 9,
+    isOneToken: true
+  },
+  oneVBTC: { 
+    address: "0x7BD198b9107496fD5cC3d7655AF52f43a8eDBc4C",
+    decimals: 9,
+    isOneToken: true
+  },
+  oneWING: { 
+    address: "0x8F041A3940a5e6FB580075C3774E15FcFA0E1618",
+    decimals: 9,
+    isOneToken: true
+  },
+  oneLINK: { 
+    address: "0x18Cc17a1EeD37C02A77B0B96b7890C7730E2a2CF",
+    decimals: 9,
+    isOneToken: true
+  }
+}
+
 const pools = {
   activePools : [8, 9, 10, 12, 13, 19, 1001, 1003, 1004, 1005, 1006, 1007, 1008, 10001, 10002],
   //activePools : [8, 1006, 1007, 10001, 10002],
@@ -126,4 +189,4 @@ labels[1008] = {
   shortLpName: 'BPT ICHI-LINK'
 }
 
-module.exports = { configMainnet, configKovan, pools, labels };
+module.exports = { configMainnet, configKovan, pools, labels, tokens };
