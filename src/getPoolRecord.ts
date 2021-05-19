@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { configMainnet, configKovan } from './config';
+import { configMainnet, configKovan, pools } from './config';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import ERC20_ABI from './abis/ERC20_ABI.json';
@@ -17,14 +17,6 @@ if (!infuraId) {
 }
 
 const RPC_HOST = `https://mainnet.infura.io/v3/${infuraId}`;
-
-// IDs of the active pools, data for the rest of the pools is cached for the life of the app 
-const oneInchPools = [15, 16];
-const balancerPools = [18, 1001, 1002, 1008];
-const balancerSmartPools = [1003, 1007];
-const bancorPools = [14, 1006];
-const specialPricing = [19];
-const externalPools = [10001,10002];
 
 const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
 
@@ -69,9 +61,9 @@ async function lookUpVBTCPrice() {
 // Used for Bancor and Smart Balancer pools 
 async function getPoolContract(poolID, useBasic) {
 
-    let isBalancerPool = balancerPools.includes(poolID);
-    let isBancorPool = bancorPools.includes(poolID);
-    let isBalancerSmartPool = balancerSmartPools.includes(poolID);
+    let isBalancerPool = pools.balancerPools.includes(poolID);
+    let isBancorPool = pools.bancorPools.includes(poolID);
+    let isBalancerSmartPool = pools.balancerSmartPools.includes(poolID);
   
     let poolToken = '';
     if (poolID < 1000 || poolID >= 10000) {
@@ -163,8 +155,8 @@ async function getPoolContract(poolID, useBasic) {
   
   async function getPoolTokens(poolID, poolContract) {
   
-    let isBalancerPool = balancerPools.includes(poolID) || balancerSmartPools.includes(poolID);
-    let isBancorPool = bancorPools.includes(poolID);
+    let isBalancerPool = pools.balancerPools.includes(poolID) || pools.balancerSmartPools.includes(poolID);
+    let isBancorPool = pools.bancorPools.includes(poolID);
   
     let token0 = '';
     let token1 = '';
@@ -228,7 +220,7 @@ async function getPoolContract(poolID, useBasic) {
   
   async function getPoolReserves(poolID, poolContract) {
   
-    let isBancorPool = bancorPools.includes(poolID);
+    let isBancorPool = pools.bancorPools.includes(poolID);
   
     if (isBancorPool) {
       // exception for Bancor pool, getting proxy (pool owner) contract
@@ -249,8 +241,8 @@ async function getPoolContract(poolID, useBasic) {
   
   async function getTotalSupply(poolID, poolContract, lpToken) {
   
-    let isBancorPool = bancorPools.includes(poolID);
-    let isBalancerSmartPool = balancerSmartPools.includes(poolID);
+    let isBancorPool = pools.bancorPools.includes(poolID);
+    let isBalancerSmartPool = pools.balancerSmartPools.includes(poolID);
   
     let poolToken = '';
     if (poolID < 1000 || poolID >= 10000) {
@@ -266,7 +258,8 @@ async function getPoolContract(poolID, useBasic) {
         PAIR_ABI,
         provider
       );
-      return await bntContract.totalSupply();
+      let tLP = await bntContract.totalSupply();
+      return tLP.toString();
     } else if (isBalancerSmartPool) {
       // exception for Balancer Smart pools, using LP contract instead of the bPool one
       const lpContract = new ethers.Contract(
@@ -274,17 +267,22 @@ async function getPoolContract(poolID, useBasic) {
         BALANCER_SMART_LP_ABI,
         provider
       );
-      return await lpContract.totalSupply();
+      let tLP = await lpContract.totalSupply();
+      return tLP.toString();
     } else {
-      return await poolContract.totalSupply();
+      let tLP = await poolContract.totalSupply();
+      return tLP.toString();
     }
   }
   
   export async function getPoolRecord(poolID, ichiPrice) {
-    let isSpecialPricing = specialPricing.includes(poolID);
+    if (poolID >= 10000)
+      return getExternalPoolRecord(poolID);
+
+    let isSpecialPricing = pools.specialPricing.includes(poolID);
   
-    let isOneInchPool = oneInchPools.includes(poolID);
-    let isBalancerPool = balancerPools.includes(poolID) || balancerSmartPools.includes(poolID);
+    let isOneInchPool = pools.oneInchPools.includes(poolID);
+    let isBalancerPool = pools.balancerPools.includes(poolID) || pools.balancerSmartPools.includes(poolID);
   
     let poolToken = '';
     if (poolID < 1000 || poolID >= 10000) {
@@ -347,11 +345,15 @@ async function getPoolContract(poolID, useBasic) {
           dailyAPY: dailyAPY,
           weeklyAPY: dailyAPY * 7,
           yearlyAPY: dailyAPY * 365,
-          totalPoolLP: Number(totalPoolLP),
+          totalPoolLP: totalPoolLP,
           tvl: Number(totalPoolLP) / 10 ** 18,
           farmTVL: apyTVL,
           reserve0Raw: 0,
           reserve1Raw: 0,
+          address0: "",
+          address1: "",
+          decimals0: 0,
+          decimals1: 0,
           token0: "",
           token1: ""
         };
@@ -434,11 +436,15 @@ async function getPoolContract(poolID, useBasic) {
           dailyAPY: dailyAPY,
           weeklyAPY: dailyAPY * 7,
           yearlyAPY: dailyAPY * 365,
-          totalPoolLP: Number(totalPoolLP),
+          totalPoolLP: totalPoolLP,
           tvl: localTVL,
           farmTVL: apyTVL,
           reserve0Raw: reserve0Raw,
           reserve1Raw: reserve1Raw,
+          address0: token0,
+          address1: token1,
+          decimals0: token0Decimals,
+          decimals1: token1Decimals,
           token0: token0Symbol,
           token1: token1Symbol
         };
@@ -446,3 +452,90 @@ async function getPoolContract(poolID, useBasic) {
   
       return poolRecord;
   }
+
+  const get1inchPools = async function() {
+    return await axios.get(
+      configMainnet._1inchPoolAPI
+    );
+  };
+  
+  const getLoopringPools = async function() {
+    return await axios.get(
+      configMainnet.loopringAPI
+    );
+  };
+  
+  async function getExternalPoolRecord(poolID) {
+      if (poolID === 10001) {
+        let allPools = await get1inchPools();
+        let _1inchICHI_pool = allPools.data[5];
+  
+        let token0 = _1inchICHI_pool.apys[0].token;
+        let token1 = _1inchICHI_pool.apys[1].token;
+  
+        let reserve = await getOneInchPoolReserves(token0, token1, configMainnet._1inch_ICHI_LP);
+        let reserve0 = reserve._reserve0;
+        let reserve1 = reserve._reserve1;
+        let reserve0Raw = reserve0 / 10 ** 18; //1inch
+        let reserve1Raw = reserve1 / 10 ** 9; //ICHI
+  
+        let prices = await lookUpTokenPrices([token0, token1]);
+        prices = prices.data;
+  
+        let TVL = reserve0Raw * prices[token0].usd + reserve1Raw * prices[token1].usd;
+  
+        let farmTVL = _1inchICHI_pool.liquidity_locked;
+        let dailyAPY = (_1inchICHI_pool.apys[0].value + _1inchICHI_pool.apys[1].value) / 365;
+  
+        let poolRecord = {
+          pool: poolID,
+          dailyAPY: dailyAPY,
+          weeklyAPY: dailyAPY * 7,
+          yearlyAPY: dailyAPY * 365,
+          totalPoolLP: '0',
+          tvl: TVL,
+          farmTVL: farmTVL,
+          reserve0Raw: 0,
+          reserve1Raw: 0,
+          address0: token0,
+          address1: token1,
+          decimals0: 18,
+          decimals1: 9,
+          token0: "1inch",
+          token1: "ICHI"
+        };
+  
+        return poolRecord;
+      }
+      if (poolID === 10002) {
+        let allPools = await getLoopringPools();
+        let loopring_pool = allPools.data[97];
+  
+        let TVL = Number(loopring_pool.liquidityUSD);
+  
+        let farmTVL = TVL;
+        let dailyAPY = (Number(loopring_pool.apyBips) / 100) / 365;
+  
+        let poolRecord = {
+          pool: poolID,
+          dailyAPY: dailyAPY,
+          weeklyAPY: dailyAPY * 7,
+          yearlyAPY: dailyAPY * 365,
+          totalPoolLP: '0',
+          tvl: TVL,
+          farmTVL: farmTVL,
+          reserve0Raw: 0,
+          reserve1Raw: 0,
+          address0: configMainnet.ichi,
+          address1: configMainnet.ETH,
+          decimals0: 9,
+          decimals1: 18,
+          token0: "ICHI",
+          token1: "ETH"
+        };
+  
+        return poolRecord;
+      }
+      return {};
+  }
+  
