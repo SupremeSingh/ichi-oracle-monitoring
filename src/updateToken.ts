@@ -33,7 +33,7 @@ const lookUpTokenPrices = async function(id_array) {
 };
 
 async function lookUpVBTCPrice() {
-  const uni_VBTC = new Token(ChainId.MAINNET, configMainnet.vBTC, 18)  
+  const uni_VBTC = new Token(ChainId.MAINNET, tokens['vBTC']['address'], 18)  
 
   const pair = await Fetcher.fetchPairData(uni_VBTC, WETH[uni_VBTC.chainId])
   const route = new Route([pair], WETH[uni_VBTC.chainId])
@@ -43,8 +43,8 @@ async function lookUpVBTCPrice() {
 
   let price_vBTC_wETH = route.midPrice.invert().toSignificant(6);
 
-  let prices = await lookUpTokenPrices([configMainnet.wETH]);
-  let price_wETH_usd = prices.data[configMainnet.wETH].usd;
+  let prices = await lookUpTokenPrices([tokens['wETH']['address'].toLowerCase()]);
+  let price_wETH_usd = prices.data[tokens['wETH']['address'].toLowerCase()].usd;
   let price_vBTC_usd = price_wETH_usd * Number(price_vBTC_wETH);
 
   return price_vBTC_usd;

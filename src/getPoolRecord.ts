@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { configMainnet, configKovan, pools } from './config';
+import { configMainnet, configKovan, pools, tokens } from './config';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import ERC20_ABI from './abis/ERC20_ABI.json';
@@ -39,7 +39,7 @@ const lookUpTokenPrices = async function(id_array) {
 };
 
 async function lookUpVBTCPrice() {
-    const uni_VBTC = new Token(ChainId.MAINNET, configMainnet.vBTC, 18)  
+    const uni_VBTC = new Token(ChainId.MAINNET, tokens['vBTC']['address'], 18)  
 
     const pair = await Fetcher.fetchPairData(uni_VBTC, WETH[uni_VBTC.chainId])
     const route = new Route([pair], WETH[uni_VBTC.chainId])
@@ -49,8 +49,8 @@ async function lookUpVBTCPrice() {
 
     let price_vBTC_wETH = route.midPrice.invert().toSignificant(6);
 
-    let prices = await lookUpTokenPrices([configMainnet.wETH]);
-    let price_wETH_usd = prices.data[configMainnet.wETH].usd;
+    let prices = await lookUpTokenPrices([tokens['wETH']['address'].toLowerCase()]);
+    let price_wETH_usd = prices.data[tokens['wETH']['address'].toLowerCase()].usd;
     let price_vBTC_usd = price_wETH_usd * Number(price_vBTC_wETH);
 
     return price_vBTC_usd;
@@ -387,8 +387,8 @@ async function getPoolContract(poolID, useBasic) {
         let reserve0Raw = reserve0 / 10 ** token0Decimals;
         let reserve1Raw = reserve1 / 10 ** token1Decimals;
     
-        token0 = (token0 === configMainnet.ETH ? configMainnet.wETH : token0);
-        token1 = (token1 === configMainnet.ETH ? configMainnet.wETH : token1);
+        token0 = (token0 === configMainnet.ETH ? tokens['wETH']['address'] : token0);
+        token1 = (token1 === configMainnet.ETH ? tokens['wETH']['address'] : token1);
     
         let prices = {};
         if (!isSpecialPricing) {
@@ -530,7 +530,7 @@ async function getPoolContract(poolID, useBasic) {
           farmTVL: farmTVL,
           reserve0Raw: 0,
           reserve1Raw: 0,
-          address0: configMainnet.ichi,
+          address0: tokens['ichi']['address'],
           address1: configMainnet.ETH,
           decimals0: 9,
           decimals1: 18,

@@ -1,5 +1,5 @@
 import { updateFarm } from './updateFarm';
-import { configMainnet, configKovan, pools } from './config';
+import { configMainnet, configKovan, pools, tokens } from './config';
 import axios from 'axios';
 
 const lookUpTokenPrices = async function(id_array) {
@@ -10,10 +10,10 @@ const lookUpTokenPrices = async function(id_array) {
 };
 
 export const updateFarms = async (tableName: string) => {
-  let ichiPrice = await lookUpTokenPrices([configMainnet.ichi]);
+  let ichiPrice = await lookUpTokenPrices([tokens['ichi']['address'].toLowerCase()]);
 
   for (let i = 0; i < pools.activePools.length; i++) {
-    let res = await updateFarm(tableName, pools.activePools[i], ichiPrice.data[configMainnet.ichi].usd);
+    let res = await updateFarm(tableName, pools.activePools[i], ichiPrice.data[tokens['ichi']['address'].toLowerCase()].usd);
 
     console.log("update " + pools.activePools[i] + " results:");
     console.log(res);

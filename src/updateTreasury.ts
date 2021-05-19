@@ -1,5 +1,5 @@
 import { updateTreasuryItem } from './updateTreasuryItem';
-import { configMainnet, configKovan } from './config';
+import { configMainnet, configKovan, tokens } from './config';
 import axios from 'axios';
 
 const lookUpTokenPrices = async function(id_array) {
@@ -12,10 +12,10 @@ const lookUpTokenPrices = async function(id_array) {
 export const updateTreasury = async (tableName: string) => {
   let treasuryTokens = ['oneBTC','oneVBTC','oneWING','oneETH','oneLINK'];
 
-  let ichiPrice = await lookUpTokenPrices([configMainnet.ichi]);
+  let ichiPrice = await lookUpTokenPrices([tokens['ichi']['address'].toLowerCase()]);
 
   for (let i = 0; i < treasuryTokens.length; i++) {
-    let res = await updateTreasuryItem(tableName, treasuryTokens[i], ichiPrice.data[configMainnet.ichi].usd);
+    let res = await updateTreasuryItem(tableName, treasuryTokens[i], ichiPrice.data[tokens['ichi']['address'].toLowerCase()].usd);
 
     console.log("update " + treasuryTokens[i] + " results:");
     console.log(res);

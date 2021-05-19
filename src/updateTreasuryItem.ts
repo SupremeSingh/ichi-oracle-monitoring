@@ -1,7 +1,7 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { ethers } from 'ethers';
-import { configMainnet, configKovan } from './config';
+import { configMainnet, configKovan, tokens } from './config';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import ERC20_ABI from './abis/ERC20_ABI.json';
@@ -33,8 +33,8 @@ const getABI = async function(abiType) {
 const getOneTokenAttributes = async function(tokenName) {
   if (tokenName == 'oneBTC')
     return {
-      address: configMainnet.oneBTC,
-      stimulus_address: configMainnet.wBTC,
+      address: tokens[tokenName]['address'],
+      stimulus_address: tokens['wBTC']['address'],
       stimulus_name: 'BTC',
       stimulus_decimals: 8,
       abi_type: 'ONELINK',
@@ -42,8 +42,8 @@ const getOneTokenAttributes = async function(tokenName) {
     }
   if (tokenName == 'oneVBTC')
     return {
-      address: configMainnet.oneVBTC,
-      stimulus_address: configMainnet.vBTC,
+      address: tokens[tokenName]['address'],
+      stimulus_address: tokens['vBTC']['address'],
       stimulus_name: 'VBTC',
       stimulus_decimals: 18,
       abi_type: 'ONEETH',
@@ -51,8 +51,8 @@ const getOneTokenAttributes = async function(tokenName) {
     }
   if (tokenName == 'oneWING')
     return {
-      address: configMainnet.oneWING,
-      stimulus_address: configMainnet.pWING,
+      address: tokens[tokenName]['address'],
+      stimulus_address: tokens['pWING']['address'],
       stimulus_name: 'WING',
       stimulus_decimals: 9,
       abi_type: 'ONEETH',
@@ -60,8 +60,8 @@ const getOneTokenAttributes = async function(tokenName) {
     }
   if (tokenName == 'oneETH')
     return {
-      address: configMainnet.oneETH,
-      stimulus_address: configMainnet.wETH,
+      address: tokens[tokenName]['address'],
+      stimulus_address: tokens['wETH']['address'],
       stimulus_name: 'ETH',
       stimulus_decimals: 18,
       abi_type: 'ONEETH',
@@ -69,8 +69,8 @@ const getOneTokenAttributes = async function(tokenName) {
     }
   if (tokenName == 'oneLINK')
     return {
-      address: configMainnet.oneLINK,
-      stimulus_address: configMainnet.link,
+      address: tokens[tokenName]['address'],
+      stimulus_address: tokens['link']['address'],
       stimulus_name: 'LINK',
       stimulus_decimals: 18,
       abi_type: 'ONELINK',
@@ -103,9 +103,9 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
   const baseName = attr.base_name;
   const oneTokenABI = await getABI(attr.abi_type);
 
-  const ichi = new ethers.Contract(configMainnet.ichi, ERC20_ABI, provider);
+  const ichi = new ethers.Contract(tokens['ichi']['address'], ERC20_ABI, provider);
   const stimulusToken = new ethers.Contract(stimulusTokenAddress, ERC20_ABI, provider);
-  const USDC = new ethers.Contract(configMainnet.USDC, ERC20_ABI, provider);
+  const USDC = new ethers.Contract(tokens['USDC']['address'], ERC20_ABI, provider);
   const oneToken = new ethers.Contract(oneTokenAddress, oneTokenABI, provider);
   const ICHIBPT = new ethers.Contract(configMainnet.ICHIBPT, ERC20_ABI, provider);
 
@@ -149,7 +149,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
   if (itemName == 'oneETH') {
     let oneETH_4_96_Farming_Position = await farming_V2.userInfo(
       3,
-      configMainnet.oneETH
+      tokens['oneETH']['address']
     );
     let oneETH_4_96_LP = oneETH_4_96_Farming_Position.amount;
   
@@ -192,7 +192,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
   
     let oneLINK_67_33_Farming_Position = await farming_V2.userInfo(
       8,
-      configMainnet.oneLINK
+      tokens['oneLINK']['address']
     );
     let oneLINK_67_33_LP = oneLINK_67_33_Farming_Position.amount;
 
