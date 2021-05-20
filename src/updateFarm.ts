@@ -1,7 +1,7 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { ethers } from 'ethers';
-import { configMainnet, configKovan, pools, labels } from './config';
+import { ADDRESSES, POOLS, LABELS } from './configMainnet';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import { getPoolRecord } from './getPoolRecord';
@@ -20,36 +20,36 @@ const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
 const RPC_HOST = `https://mainnet.infura.io/v3/${infuraId}`;
 
 const getExchangeName = async function(poolId: number) {
-  if (pools.bancorPools.includes(poolId))
+  if (POOLS.bancorPools.includes(poolId))
     return "bancor";
-  if (pools.oneInchPools.includes(poolId))
+  if (POOLS.oneInchPools.includes(poolId))
     return "1inch";
-  if (pools.uniPools.includes(poolId))
+  if (POOLS.uniPools.includes(poolId))
     return "uni";
-  if (pools.loopringPools.includes(poolId))
+  if (POOLS.loopringPools.includes(poolId))
     return "loopring";
-  if (pools.balancerPools.includes(poolId) || pools.balancerSmartPools.includes(poolId))
+  if (POOLS.balancerPools.includes(poolId) || POOLS.balancerSmartPools.includes(poolId))
     return "balancer";
   return "sushi";
 };
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
-export const updateFarm = async (tableName: string, poolId: number, ichiPrice: string): Promise<APIGatewayProxyResult> => {
+export const updateFarm = async (tableName: string, poolId: number, tokenPrices: any): Promise<APIGatewayProxyResult> => {
   const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
 
   const farming_V1 = new ethers.Contract(
-    configMainnet.farming_V1,
+    ADDRESSES.farming_V1,
     FARMING_V1_ABI,
     provider
   );
   const farming_V2 = new ethers.Contract(
-    configMainnet.farming_V2,
+    ADDRESSES.farming_V2,
     FARMING_V2_ABI,
     provider
   );
 
-  let pool = await getPoolRecord(poolId, ichiPrice);
+  let pool = await getPoolRecord(poolId, tokenPrices);
   console.log(pool);
 
   let farmPoolId = 0;
@@ -95,25 +95,25 @@ export const updateFarm = async (tableName: string, poolId: number, ichiPrice: s
 
   let isExternal = poolId >= 10000;
   let isIchiPool = pool['token0'] == 'ICHI' || pool['token1'] == 'ICHI';
-  let isUpcoming = pools.upcomingPools.includes(poolId);
-  let isMigrating = pools.migratingPools.includes(poolId);
-  let isRetired = pools.retiredPools.includes(poolId);
+  let isUpcoming = POOLS.upcomingPools.includes(poolId);
+  let isMigrating = POOLS.migratingPools.includes(poolId);
+  let isRetired = POOLS.retiredPools.includes(poolId);
 
   let exchange = await getExchangeName(poolId);
 
-  let displayName = labels[poolId]['name'];
-  let lpName = labels[poolId]['lpName'];
-  let shortLpName = labels[poolId]['shortLpName'];
+  let displayName = LABELS[poolId]['name'];
+  let lpName = LABELS[poolId]['lpName'];
+  let shortLpName = LABELS[poolId]['shortLpName'];
 
   let extras = {};
-  if (labels[poolId]['externalUrl']) {
-    extras['externalUrl'] = { S: labels[poolId]['externalUrl'] }
+  if (LABELS[poolId]['externalUrl']) {
+    extras['externalUrl'] = { S: LABELS[poolId]['externalUrl'] }
   }
-  if (labels[poolId]['externalText']) {
-    extras['externalText'] = { S: labels[poolId]['externalText'] }
+  if (LABELS[poolId]['externalText']) {
+    extras['externalText'] = { S: LABELS[poolId]['externalText'] }
   }
-  if (labels[poolId]['externalButton']) {
-    extras['externalButton'] = { S: labels[poolId]['externalButton'] }
+  if (LABELS[poolId]['externalButton']) {
+    extras['externalButton'] = { S: LABELS[poolId]['externalButton'] }
   }
 
   // pool is retired if no rewards are given in it

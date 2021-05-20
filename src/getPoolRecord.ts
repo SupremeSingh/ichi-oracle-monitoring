@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { configMainnet, configKovan, pools, tokens } from './config';
+import { ADDRESSES, POOLS, TOKENS, APIS } from './configMainnet';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import ERC20_ABI from './abis/ERC20_ABI.json';
@@ -8,7 +8,6 @@ import BALANCER_SMART_LP_ABI from './abis/BALANCER_SMART_LP_ABI.json';
 import PAIR_ABI from './abis/PAIR_ABI.json';
 import ICHI_BNT_ABI from './abis/ICHI_BNT_ABI.json';
 import axios from 'axios';
-import { ChainId, Token, WETH, Fetcher, Route } from '@uniswap/sdk';
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
@@ -21,49 +20,23 @@ const RPC_HOST = `https://mainnet.infura.io/v3/${infuraId}`;
 const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
 
 const farming_V1 = new ethers.Contract(
-    configMainnet.farming_V1,
+    ADDRESSES.farming_V1,
     FARMING_V1_ABI,
     provider
 );
 const farming_V2 = new ethers.Contract(
-    configMainnet.farming_V2,
+    ADDRESSES.farming_V2,
     FARMING_V2_ABI,
     provider
 );
-
-const lookUpTokenPrices = async function(id_array) {
-    let ids = id_array.join("%2C");
-    return await axios.get(
-      `https://api.coingecko.com/api/v3/simple/token_price/ethereum?contract_addresses=${ids}&vs_currencies=usd`
-    );
-};
-
-async function lookUpVBTCPrice() {
-    const uni_VBTC = new Token(ChainId.MAINNET, tokens['vBTC']['address'], 18)  
-
-    const pair = await Fetcher.fetchPairData(uni_VBTC, WETH[uni_VBTC.chainId])
-    const route = new Route([pair], WETH[uni_VBTC.chainId])
-
-    //console.log(route.midPrice.toSignificant(6)) 
-    //console.log(route.midPrice.invert().toSignificant(6)) 
-
-    let price_vBTC_wETH = route.midPrice.invert().toSignificant(6);
-
-    let prices = await lookUpTokenPrices([tokens['wETH']['address'].toLowerCase()]);
-    let price_wETH_usd = prices.data[tokens['wETH']['address'].toLowerCase()].usd;
-    let price_vBTC_usd = price_wETH_usd * Number(price_vBTC_wETH);
-
-    return price_vBTC_usd;
-};
-  
 
 // useBasic - true when we need to get the base LP instead of the full pool contract
 // Used for Bancor and Smart Balancer pools 
 async function getPoolContract(poolID, useBasic) {
 
-    let isBalancerPool = pools.balancerPools.includes(poolID);
-    let isBancorPool = pools.bancorPools.includes(poolID);
-    let isBalancerSmartPool = pools.balancerSmartPools.includes(poolID);
+    let isBalancerPool = POOLS.balancerPools.includes(poolID);
+    let isBancorPool = POOLS.bancorPools.includes(poolID);
+    let isBalancerSmartPool = POOLS.balancerSmartPools.includes(poolID);
   
     let poolToken = '';
     if (poolID < 1000 || poolID >= 10000) {
@@ -85,7 +58,7 @@ async function getPoolContract(poolID, useBasic) {
         return poolContract;
       } else {
         const poolContract = new ethers.Contract(
-          configMainnet.ICHI_BNT,
+          ADDRESSES.ICHI_BNT,
           ICHI_BNT_ABI,
           provider
         );
@@ -127,20 +100,30 @@ async function getPoolContract(poolID, useBasic) {
   }
   
   async function getTokenData(token, _provider) {
-    // get token0 symbol and decimals (from cache is they are there)
     let tokenSymbol = "";
     let tokenDecimals = 0;
   
-    if (token === configMainnet.ETH) {
+    if (token === ADDRESSES.ETH) {
       // special case for ETH
       tokenDecimals = 18;
       tokenSymbol = "ETH";
     } else {
+        for (const tkn in TOKENS) {
+          if (TOKENS[tkn].address.toLowerCase() == token) {
+            return {
+              symbol: tkn,
+              decimals: TOKENS[tkn].decimals
+            }
+          }
+        }
+
         let tokenContract = new ethers.Contract(
           token,
           ERC20_ABI,
           _provider
         );
+
+        console.log("======= SHOULD NOT BE HERE, make sure to add missing token to tokens table");
   
         tokenSymbol = await tokenContract.symbol();
         tokenDecimals = await tokenContract.decimals();
@@ -155,8 +138,8 @@ async function getPoolContract(poolID, useBasic) {
   
   async function getPoolTokens(poolID, poolContract) {
   
-    let isBalancerPool = pools.balancerPools.includes(poolID) || pools.balancerSmartPools.includes(poolID);
-    let isBancorPool = pools.bancorPools.includes(poolID);
+    let isBalancerPool = POOLS.balancerPools.includes(poolID) || POOLS.balancerSmartPools.includes(poolID);
+    let isBancorPool = POOLS.bancorPools.includes(poolID);
   
     let token0 = '';
     let token1 = '';
@@ -186,7 +169,7 @@ async function getPoolContract(poolID, useBasic) {
   }
   
   async function getOneInchPoolTokenReserve(token, poolAddress) {
-    if (token === configMainnet.ETH) {
+    if (token === ADDRESSES.ETH) {
       let tokenBalance = await provider.getBalance(poolAddress);
       return tokenBalance;
     } else {
@@ -220,7 +203,7 @@ async function getPoolContract(poolID, useBasic) {
   
   async function getPoolReserves(poolID, poolContract) {
   
-    let isBancorPool = pools.bancorPools.includes(poolID);
+    let isBancorPool = POOLS.bancorPools.includes(poolID);
   
     if (isBancorPool) {
       // exception for Bancor pool, getting proxy (pool owner) contract
@@ -241,8 +224,8 @@ async function getPoolContract(poolID, useBasic) {
   
   async function getTotalSupply(poolID, poolContract, lpToken) {
   
-    let isBancorPool = pools.bancorPools.includes(poolID);
-    let isBalancerSmartPool = pools.balancerSmartPools.includes(poolID);
+    let isBancorPool = POOLS.bancorPools.includes(poolID);
+    let isBalancerSmartPool = POOLS.balancerSmartPools.includes(poolID);
   
     let poolToken = '';
     if (poolID < 1000 || poolID >= 10000) {
@@ -275,14 +258,14 @@ async function getPoolContract(poolID, useBasic) {
     }
   }
   
-  export async function getPoolRecord(poolID, ichiPrice) {
+  export async function getPoolRecord(poolID, tokenPrices) {
     if (poolID >= 10000)
-      return getExternalPoolRecord(poolID);
+      return getExternalPoolRecord(poolID, tokenPrices);
 
-    let isSpecialPricing = pools.specialPricing.includes(poolID);
+    let isSpecialPricing = POOLS.specialPricing.includes(poolID);
   
-    let isOneInchPool = pools.oneInchPools.includes(poolID);
-    let isBalancerPool = pools.balancerPools.includes(poolID) || pools.balancerSmartPools.includes(poolID);
+    let isOneInchPool = POOLS.oneInchPools.includes(poolID);
+    let isBalancerPool = POOLS.balancerPools.includes(poolID) || POOLS.balancerSmartPools.includes(poolID);
   
     let poolToken = '';
     if (poolID < 1000 || poolID >= 10000) {
@@ -336,7 +319,7 @@ async function getPoolContract(poolID, useBasic) {
           let ichiReturnUsd =
           6500 *
           reward *
-          ichiPrice / apyTVL;
+          tokenPrices['ichi'] / apyTVL;
           dailyAPY = ichiReturnUsd * 100;
         }
   
@@ -387,37 +370,37 @@ async function getPoolContract(poolID, useBasic) {
         let reserve0Raw = reserve0 / 10 ** token0Decimals;
         let reserve1Raw = reserve1 / 10 ** token1Decimals;
     
-        token0 = (token0 === configMainnet.ETH ? tokens['wETH']['address'] : token0);
-        token1 = (token1 === configMainnet.ETH ? tokens['wETH']['address'] : token1);
+        token0 = (token0 === ADDRESSES.ETH ? tokens['wETH']['address'] : token0);
+        token1 = (token1 === ADDRESSES.ETH ? tokens['wETH']['address'] : token1);
     
         let prices = {};
         if (!isSpecialPricing) {
-          prices = await lookUpTokenPrices([token0, token1]);
-          prices = prices['data'];
+          prices[token0] = tokenPrices[token0Symbol.toLowerCase()];
+          prices[token1] = tokenPrices[token1Symbol.toLowerCase()];
         } 
     
         // both tokens there
         let localTVL = 0;
         if (prices[token0] && prices[token1]) {
-          localTVL = reserve0Raw * prices[token0].usd + reserve1Raw * prices[token1].usd;
+          localTVL = reserve0Raw * prices[token0] + reserve1Raw * prices[token1];
         } else {
           if (prices[token0]) {
-            localTVL = 2 * reserve0Raw * prices[token0].usd;
+            localTVL = 2 * reserve0Raw * prices[token0];
           } else if (prices[token1]) {
-            localTVL = 2 * reserve1Raw * prices[token1].usd;
+            localTVL = 2 * reserve1Raw * prices[token1];
           } else if (poolID == 19) {
             // special case for oneVBTC-vBTC pool, use uni pairs for price check 
-            let vBTC_price = await lookUpVBTCPrice();
+            let vBTC_price = tokenPrices['vbtc'];
             localTVL = 2 * reserve1Raw * vBTC_price;
           } else {
             console.log("==== error ====");
             // hardcoded prices for testing on Kovan
-            if (token0.toLowerCase() === configKovan.WEENUS.toLowerCase()) {
+            /*if (token0.toLowerCase() === configKovan.WEENUS.toLowerCase()) {
               localTVL = 2 * reserve0Raw * 10000;
             }
             if (token0.toLowerCase() === configKovan.TEST_ICHI.toLowerCase()) {
               localTVL = 2 * reserve0Raw * 13;
-            }
+            }*/
           }
         }
     
@@ -428,7 +411,7 @@ async function getPoolContract(poolID, useBasic) {
           let ichiReturnUsd =
           6500 *
           reward *
-          ichiPrice / apyTVL;
+          tokenPrices['ichi'] / apyTVL;
           dailyAPY = ichiReturnUsd * 100;
         }
   
@@ -457,17 +440,17 @@ async function getPoolContract(poolID, useBasic) {
 
   const get1inchPools = async function() {
     return await axios.get(
-      configMainnet._1inchPoolAPI
+      APIS._1inchPoolAPI
     );
   };
   
   const getLoopringPools = async function() {
     return await axios.get(
-      configMainnet.loopringAPI
+      APIS.loopringAPI
     );
   };
   
-  async function getExternalPoolRecord(poolID) {
+  async function getExternalPoolRecord(poolID, tokenPrices) {
       if (poolID === 10001) {
         let allPools = await get1inchPools();
         let _1inchICHI_pool = allPools.data[5];
@@ -475,16 +458,23 @@ async function getPoolContract(poolID, useBasic) {
         let token0 = _1inchICHI_pool.apys[0].token;
         let token1 = _1inchICHI_pool.apys[1].token;
   
-        let reserve = await getOneInchPoolReserves(token0, token1, configMainnet._1inch_ICHI_LP);
+        let token0data = await getTokenData(token0, provider);
+        let token1data = await getTokenData(token1, provider);
+    
+        let token0Symbol = token0data.symbol;
+        let token1Symbol = token1data.symbol;
+
+        let reserve = await getOneInchPoolReserves(token0, token1, ADDRESSES._1inch_ICHI_LP);
         let reserve0 = reserve._reserve0;
         let reserve1 = reserve._reserve1;
         let reserve0Raw = reserve0 / 10 ** 18; //1inch
         let reserve1Raw = reserve1 / 10 ** 9; //ICHI
   
-        let prices = await lookUpTokenPrices([token0, token1]);
-        prices = prices.data;
-  
-        let TVL = reserve0Raw * prices[token0].usd + reserve1Raw * prices[token1].usd;
+        let prices = {};
+        prices[token0] = tokenPrices[token0Symbol.toLowerCase()];
+        prices[token1] = tokenPrices[token1Symbol.toLowerCase()];
+
+        let TVL = reserve0Raw * prices[token0] + reserve1Raw * prices[token1];
   
         let farmTVL = _1inchICHI_pool.liquidity_locked;
         let dailyAPY = (_1inchICHI_pool.apys[0].value + _1inchICHI_pool.apys[1].value) / 365;
@@ -530,8 +520,8 @@ async function getPoolContract(poolID, useBasic) {
           farmTVL: farmTVL,
           reserve0Raw: 0,
           reserve1Raw: 0,
-          address0: tokens['ichi']['address'],
-          address1: configMainnet.ETH,
+          address0: TOKENS['ichi']['address'],
+          address1: ADDRESSES.ETH,
           decimals0: 9,
           decimals1: 18,
           token0: "ICHI",

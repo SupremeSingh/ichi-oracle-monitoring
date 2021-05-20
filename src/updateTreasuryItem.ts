@@ -1,7 +1,7 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { ethers } from 'ethers';
-import { configMainnet, configKovan, tokens } from './config';
+import { ADDRESSES, TOKENS } from './configMainnet';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import ERC20_ABI from './abis/ERC20_ABI.json';
@@ -33,45 +33,50 @@ const getABI = async function(abiType) {
 const getOneTokenAttributes = async function(tokenName) {
   if (tokenName == 'oneBTC')
     return {
-      address: tokens[tokenName]['address'],
-      stimulus_address: tokens['wBTC']['address'],
-      stimulus_name: 'BTC',
+      address: TOKENS[tokenName]['address'],
+      stimulus_address: TOKENS['wBTC']['address'],
+      stimulus_name: 'wBTC',
+      stimulus_display_name: 'BTC',
       stimulus_decimals: 8,
       abi_type: 'ONELINK',
       base_name: 'btc'
     }
   if (tokenName == 'oneVBTC')
     return {
-      address: tokens[tokenName]['address'],
-      stimulus_address: tokens['vBTC']['address'],
-      stimulus_name: 'VBTC',
+      address: TOKENS[tokenName]['address'],
+      stimulus_address: TOKENS['vBTC']['address'],
+      stimulus_name: 'vBTC',
+      stimulus_display_name: 'VBTC',
       stimulus_decimals: 18,
       abi_type: 'ONEETH',
       base_name: 'vbtc'
     }
   if (tokenName == 'oneWING')
     return {
-      address: tokens[tokenName]['address'],
-      stimulus_address: tokens['pWING']['address'],
-      stimulus_name: 'WING',
+      address: TOKENS[tokenName]['address'],
+      stimulus_address: TOKENS['pWING']['address'],
+      stimulus_name: 'pWING',
+      stimulus_display_name: 'WING',
       stimulus_decimals: 9,
       abi_type: 'ONEETH',
       base_name: 'wing'
     }
   if (tokenName == 'oneETH')
     return {
-      address: tokens[tokenName]['address'],
-      stimulus_address: tokens['wETH']['address'],
-      stimulus_name: 'ETH',
+      address: TOKENS[tokenName]['address'],
+      stimulus_address: TOKENS['wETH']['address'],
+      stimulus_name: 'wETH',
+      stimulus_display_name: 'ETH',
       stimulus_decimals: 18,
       abi_type: 'ONEETH',
       base_name: 'eth'
     }
   if (tokenName == 'oneLINK')
     return {
-      address: tokens[tokenName]['address'],
-      stimulus_address: tokens['link']['address'],
-      stimulus_name: 'LINK',
+      address: TOKENS[tokenName]['address'],
+      stimulus_address: TOKENS['link']['address'],
+      stimulus_name: 'link',
+      stimulus_display_name: 'LINK',
       stimulus_decimals: 18,
       abi_type: 'ONELINK',
       base_name: 'link'
@@ -81,16 +86,16 @@ const getOneTokenAttributes = async function(tokenName) {
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
-export const updateTreasuryItem = async (tableName: string, itemName: string, ichiPrice: string): Promise<APIGatewayProxyResult> => {
+export const updateTreasuryItem = async (tableName: string, itemName: string, tokenPrices: any): Promise<APIGatewayProxyResult> => {
   const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
 
   const farming_V1 = new ethers.Contract(
-    configMainnet.farming_V1,
+    ADDRESSES.farming_V1,
     FARMING_V1_ABI,
     provider
   );
   const farming_V2 = new ethers.Contract(
-    configMainnet.farming_V2,
+    ADDRESSES.farming_V2,
     FARMING_V2_ABI,
     provider
   );
@@ -98,16 +103,17 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
   const attr = await getOneTokenAttributes(itemName);
   const oneTokenAddress = attr.address;
   const stimulusTokenAddress = attr.stimulus_address;
+  const stimulusDisplayName = attr.stimulus_display_name;
   const stimulusTokenName = attr.stimulus_name;
   const stimulusDecimals = attr.stimulus_decimals;
   const baseName = attr.base_name;
   const oneTokenABI = await getABI(attr.abi_type);
 
-  const ichi = new ethers.Contract(tokens['ichi']['address'], ERC20_ABI, provider);
+  const ichi = new ethers.Contract(TOKENS['ichi']['address'], ERC20_ABI, provider);
   const stimulusToken = new ethers.Contract(stimulusTokenAddress, ERC20_ABI, provider);
-  const USDC = new ethers.Contract(tokens['USDC']['address'], ERC20_ABI, provider);
+  const USDC = new ethers.Contract(TOKENS['USDC']['address'], ERC20_ABI, provider);
   const oneToken = new ethers.Contract(oneTokenAddress, oneTokenABI, provider);
-  const ICHIBPT = new ethers.Contract(configMainnet.ICHIBPT, ERC20_ABI, provider);
+  const ICHIBPT = new ethers.Contract(ADDRESSES.ICHIBPT, ERC20_ABI, provider);
 
   const oneToken_BPT_Farming_Position = await farming_V2.userInfo(
     7,
@@ -120,13 +126,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
   const oneToken_stimulus = await stimulusToken.balanceOf(oneTokenAddress);
   const oneToken_ichi = await ichi.balanceOf(oneTokenAddress);
   
-  let oneToken_stimulus_price;
-  if (attr.abi_type == 'ONELINK') {
-    oneToken_stimulus_price = await oneToken.getStimulusOracle();
-  }
-  if (attr.abi_type == 'ONEETH') {
-    oneToken_stimulus_price = await oneToken.getStimulusUSD();
-  }
+  let oneToken_stimulus_price = tokenPrices[stimulusTokenName.toLowerCase()];
 
   const reserveBPT = Number(oneToken_BPT_LP) / 10 ** 18;
   const oneToken_BPT_Position = {
@@ -149,11 +149,11 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
   if (itemName == 'oneETH') {
     let oneETH_4_96_Farming_Position = await farming_V2.userInfo(
       3,
-      tokens['oneETH']['address']
+      TOKENS['oneETH']['address']
     );
     let oneETH_4_96_LP = oneETH_4_96_Farming_Position.amount;
   
-    let oneETH_4_96_PoolRecord = await getPoolRecord(1003, ichiPrice);
+    let oneETH_4_96_PoolRecord = await getPoolRecord(1003, tokenPrices);
     
     let totalOneETHLP = oneETH_4_96_PoolRecord['totalPoolLP'];
     let percentOwnership = Number(oneETH_4_96_LP) / Number(totalOneETHLP);
@@ -192,11 +192,11 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
   
     let oneLINK_67_33_Farming_Position = await farming_V2.userInfo(
       8,
-      tokens['oneLINK']['address']
+      TOKENS['oneLINK']['address']
     );
     let oneLINK_67_33_LP = oneLINK_67_33_Farming_Position.amount;
 
-    let oneLINK_67_33_PoolRecord = await getPoolRecord(1008, ichiPrice);
+    let oneLINK_67_33_PoolRecord = await getPoolRecord(1008, tokenPrices);
     
     let totalOneLINKLP = oneLINK_67_33_PoolRecord['totalPoolLP'];
     let percentOwnership = Number(oneLINK_67_33_LP) / Number(totalOneLINKLP);
@@ -246,11 +246,11 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
     ((Number(oneToken_stimulus_price) / 10 ** 9) * Number(oneToken_stimulus)) /
     10 ** stimulusDecimals +
     farmPositionsUSDValue +
-    Number(ichiPrice) * (oneToken_ichi / 10 ** 9);
+    tokenPrices['ichi'] * (oneToken_ichi / 10 ** 9);
 
-  let usdc_price = 1000000000; // hardcoded until we have a better way to get this price
+  let usdc_price = tokenPrices['usdc'];
   let oneToken_collateral_USDC_only =
-    (Number(usdc_price) / 10 ** 9) * (Number(oneToken_USDC) / 10 ** 6);
+    usdc_price * (Number(oneToken_USDC) / 10 ** 6);
 
   let oneToken_collateral_only = oneToken_collateral_USDC_only +
     oneToken_from_all_pools + Number(oneToken_ICHIBPT) / 10 ** 18;
@@ -271,7 +271,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, ic
     }
 
     let oneToken_stimulus_list = [];
-    oneToken_stimulus_list.push({ M: { name: { S: stimulusTokenName }, balance: { N: (Number(oneToken_stimulus) / 10 ** stimulusDecimals).toString() } }});
+    oneToken_stimulus_list.push({ M: { name: { S: stimulusDisplayName }, balance: { N: (Number(oneToken_stimulus) / 10 ** stimulusDecimals).toString() } }});
 
     if (Number(oneToken_ichi) > 0) {
       oneToken_stimulus_list.push({ M: { name: { S: "ICHI" }, balance: { N: (Number(oneToken_ichi) / 10 ** 9).toString() } }});

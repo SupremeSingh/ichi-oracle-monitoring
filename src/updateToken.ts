@@ -4,7 +4,7 @@ import { ContractInterface, ethers } from 'ethers';
 import ERC20_ABI from './abis/ERC20_ABI.json';
 import ONELINK_ABI from './abis/oneLINK_ABI.json';
 import ONEETH_ABI from './abis/oneETH_ABI.json';
-import { configMainnet, configKovan, tokens } from './config';
+import { ADDRESSES, TOKENS } from './configMainnet';
 import axios from 'axios';
 import { ChainId, Token, WETH, Fetcher, Route } from '@uniswap/sdk';
 
@@ -22,8 +22,8 @@ const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
 const RPC_HOST = `https://mainnet.infura.io/v3/${infuraId}`;
 const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
 
-const farmV1 = configMainnet.farming_V1;
-const farmV2 = configMainnet.farming_V2;
+const farmV1 = ADDRESSES.farming_V1;
+const farmV2 = ADDRESSES.farming_V2;
 
 const lookUpTokenPrices = async function(id_array) {
   let ids = id_array.join("%2C");
@@ -33,7 +33,7 @@ const lookUpTokenPrices = async function(id_array) {
 };
 
 async function lookUpVBTCPrice() {
-  const uni_VBTC = new Token(ChainId.MAINNET, tokens['vBTC']['address'], 18)  
+  const uni_VBTC = new Token(ChainId.MAINNET, TOKENS['vBTC']['address'], 18)  
 
   const pair = await Fetcher.fetchPairData(uni_VBTC, WETH[uni_VBTC.chainId])
   const route = new Route([pair], WETH[uni_VBTC.chainId])
@@ -43,8 +43,8 @@ async function lookUpVBTCPrice() {
 
   let price_vBTC_wETH = route.midPrice.invert().toSignificant(6);
 
-  let prices = await lookUpTokenPrices([tokens['wETH']['address'].toLowerCase()]);
-  let price_wETH_usd = prices.data[tokens['wETH']['address'].toLowerCase()].usd;
+  let prices = await lookUpTokenPrices([TOKENS['wETH']['address'].toLowerCase()]);
+  let price_wETH_usd = prices.data[TOKENS['wETH']['address'].toLowerCase()].usd;
   let price_vBTC_usd = price_wETH_usd * Number(price_vBTC_wETH);
 
   return price_vBTC_usd;
@@ -65,9 +65,9 @@ async function lookupStimulusOraclePrice(address: string, decimals: number) {
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
 export const updateToken = async (tableName: string, tokenName: string): Promise<APIGatewayProxyResult> => {
-  const address = tokens[tokenName]['address'];
-  const decimals = tokens[tokenName]['decimals'];
-  const isOneToken = tokens[tokenName]['isOneToken'];
+  const address = TOKENS[tokenName]['address'];
+  const decimals = TOKENS[tokenName]['decimals'];
+  const isOneToken = TOKENS[tokenName]['isOneToken'];
   let price = 0;
 
   const tokenContract = new ethers.Contract(address, ERC20_ABI as ContractInterface, provider);
@@ -91,16 +91,16 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
         price = await lookUpVBTCPrice();
         break;
       case 'pWING':
-        price = await lookupStimulusUSDPrice(tokens['oneWING']['address'], 9);
+        price = await lookupStimulusUSDPrice(TOKENS['oneWING']['address'], 9);
         break;
       case 'wETH':
-        price = await lookupStimulusUSDPrice(tokens['oneETH']['address'], 9);
+        price = await lookupStimulusUSDPrice(TOKENS['oneETH']['address'], 9);
         break;
       case 'wBTC':
-        price = await lookupStimulusOraclePrice(tokens['oneBTC']['address'], 9);
+        price = await lookupStimulusOraclePrice(TOKENS['oneBTC']['address'], 9);
         break;
       case 'link':
-        price = await lookupStimulusOraclePrice(tokens['oneLINK']['address'], 9);
+        price = await lookupStimulusOraclePrice(TOKENS['oneLINK']['address'], 9);
         break;
       default:
         let lookup_price = await lookUpTokenPrices([address.toLowerCase()]);
