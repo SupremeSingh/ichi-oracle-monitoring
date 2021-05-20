@@ -4,9 +4,9 @@ import { updateTreasury } from './updateTreasury';
 import { updateFarms } from './updateFarms';
 import AWS from 'aws-sdk';
 
-const token_tableName = process.env.TABLE_NAME || 'token-dev';
-const treasury_tableName = process.env.TABLE_NAME || 'treasury-dev';
-const farms_tableName = process.env.TABLE_NAME || 'farms-dev';
+const token_tableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
+const treasury_tableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
+const farms_tableName = process.env.FARMS_TABLE_NAME || 'farms-dev';
 
 export const handler = async (event: APIGatewayProxyEvent) => {
   AWS.config.update({
