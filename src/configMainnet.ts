@@ -184,4 +184,4 @@ LABELS[1008] = {
   shortLpName: 'BPT ICHI-LINK'
 }
 
-module.exports = { ADDRESSES, APIS, POOLS, LABELS, TOKENS };
+export { ADDRESSES, APIS, POOLS, LABELS, TOKENS };

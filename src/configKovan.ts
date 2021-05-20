@@ -16,4 +16,4 @@ const TOKENS = {
 const LABELS = {
 }
 
-module.exports = { ADDRESSES, APIS, POOLS, LABELS, TOKENS };
+export { ADDRESSES, APIS, POOLS, LABELS, TOKENS };
