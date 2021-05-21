@@ -19,6 +19,11 @@ const TOKENS = {
     decimals: 9,
     isOneToken: false
   },
+  xichi: {
+    address: "0x70605a6457B0A8fBf1EEE896911895296eAB467E",
+    decimals: 9,
+    isOneToken: false
+  },
   BNT: {
     address: "0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C",
     decimals: 18,

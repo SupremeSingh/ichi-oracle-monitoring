@@ -87,6 +87,9 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
     price = 1;
   } else {
     switch(tokenName) {
+      case 'xichi':
+        price = 0;
+        break;
       case 'vBTC':
         price = await lookUpVBTCPrice();
         break;
