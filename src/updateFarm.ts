@@ -141,6 +141,7 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
       'tvl = :tvl, ' + 
       'farmTVL = :farmTVL, ' + 
       'totalPoolLP = :totalPoolLP, ' + 
+      'totalFarmLP = :totalFarmLP, ' + 
       'dailyAPY = :dailyAPY, ' + 
       'weeklyAPY = :weeklyAPY, ' + 
       'monthlyAPY = :monthlyAPY, ' + 
@@ -163,6 +164,7 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
       ':tvl': { N: Number(pool['tvl']).toString() },
       ':farmTVL': { N: Number(pool['farmTVL']).toString() },
       ':totalPoolLP': { S: pool['totalPoolLP'] },
+      ':totalFarmLP': { S: pool['totalFarmLP'] },
       ':dailyAPY': { N: Number(pool['dailyAPY']).toString() },
       ':weeklyAPY': { N: Number(pool['weeklyAPY']).toString() },
       ':monthlyAPY': { N: Number(pool['monthlyAPY']).toString() },

@@ -277,7 +277,7 @@ async function getPoolContract(poolID, useBasic) {
       // getting data for an active pool (or inactive pool not cached yet)
       let reward = 0;
       let bonusToRealRatio = 1;
-      let inTheFarmLP = 0;
+      let inTheFarmLP = '';
       
       if (poolID < 1000 || poolID >= 10000) {
         reward = await farming_V1.ichiReward(poolID);
@@ -330,6 +330,7 @@ async function getPoolContract(poolID, useBasic) {
           monthlyAPY: dailyAPY * 30,
           yearlyAPY: dailyAPY * 365,
           totalPoolLP: totalPoolLP,
+          totalFarmLP: inTheFarmLP.toString(),
           tvl: Number(totalPoolLP) / 10 ** 18,
           farmTVL: apyTVL,
           reserve0Raw: 0,
@@ -422,6 +423,7 @@ async function getPoolContract(poolID, useBasic) {
           monthlyAPY: dailyAPY * 30,
           yearlyAPY: dailyAPY * 365,
           totalPoolLP: totalPoolLP,
+          totalFarmLP: inTheFarmLP.toString(),
           tvl: localTVL,
           farmTVL: apyTVL,
           reserve0Raw: reserve0Raw,
@@ -486,6 +488,7 @@ async function getPoolContract(poolID, useBasic) {
           monthlyAPY: dailyAPY * 30,
           yearlyAPY: dailyAPY * 365,
           totalPoolLP: '0',
+          totalFarmLP: '0',
           tvl: TVL,
           farmTVL: farmTVL,
           reserve0Raw: 0,
@@ -516,6 +519,7 @@ async function getPoolContract(poolID, useBasic) {
           monthlyAPY: dailyAPY * 30,
           yearlyAPY: dailyAPY * 365,
           totalPoolLP: '0',
+          totalFarmLP: '0',
           tvl: TVL,
           farmTVL: farmTVL,
           reserve0Raw: 0,
