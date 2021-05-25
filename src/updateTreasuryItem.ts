@@ -181,6 +181,14 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   }
 
   // =================================================================================
+  // special oneVBTC logic in this section
+
+  if (itemName == 'oneVBTC') {
+    // temp fix for oneVBTC (removing price of burned stablecoins for a specific address from the total)
+    oneToken_burned_tokens = await oneToken.getBurnedStablecoin('0xcc71b8a0b9ea458ae7e17fa232a36816f6b27195');
+  }
+
+  // =================================================================================
 
   // =================================================================================
   // special oneLINK logic in this section
@@ -243,7 +251,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const oneToken_SUPPLY = await oneToken.totalSupply();
 
   let oneToken_stimulus_usd =
-    ((Number(oneToken_stimulus_price) / 10 ** 9) * Number(oneToken_stimulus)) /
+    (Number(oneToken_stimulus_price) * Number(oneToken_stimulus)) /
     10 ** stimulusDecimals +
     farmPositionsUSDValue +
     tokenPrices['ichi'] * (oneToken_ichi / 10 ** 9);
