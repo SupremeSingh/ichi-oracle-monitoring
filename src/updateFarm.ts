@@ -94,7 +94,7 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
   }
 
   let isExternal = poolId >= 10000;
-  let isIchiPool = pool['token0'] == 'ICHI' || pool['token1'] == 'ICHI';
+  let isIchiPool = pool['token0'].toLowerCase() == 'ichi' || pool['token1'].toLowerCase() == 'ichi';
   let isUpcoming = POOLS.upcomingPools.includes(poolId);
   let isMigrating = POOLS.migratingPools.includes(poolId);
   let isRetired = POOLS.retiredPools.includes(poolId);
