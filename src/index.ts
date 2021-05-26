@@ -38,6 +38,6 @@ export const handler = async (event: APIGatewayProxyEvent) => {
 
   console.log(tokenPrices);
 
-  await updateTreasury(treasury_tableName, tokenPrices);
   await updateFarms(farms_tableName, tokenPrices);
+  await updateTreasury(treasury_tableName, tokenPrices);
 };

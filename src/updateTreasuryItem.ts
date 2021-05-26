@@ -159,54 +159,6 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   collateralPositionsUSDValue = collateralPositionsUSDValue + reserveBPT;
 
   // =================================================================================
-  // special oneETH logic in this section
-
-  if (itemName == 'oneETH') {
-    let oneETH_4_96_Farming_Position = await farming_V2.userInfo(
-      3,
-      TOKENS['oneETH']['address']
-    );
-    let oneETH_4_96_LP = oneETH_4_96_Farming_Position.amount;
-  
-    let oneETH_4_96_PoolRecord = await getPoolRecord(1003, tokenPrices);
-    
-    let totalOneETHLP = oneETH_4_96_PoolRecord['totalPoolLP'];
-    let percentOwnership = Number(oneETH_4_96_LP) / Number(totalOneETHLP);
-  
-    let reserve0 = oneETH_4_96_PoolRecord['reserve0Raw'];
-    let reserve1 = oneETH_4_96_PoolRecord['reserve1Raw'];
-    let token0 = oneETH_4_96_PoolRecord['token0'];
-    let token1 = oneETH_4_96_PoolRecord['token1'];
-    let tvl = oneETH_4_96_PoolRecord['tvl'];
-    let usdValue = Number(tvl) * percentOwnership;
-    let yAPY = oneETH_4_96_PoolRecord['yearlyAPY'];
-  
-    assets = [];
-    assets.push({ M: { 
-      name: { S: token0 }, 
-      balance: { N: (Number(reserve0) * percentOwnership).toString() } 
-    }});
-    assets.push({ M: { 
-      name: { S: token1 }, 
-      balance: { N: (Number(reserve1) * percentOwnership).toString() } 
-    }});
-    let oneETH_4_96_Position = {
-      name: { S: "SMART ICHI-ETH Farm" },
-      LP: { N: (Number(oneETH_4_96_LP) / 10 ** 18).toString() },
-      percentOwnership: { N: (percentOwnership * 100).toString() },
-      usdValue: { N: usdValue.toString() },
-      assets: { L: assets }
-    };
-  
-    if (stimulusPositionsUSDValue + usdValue > 0) {
-      stimulusPositionsAPY = (stimulusPositionsUSDValue * stimulusPositionsAPY + usdValue * yAPY) / 
-        (stimulusPositionsUSDValue + usdValue);
-    }
-    stimulusPositionsUSDValue = stimulusPositionsUSDValue + usdValue;
-    oneTokenStimulusPostions.push({ M: oneETH_4_96_Position });
-  }
-
-  // =================================================================================
   // special oneVBTC logic in this section
 
   if (itemName == 'oneVBTC') {
