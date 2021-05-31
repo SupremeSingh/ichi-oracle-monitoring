@@ -140,6 +140,7 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
       'searchName = :searchName, ' + 
       'displayName = :displayName, ' + 
       'lpName = :lpName, ' + 
+      'lpAddress = :lpAddress, ' + 
       'extras = :extras, ' + 
       'shortLpName = :shortLpName, ' + 
       'tokens = :tokens, ' + 
@@ -163,6 +164,7 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
       ':searchName': { S: searchName },
       ':displayName': { S: displayName },
       ':lpName': { S: lpName },
+      ':lpAddress': { S: pool['lpAddress'] },
       ':extras': { M: extras },
       ':shortLpName': { S: shortLpName },
       ':tokens': { L: tokens },

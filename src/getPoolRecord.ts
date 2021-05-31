@@ -325,6 +325,7 @@ async function getPoolContract(poolID, useBasic) {
   
         poolRecord = {
           pool: poolID,
+          lpAddress: poolToken,
           dailyAPY: dailyAPY,
           weeklyAPY: dailyAPY * 7,
           monthlyAPY: dailyAPY * 30,
@@ -418,6 +419,7 @@ async function getPoolContract(poolID, useBasic) {
   
         poolRecord = {
           pool: poolID,
+          lpAddress: poolToken,
           dailyAPY: dailyAPY,
           weeklyAPY: dailyAPY * 7,
           monthlyAPY: dailyAPY * 30,
@@ -483,6 +485,7 @@ async function getPoolContract(poolID, useBasic) {
   
         let poolRecord = {
           pool: poolID,
+          lpAddress: ADDRESSES._1inch_ICHI_LP,
           dailyAPY: dailyAPY,
           weeklyAPY: dailyAPY * 7,
           monthlyAPY: dailyAPY * 30,
@@ -514,6 +517,7 @@ async function getPoolContract(poolID, useBasic) {
   
         let poolRecord = {
           pool: poolID,
+          lpAddress: "",
           dailyAPY: dailyAPY,
           weeklyAPY: dailyAPY * 7,
           monthlyAPY: dailyAPY * 30,
