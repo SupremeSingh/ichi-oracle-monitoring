@@ -17,7 +17,10 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   await updateTokens(token_tableName);
 
   const tokenPrices = {};
-  var params = {
+  const tokenNames = {};
+  tokenNames['eth'] = 'ETH';
+
+  let params = {
     TableName: token_tableName,
     FilterExpression: "#isOneToken = :is_one_token",
     ExpressionAttributeNames: {
@@ -29,15 +32,37 @@ export const handler = async (event: APIGatewayProxyEvent) => {
     const result = await dbClient.scan(params).promise();
     for (let i = 0; i < result.Items.length; i++) {
       let item = result.Items[i];
-      let name = item['name']['S'];
-      tokenPrices[name.toLowerCase()] = Number(item['price']['N'])
+      let name = item['name']['S'].toLowerCase();
+      tokenPrices[name] = Number(item['price']['N'])
+      tokenNames[name] = item['displayName']['S']
     }
   } catch (error) {
     throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
   }
 
-  console.log(tokenPrices);
+  params = {
+    TableName: token_tableName,
+    FilterExpression: "#isOneToken = :is_one_token",
+    ExpressionAttributeNames: {
+        "#isOneToken": "isOneToken",
+    },
+    ExpressionAttributeValues: { ":is_one_token": { BOOL: true } }
+  };
+  try {
+    const result = await dbClient.scan(params).promise();
+    for (let i = 0; i < result.Items.length; i++) {
+      let item = result.Items[i];
+      let name = item['name']['S'].toLowerCase();
+      tokenNames[name] = item['displayName']['S']
+    }
+  } catch (error) {
+    throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
+  }
 
-  await updateFarms(farms_tableName, tokenPrices);
-  await updateTreasury(treasury_tableName, tokenPrices);
+  //console.log(tokenPrices);
+  //console.log(tokenNames);
+
+  await updateFarms(farms_tableName, tokenPrices, tokenNames);
+  await updateTreasury(treasury_tableName, tokenPrices, tokenNames);
+
 };

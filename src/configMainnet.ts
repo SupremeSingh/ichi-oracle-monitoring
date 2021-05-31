@@ -17,76 +17,91 @@ const TOKENS = {
   ichi: {
     address: "0x903bEF1736CDdf2A537176cf3C64579C3867A881",
     decimals: 9,
+    displayName: "ICHI",
     isOneToken: false
   },
   xichi: {
     address: "0x70605a6457B0A8fBf1EEE896911895296eAB467E",
     decimals: 9,
+    displayName: "xICHI",
     isOneToken: false
   },
-  BNT: {
+  bnt: {
     address: "0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C",
     decimals: 18,
+    displayName: "BNT",
     isOneToken: false
   },
   '1inch': {
     address: "0x111111111117dC0aa78b770fA6A738034120C302",
     decimals: 18,
+    displayName: "1INCH",
     isOneToken: false
   },
-  pWING: {
+  pwing: {
     address: "0xDb0f18081b505A7DE20B18ac41856BCB4Ba86A1a",
     decimals: 9,
+    displayName: "pWING",
     isOneToken: false
   },
-  wBTC: {
+  wbtc: {
     address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
     decimals: 8,
+    displayName: "wBTC",
     isOneToken: false
   },
-  wETH: {
+  weth: {
     address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     decimals: 18,
+    displayName: "wETH",
     isOneToken: false
   },
-  vBTC: {
+  vbtc: {
     address: "0xe1406825186D63980fd6e2eC61888f7B91C4bAe4",
     decimals: 18,
+    displayName: "VBTC",
     isOneToken: false
   },
   link: {
     address: "0x514910771AF9Ca656af840dff83E8264EcF986CA",
     decimals: 18,
+    displayName: "LINK",
     isOneToken: false
   },
-  USDC: {
+  usdc: {
     address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
     decimals: 6,
+    displayName: "USDC",
     isOneToken: false
   },
-  oneETH: { 
+  oneeth: { 
     address: "0xEc0d77a58528a218cBf41Fa6E1585c8D7A085868",
     decimals: 9,
+    displayName: "oneETH",
     isOneToken: true
   },
-  oneBTC: { 
+  onebtc: { 
     address: "0xC88F47067dB2E25851317A2FDaE73a22c0777c37",
     decimals: 9,
+    displayName: "oneBTC",
     isOneToken: true
   },
-  oneVBTC: { 
+  onevbtc: { 
     address: "0x7BD198b9107496fD5cC3d7655AF52f43a8eDBc4C",
     decimals: 9,
+    displayName: "oneVBTC",
     isOneToken: true
   },
-  oneWING: { 
+  onewing: { 
     address: "0x8F041A3940a5e6FB580075C3774E15FcFA0E1618",
     decimals: 9,
+    displayName: "oneWING",
     isOneToken: true
   },
-  oneLINK: { 
+  onelink: { 
     address: "0x18Cc17a1EeD37C02A77B0B96b7890C7730E2a2CF",
     decimals: 9,
+    displayName: "oneLINK",
     isOneToken: true
   }
 }

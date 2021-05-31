@@ -31,47 +31,47 @@ const getABI = async function(abiType) {
 };
 
 const getOneTokenAttributes = async function(tokenName) {
-  if (tokenName == 'oneBTC')
+  if (tokenName == 'onebtc')
     return {
       address: TOKENS[tokenName]['address'],
-      stimulus_address: TOKENS['wBTC']['address'],
-      stimulus_name: 'wBTC',
+      stimulus_address: TOKENS['wbtc']['address'],
+      stimulus_name: 'wbtc',
       stimulus_display_name: 'BTC',
       stimulus_decimals: 8,
       abi_type: 'ONELINK',
       base_name: 'btc'
     }
-  if (tokenName == 'oneVBTC')
+  if (tokenName == 'onevbtc')
     return {
       address: TOKENS[tokenName]['address'],
-      stimulus_address: TOKENS['vBTC']['address'],
-      stimulus_name: 'vBTC',
+      stimulus_address: TOKENS['vbtc']['address'],
+      stimulus_name: 'vbtc',
       stimulus_display_name: 'VBTC',
       stimulus_decimals: 18,
       abi_type: 'ONEETH',
       base_name: 'vbtc'
     }
-  if (tokenName == 'oneWING')
+  if (tokenName == 'onewing')
     return {
       address: TOKENS[tokenName]['address'],
-      stimulus_address: TOKENS['pWING']['address'],
-      stimulus_name: 'pWING',
+      stimulus_address: TOKENS['pwing']['address'],
+      stimulus_name: 'pwing',
       stimulus_display_name: 'WING',
       stimulus_decimals: 9,
       abi_type: 'ONEETH',
       base_name: 'wing'
     }
-  if (tokenName == 'oneETH')
+  if (tokenName == 'oneeth')
     return {
       address: TOKENS[tokenName]['address'],
-      stimulus_address: TOKENS['wETH']['address'],
-      stimulus_name: 'wETH',
+      stimulus_address: TOKENS['weth']['address'],
+      stimulus_name: 'weth',
       stimulus_display_name: 'ETH',
       stimulus_decimals: 18,
       abi_type: 'ONEETH',
       base_name: 'eth'
     }
-  if (tokenName == 'oneLINK')
+  if (tokenName == 'onelink')
     return {
       address: TOKENS[tokenName]['address'],
       stimulus_address: TOKENS['link']['address'],
@@ -86,7 +86,8 @@ const getOneTokenAttributes = async function(tokenName) {
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
-export const updateTreasuryItem = async (tableName: string, itemName: string, tokenPrices: any): Promise<APIGatewayProxyResult> => {
+export const updateTreasuryItem = async (tableName: string, itemName: string, tokenPrices: {[name: number]: string}, 
+      tokenNames: {[name: string]: string}): Promise<APIGatewayProxyResult> => {
   const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
 
   const farming_V1 = new ethers.Contract(
@@ -100,7 +101,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     provider
   );
 
-  const attr = await getOneTokenAttributes(itemName);
+  const attr = await getOneTokenAttributes(itemName.toLowerCase());
   const oneTokenAddress = attr.address;
   const stimulusTokenAddress = attr.stimulus_address;
   const stimulusDisplayName = attr.stimulus_display_name;
@@ -111,7 +112,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
   const ichi = new ethers.Contract(TOKENS['ichi']['address'], ERC20_ABI, provider);
   const stimulusToken = new ethers.Contract(stimulusTokenAddress, ERC20_ABI, provider);
-  const USDC = new ethers.Contract(TOKENS['USDC']['address'], ERC20_ABI, provider);
+  const USDC = new ethers.Contract(TOKENS['usdc']['address'], ERC20_ABI, provider);
   const oneToken = new ethers.Contract(oneTokenAddress, oneTokenABI, provider);
   const ICHIBPT = new ethers.Contract(ADDRESSES.ICHIBPT, ERC20_ABI, provider);
 
@@ -178,7 +179,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   
     let oneLINK_67_33_Farming_Position = await farming_V2.userInfo(
       8,
-      TOKENS['oneLINK']['address']
+      TOKENS['onelink']['address']
     );
     let oneLINK_67_33_LP = oneLINK_67_33_Farming_Position.amount;
 
@@ -197,11 +198,11 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
     assets = [];
     assets.push({ M: { 
-      name: { S: token0 }, 
+      name: { S: tokenNames[token0.toLowerCase()] }, 
       balance: { N: (Number(reserve0) * percentOwnership).toString() } 
     }});
     assets.push({ M: { 
-      name: { S: token1 }, 
+      name: { S: tokenNames[token1.toLowerCase()] }, 
       balance: { N: (Number(reserve1) * percentOwnership).toString() } 
     }});
     let oneLINK_67_33_Position = {
@@ -280,7 +281,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     }
 
     let res = {
-      name: itemName,
+      name: itemName.toLowerCase(),
+      displayName: itemName,
       base: baseName,
       usdc: Number(oneToken_USDC) / 10 ** 6,
       circulation: Number(oneToken_SUPPLY) / 10 ** 9,
@@ -305,11 +307,12 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       TableName: tableName,
       Key: {
         name: {
-          S: itemName
+          S: itemName.toLowerCase()
         }
       },
       UpdateExpression: 'set ' + 
         'baseName = :baseName, ' + 
+        'displayName = :displayName, ' + 
         'usdc = :usdc, ' + 
         'circulation = :circulation, ' + 
         'collateral = :collateral, ' +
@@ -326,7 +329,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         'treasuryBacked = :treasuryBacked, ' + 
         'reserveRatio = :reserveRatio',
       ExpressionAttributeValues: {
-        ':baseName': { S: baseName},
+        ':baseName': { S: baseName },
+        ':displayName': { S: itemName },
         ':usdc': { N: (Number(oneToken_USDC) / 10 ** 6).toString() },
         ':circulation': { N: (Number(oneToken_SUPPLY) / 10 ** 9).toString() },
         ':collateral' : { L: oneToken_collateral_list },

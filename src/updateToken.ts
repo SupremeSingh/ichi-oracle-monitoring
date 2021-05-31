@@ -33,7 +33,7 @@ const lookUpTokenPrices = async function(id_array) {
 };
 
 async function lookUpVBTCPrice() {
-  const uni_VBTC = new Token(ChainId.MAINNET, TOKENS['vBTC']['address'], 18)  
+  const uni_VBTC = new Token(ChainId.MAINNET, TOKENS['vbtc']['address'], 18)  
 
   const pair = await Fetcher.fetchPairData(uni_VBTC, WETH[uni_VBTC.chainId])
   const route = new Route([pair], WETH[uni_VBTC.chainId])
@@ -43,8 +43,8 @@ async function lookUpVBTCPrice() {
 
   let price_vBTC_wETH = route.midPrice.invert().toSignificant(6);
 
-  let prices = await lookUpTokenPrices([TOKENS['wETH']['address'].toLowerCase()]);
-  let price_wETH_usd = prices.data[TOKENS['wETH']['address'].toLowerCase()].usd;
+  let prices = await lookUpTokenPrices([TOKENS['weth']['address'].toLowerCase()]);
+  let price_wETH_usd = prices.data[TOKENS['weth']['address'].toLowerCase()].usd;
   let price_vBTC_usd = price_wETH_usd * Number(price_vBTC_wETH);
 
   return price_vBTC_usd;
@@ -68,6 +68,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
   const address = TOKENS[tokenName]['address'];
   const decimals = TOKENS[tokenName]['decimals'];
   const isOneToken = TOKENS[tokenName]['isOneToken'];
+  const displayName = TOKENS[tokenName]['displayName'];
   let price = 0;
 
   const tokenContract = new ethers.Contract(address, ERC20_ABI as ContractInterface, provider);
@@ -90,20 +91,20 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
       case 'xichi':
         price = 0;
         break;
-      case 'vBTC':
+      case 'vbtc':
         price = await lookUpVBTCPrice();
         break;
-      case 'pWING':
-        price = await lookupStimulusUSDPrice(TOKENS['oneWING']['address'], 9);
+      case 'pwing':
+        price = await lookupStimulusUSDPrice(TOKENS['onewing']['address'], 9);
         break;
-      case 'wETH':
-        price = await lookupStimulusUSDPrice(TOKENS['oneETH']['address'], 9);
+      case 'weth':
+        price = await lookupStimulusUSDPrice(TOKENS['oneeth']['address'], 9);
         break;
-      case 'wBTC':
-        price = await lookupStimulusOraclePrice(TOKENS['oneBTC']['address'], 9);
+      case 'wbtc':
+        price = await lookupStimulusOraclePrice(TOKENS['onebtc']['address'], 9);
         break;
       case 'link':
-        price = await lookupStimulusOraclePrice(TOKENS['oneLINK']['address'], 9);
+        price = await lookupStimulusOraclePrice(TOKENS['onelink']['address'], 9);
         break;
       default:
         let lookup_price = await lookUpTokenPrices([address.toLowerCase()]);
@@ -124,6 +125,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
       'circulating = :circulating, ' +
       'address = :address, ' +
       'decimals = :decimals, ' +
+      'displayName = :displayName, ' +
       'price = :price, ' +
       'isOneToken = :isOneToken, ' +
       'supply = :supply',
@@ -131,6 +133,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
       ':circulating': { N: circulating.toString() },
       ':address': { S: address },
       ':decimals': { N: decimals.toString() },
+      ':displayName': { S: displayName },
       ':price': { N: Number(price).toString() },
       ':isOneToken': { BOOL: isOneToken },
       ':supply': { N: totalTokens.toString() }

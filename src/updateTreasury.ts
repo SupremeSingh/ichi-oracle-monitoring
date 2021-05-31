@@ -1,12 +1,13 @@
 import { updateTreasuryItem } from './updateTreasuryItem';
 
-export const updateTreasury = async (tableName: string, tokenPrices: any) => {
-  let treasuryTokens = ['oneBTC','oneVBTC','oneWING','oneETH','oneLINK'];
+export const updateTreasury = async (tableName: string, tokenPrices: {[name: number]: string}, 
+      tokenNames: {[name: string]: string}) => {
+  let treasuryPositions = ['oneBTC','oneVBTC','oneWING','oneETH','oneLINK'];
 
-  for (let i = 0; i < treasuryTokens.length; i++) {
-    let res = await updateTreasuryItem(tableName, treasuryTokens[i], tokenPrices);
+  for (let i = 0; i < treasuryPositions.length; i++) {
+    let res = await updateTreasuryItem(tableName, treasuryPositions[i], tokenPrices, tokenNames);
 
-    console.log("update " + treasuryTokens[i] + " results:");
+    console.log("update " + treasuryPositions[i] + " results:");
     console.log(res);
   }
 };

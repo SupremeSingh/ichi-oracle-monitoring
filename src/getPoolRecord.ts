@@ -371,8 +371,8 @@ async function getPoolContract(poolID, useBasic) {
         let reserve0Raw = reserve0 / 10 ** token0Decimals;
         let reserve1Raw = reserve1 / 10 ** token1Decimals;
     
-        token0 = (token0 === ADDRESSES.ETH ? tokens['wETH']['address'] : token0);
-        token1 = (token1 === ADDRESSES.ETH ? tokens['wETH']['address'] : token1);
+        token0 = (token0 === ADDRESSES.ETH ? tokens['weth']['address'] : token0);
+        token1 = (token1 === ADDRESSES.ETH ? tokens['weth']['address'] : token1);
     
         let prices = {};
         if (!isSpecialPricing) {

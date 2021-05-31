@@ -35,7 +35,8 @@ const getExchangeName = async function(poolId: number) {
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
-export const updateFarm = async (tableName: string, poolId: number, tokenPrices: any): Promise<APIGatewayProxyResult> => {
+export const updateFarm = async (tableName: string, poolId: number, tokenPrices: {[name: number]: string}, 
+      tokenNames: {[name: string]: string}): Promise<APIGatewayProxyResult> => {
   const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
 
   const farming_V1 = new ethers.Contract(
@@ -77,17 +78,22 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
     searchName = farmName.toLowerCase()+'-'+pool['token0'].toLowerCase()+'-'+pool['token1'].toLowerCase()+'-'+farmPoolId;
 
     let token0 = {
-      token: { S: pool['token0'] },
+      name: { S: pool['token0'].toLowerCase() },
+      displayName: { S: tokenNames[pool['token0'].toLowerCase()] },
       address: { S: pool['address0'] },
       reserve: { N: (Number(pool['reserve0Raw'])).toString() },
       decimals: { N: (Number(pool['decimals0'])).toString() }
     };
     let token1 = {
-      token: { S: pool['token1'] },
+      name: { S: pool['token1'].toLowerCase() },
+      displayName: { S: tokenNames[pool['token1'].toLowerCase()] },
       address: { S: pool['address1'] },
       reserve: { N: (Number(pool['reserve1Raw'])).toString() },
       decimals: { N: (Number(pool['decimals1'])).toString() }
     };
+
+    //console.log(token0);
+    //console.log(token1);
 
     tokens.push({ M: token0 });
     tokens.push({ M: token1 });
