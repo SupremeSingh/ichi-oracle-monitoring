@@ -1,6 +1,6 @@
 import { updateTreasuryItem } from './updateTreasuryItem';
 
-export const updateTreasury = async (tableName: string, tokenPrices: {[name: number]: string}, 
+export const updateTreasury = async (tableName: string, tokenPrices: {[name: string]: number}, 
       tokenNames: {[name: string]: string}) => {
   let treasuryPositions = ['oneBTC','oneVBTC','oneWING','oneETH','oneLINK'];
 

@@ -86,7 +86,7 @@ const getOneTokenAttributes = async function(tokenName) {
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
-export const updateTreasuryItem = async (tableName: string, itemName: string, tokenPrices: {[name: number]: string}, 
+export const updateTreasuryItem = async (tableName: string, itemName: string, tokenPrices: {[name: string]: number}, 
       tokenNames: {[name: string]: string}): Promise<APIGatewayProxyResult> => {
   const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
 
