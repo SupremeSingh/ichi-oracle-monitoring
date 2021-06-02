@@ -75,8 +75,6 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
   if (pool['token0'] == '') {
     searchName = farmName.toLowerCase()+'-multi-'+farmPoolId;
   } else {
-    searchName = farmName.toLowerCase()+'-'+pool['token0'].toLowerCase()+'-'+pool['token1'].toLowerCase()+'-'+farmPoolId;
-
     let token0 = {
       name: { S: pool['token0'].toLowerCase() },
       displayName: { S: tokenNames[pool['token0'].toLowerCase()] },
@@ -84,19 +82,22 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
       reserve: { N: (Number(pool['reserve0Raw'])).toString() },
       decimals: { N: (Number(pool['decimals0'])).toString() }
     };
-    let token1 = {
-      name: { S: pool['token1'].toLowerCase() },
-      displayName: { S: tokenNames[pool['token1'].toLowerCase()] },
-      address: { S: pool['address1'] },
-      reserve: { N: (Number(pool['reserve1Raw'])).toString() },
-      decimals: { N: (Number(pool['decimals1'])).toString() }
-    };
-
-    //console.log(token0);
-    //console.log(token1);
-
     tokens.push({ M: token0 });
-    tokens.push({ M: token1 });
+
+    if (pool['token1'] == '') {
+      searchName = farmName.toLowerCase()+'-'+pool['token0'].toLowerCase()+farmPoolId;
+    } else {
+      searchName = farmName.toLowerCase()+'-'+pool['token0'].toLowerCase()+'-'+pool['token1'].toLowerCase()+'-'+farmPoolId;
+
+      let token1 = {
+        name: { S: pool['token1'].toLowerCase() },
+        displayName: { S: tokenNames[pool['token1'].toLowerCase()] },
+        address: { S: pool['address1'] },
+        reserve: { N: (Number(pool['reserve1Raw'])).toString() },
+        decimals: { N: (Number(pool['decimals1'])).toString() }
+      };
+      tokens.push({ M: token1 });
+    }
   }
 
   let isExternal = poolId >= 10000;
@@ -104,6 +105,7 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
   let isUpcoming = POOLS.upcomingPools.includes(poolId);
   let isMigrating = POOLS.migratingPools.includes(poolId);
   let isRetired = POOLS.retiredPools.includes(poolId);
+  let isDeposit = POOLS.depositPools.includes(poolId);
 
   let exchange = await getExchangeName(poolId);
 
@@ -158,6 +160,7 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
       'isMigrating = :isMigrating, ' + 
       'isRetired = :isRetired, ' + 
       'isIchiPool = :isIchiPool, ' + 
+      'isDeposit = :isDeposit, ' + 
       'chainId = :chainId, ' +
       'farmName = :farmName', 
     ExpressionAttributeValues: {
@@ -183,6 +186,7 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
       ':isMigrating': { BOOL: isMigrating },
       ':isRetired': { BOOL: isRetired },
       ':isIchiPool': { BOOL: isIchiPool },
+      ':isDeposit': { BOOL: isDeposit },
       ':chainId': { N: Number(CHAIN_ID).toString() },
       ':farmName': { S: farmName }
     },

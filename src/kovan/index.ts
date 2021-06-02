@@ -14,7 +14,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   });
   const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
 
-  //await updateTokens(token_tableName);
+  await updateTokens(token_tableName);
 
   const tokenPrices = {};
   const tokenNames = {};
@@ -62,8 +62,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   //console.log(tokenPrices);
   //console.log(tokenNames);
 
-  // TODO - farms
-  //await updateFarms(farms_tableName, tokenPrices, tokenNames);
+  await updateFarms(farms_tableName, tokenPrices, tokenNames);
   await updateTreasury(treasury_tableName, tokenPrices, tokenNames);
 
 };

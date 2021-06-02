@@ -9,7 +9,9 @@ const APIS = {
 }
 
 const POOLS = {
-  activePools : [],
+//  activePools : [5001,5002,5003],
+  activePools : [5002],
+  depositPools : [5002],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : []
@@ -43,7 +45,11 @@ const TOKENS = {
   }
 }
 
-const LABELS = {
+const LABELS = {}
+LABELS[5002] = {
+  name: 'OTI Deposit',
+  lpName: 'OTI',
+  shortLpName: 'OTI'
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID };

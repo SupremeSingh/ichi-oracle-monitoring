@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { ADDRESSES, TOKENS } from './configKovan';
+import { ADDRESSES, TOKENS, POOLS } from './configKovan';
 import FARMING_V2_ABI from './../abis/FARMING_V2_ABI.json';
 import ERC20_ABI from './../abis/ERC20_ABI.json';
 import PAIR_ABI from './../abis/PAIR_ABI.json';
@@ -40,7 +40,7 @@ async function getTokenData(token, _provider) {
     tokenSymbol = "ETH";
   } else {
       for (const tkn in TOKENS) {
-        if (TOKENS[tkn].address.toLowerCase() == token) {
+        if (TOKENS[tkn].address.toLowerCase() == token.toLowerCase()) {
           return {
             symbol: tkn,
             decimals: TOKENS[tkn].decimals
@@ -82,7 +82,7 @@ async function getPoolTokens(poolContract) {
   }
 }
   
-async function getPoolReserves(poolID, poolContract) {
+async function getPoolReserves(poolContract) {
   let reserveBalances = await poolContract.getReserves();
   return {
     _reserve0: Number(reserveBalances._reserve0),
@@ -96,7 +96,8 @@ async function getTotalSupply(poolContract) {
 }
   
 export async function getPoolRecord(poolID, tokenPrices) {
-  let poolToken = await farming_V2.lpToken(poolID);
+  let adjusterPoolId = poolID - 5000;
+  let poolToken = await farming_V2.lpToken(adjusterPoolId);
 
   // getting data for an active pool (or inactive pool not cached yet)
   let reward = 0;
@@ -106,13 +107,13 @@ export async function getPoolRecord(poolID, tokenPrices) {
   let ichiPerBlock_V2 = await farming_V2.ichiPerBlock();
 
   let totalAllocPoint = await farming_V2.totalAllocPoint();
-  let poolInfo = await farming_V2.poolInfo(poolID);
+  let poolInfo = await farming_V2.poolInfo(adjusterPoolId);
   let poolAllocPoint = poolInfo.allocPoint;
 
   reward = Number(ichiPerBlock_V2) * poolAllocPoint / totalAllocPoint;
-  inTheFarmLP = await farming_V2.getLPSupply(poolID);
+  inTheFarmLP = await farming_V2.getLPSupply(adjusterPoolId);
 
-  const poolContract = await getPoolContract(poolID);
+  const poolContract = await getPoolContract(adjusterPoolId);
 
   let poolRecord = {};
 
@@ -127,51 +128,74 @@ export async function getPoolRecord(poolID, tokenPrices) {
     farmRatio = Number(inTheFarmLP) / Number(totalPoolLP);
   }
 
-  let tokens = await getPoolTokens(poolID);
-  let token0 = tokens.token0;
-  let token1 = tokens.token1;
+  let isDeposit = POOLS.depositPools.includes(poolID);
 
-  let token0data = await getTokenData(token0, provider);
-  let token1data = await getTokenData(token1, provider);
-
-  let token0Symbol = token0data.symbol;
-  let token0Decimals = token0data.decimals;
-  let token1Symbol = token1data.symbol;
-  let token1Decimals = token1data.decimals;
-
-  let reserve = {};
-  reserve = await getPoolReserves(poolID, poolContract);
-
-  let reserve0 = reserve['_reserve0'];
-  let reserve1 = reserve['_reserve1'];
-  let reserve0Raw = reserve0 / 10 ** token0Decimals;
-  let reserve1Raw = reserve1 / 10 ** token1Decimals;
-
-  token0 = (token0 === ADDRESSES.ETH ? tokens['weth']['address'] : token0);
-  token1 = (token1 === ADDRESSES.ETH ? tokens['weth']['address'] : token1);
-
-  let prices = {};
-  prices[token0] = tokenPrices[token0Symbol.toLowerCase()];
-  prices[token1] = tokenPrices[token1Symbol.toLowerCase()];
-
-  // both tokens there
+  let token0 = "";
+  let token1 = "";
+  let token0Symbol = "";
+  let token1Symbol = "";
+  let token0Decimals = 0;
+  let token1Decimals = 0;
+  let reserve0Raw = 0;
+  let reserve1Raw = 0;
   let localTVL = 0;
-  if (prices[token0] && prices[token1]) {
-    localTVL = reserve0Raw * prices[token0] + reserve1Raw * prices[token1];
+
+  if (isDeposit) {
+    token0 = poolToken;
+  
+    let token0data = await getTokenData(token0, provider);
+  
+    token0Symbol = token0data.symbol;
+    token0Decimals = token0data.decimals;
+  
+    reserve0Raw = Number(totalPoolLP) / 10 ** token0Decimals;
+    localTVL = reserve0Raw;
+  
   } else {
-    if (prices[token0]) {
-      localTVL = 2 * reserve0Raw * prices[token0];
-    } else if (prices[token1]) {
-      localTVL = 2 * reserve1Raw * prices[token1];
+    let tokens = await getPoolTokens(poolContract);
+    token0 = tokens.token0;
+    token1 = tokens.token1;
+  
+    let token0data = await getTokenData(token0, provider);
+    let token1data = await getTokenData(token1, provider);
+  
+    token0Symbol = token0data.symbol;
+    token0Decimals = token0data.decimals;
+    token1Symbol = token1data.symbol;
+    token1Decimals = token1data.decimals;
+  
+    let reserve = {};
+    reserve = await getPoolReserves(poolContract);
+  
+    let reserve0 = reserve['_reserve0'];
+    let reserve1 = reserve['_reserve1'];
+    reserve0Raw = reserve0 / 10 ** token0Decimals;
+    reserve1Raw = reserve1 / 10 ** token1Decimals;
+  
+    token0 = (token0 === ADDRESSES.ETH ? tokens['weth']['address'] : token0);
+    token1 = (token1 === ADDRESSES.ETH ? tokens['weth']['address'] : token1);
+  
+    let prices = {};
+    prices[token0] = tokenPrices[token0Symbol.toLowerCase()];
+    prices[token1] = tokenPrices[token1Symbol.toLowerCase()];
+  
+    if (prices[token0] && prices[token1]) {
+      localTVL = reserve0Raw * prices[token0] + reserve1Raw * prices[token1];
     } else {
-      console.log("==== error ====");
-      // hardcoded prices for testing on Kovan
-      /*if (token0.toLowerCase() === configKovan.WEENUS.toLowerCase()) {
-        localTVL = 2 * reserve0Raw * 10000;
+      if (prices[token0]) {
+        localTVL = 2 * reserve0Raw * prices[token0];
+      } else if (prices[token1]) {
+        localTVL = 2 * reserve1Raw * prices[token1];
+      } else {
+        console.log("==== error ====");
+        // hardcoded prices for testing on Kovan
+        /*if (token0.toLowerCase() === configKovan.WEENUS.toLowerCase()) {
+          localTVL = 2 * reserve0Raw * 10000;
+        }
+        if (token0.toLowerCase() === configKovan.TEST_ICHI.toLowerCase()) {
+          localTVL = 2 * reserve0Raw * 13;
+        }*/
       }
-      if (token0.toLowerCase() === configKovan.TEST_ICHI.toLowerCase()) {
-        localTVL = 2 * reserve0Raw * 13;
-      }*/
     }
   }
 

@@ -117,6 +117,7 @@ const TOKENS = {
 const POOLS = {
   activePools : [8, 9, 10, 12, 13, 19, 1001, 1003, 1004, 1005, 1006, 1007, 1008, 10001, 10002],
   //activePools : [8, 1006, 1007, 10001, 10002],
+  depositPools : [],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
