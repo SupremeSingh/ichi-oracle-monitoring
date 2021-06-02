@@ -4,7 +4,7 @@ import { ContractInterface, ethers } from 'ethers';
 import ERC20_ABI from './abis/ERC20_ABI.json';
 import ONELINK_ABI from './abis/oneLINK_ABI.json';
 import ONEETH_ABI from './abis/oneETH_ABI.json';
-import { ADDRESSES, TOKENS } from './configMainnet';
+import { ADDRESSES, TOKENS, CHAIN_ID } from './configMainnet';
 import axios from 'axios';
 import { ChainId, Token, WETH, Fetcher, Route } from '@uniswap/sdk';
 
@@ -127,6 +127,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
       'decimals = :decimals, ' +
       'displayName = :displayName, ' +
       'price = :price, ' +
+      'chainId = :chainId, ' +
       'isOneToken = :isOneToken, ' +
       'supply = :supply',
     ExpressionAttributeValues: {
@@ -135,6 +136,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
       ':decimals': { N: decimals.toString() },
       ':displayName': { S: displayName },
       ':price': { N: Number(price).toString() },
+      ':chainId': { N: Number(CHAIN_ID).toString() },
       ':isOneToken': { BOOL: isOneToken },
       ':supply': { N: totalTokens.toString() }
     },

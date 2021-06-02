@@ -1,14 +1,13 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { ethers } from 'ethers';
-import { ADDRESSES, POOLS, LABELS, CHAIN_ID } from './configMainnet';
-import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
-import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
+import { ADDRESSES, POOLS, LABELS, CHAIN_ID } from './configKovan';
+import FARMING_V2_ABI from './../abis/FARMING_V2_ABI.json';
 import { getPoolRecord } from './getPoolRecord';
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
-  console.error('Please export INFURA_ID=*** which is used for https://mainnet.infura.io/v3/***');
+  console.error('Please export INFURA_ID=*** which is used for https://kovan.infura.io/v3/***');
   process.exit();
 }
 
@@ -17,20 +16,10 @@ AWS.config.update({
 });
 const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
 
-const RPC_HOST = `https://mainnet.infura.io/v3/${infuraId}`;
+const RPC_HOST = `https://kovan.infura.io/v3/${infuraId}`;
 
 const getExchangeName = async function(poolId: number) {
-  if (POOLS.bancorPools.includes(poolId))
-    return "bancor";
-  if (POOLS.oneInchPools.includes(poolId))
-    return "1inch";
-  if (POOLS.uniPools.includes(poolId))
-    return "uni";
-  if (POOLS.loopringPools.includes(poolId))
-    return "loopring";
-  if (POOLS.balancerPools.includes(poolId) || POOLS.balancerSmartPools.includes(poolId))
-    return "balancer";
-  return "sushi";
+  return "exchange";
 };
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
@@ -39,11 +28,6 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
       tokenNames: {[name: string]: string}): Promise<APIGatewayProxyResult> => {
   const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
 
-  const farming_V1 = new ethers.Contract(
-    ADDRESSES.farming_V1,
-    FARMING_V1_ABI,
-    provider
-  );
   const farming_V2 = new ethers.Contract(
     ADDRESSES.farming_V2,
     FARMING_V2_ABI,
@@ -53,22 +37,9 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
   let pool = await getPoolRecord(poolId, tokenPrices);
   console.log(pool);
 
-  let farmPoolId = 0;
+  let farmPoolId = poolId;
   let farmName = '';
   let searchName = '';
-
-  if (poolId >= 10000) {
-    farmName = 'external';
-    farmPoolId = poolId - 10000;
-  }
-  if (poolId >= 1000 && poolId < 10000) {
-    farmName = 'V2'
-    farmPoolId = poolId - 1000;
-  }
-  if (poolId < 1000) {
-    farmName = 'V1'
-    farmPoolId = poolId;
-  }
 
   let tokens = [];
 

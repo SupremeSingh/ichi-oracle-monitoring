@@ -13,6 +13,7 @@
     "upload-prod": "aws lambda update-function-code --function-name ichi-api-updater-prod --zip-file fileb://dist/function.zip",
     "start": "ts-node ./src/index.ts",
     "dev": "ts-node ./src/dev.ts",
+    "kovan": "ts-node ./src/kovan/dev.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"**/*.{ts,tsx}\""
   },
