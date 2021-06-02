@@ -10,7 +10,7 @@ const APIS = {
 
 const POOLS = {
 //  activePools : [5001,5002,5003],
-  activePools : [5002],
+  activePools : [5000,5001,5002],
   depositPools : [5002],
   upcomingPools : [],
   migratingPools : [],
@@ -28,7 +28,19 @@ const TOKENS = {
   test_ichi: { 
     address: "0x9b5795db93d4c3cc727b5efdaa78f8ec5feb1af2",
     decimals: 9,
-    displayName: "TICHI",
+    displayName: "ICHI",
+    isOneToken: false
+  },
+  weenus: { 
+    address: "0xaFF4481D10270F50f203E0763e2597776068CBc5",
+    decimals: 18,
+    displayName: "WEENUS",
+    isOneToken: false
+  },
+  test_weth: { 
+    address: "0xd0A1E359811322d97991E03f863a0C30C2cF029C",
+    decimals: 18,
+    displayName: "WETH",
     isOneToken: false
   },
   token6: { 
@@ -46,6 +58,16 @@ const TOKENS = {
 }
 
 const LABELS = {}
+LABELS[5000] = {
+  name: 'WEENUS-WETH',
+  lpName: 'UNI-V2',
+  shortLpName: 'UNI-V2'
+}
+LABELS[5001] = {
+  name: 'ICHI-WETH',
+  lpName: 'UNI-V2',
+  shortLpName: 'UNI-V2'
+}
 LABELS[5002] = {
   name: 'OTI Deposit',
   lpName: 'OTI',
