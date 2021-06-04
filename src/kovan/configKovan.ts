@@ -25,10 +25,29 @@ const TOKENS = {
     isOneToken: true,
     isV2: true
   },
+  test_oneuni: { 
+    address: "0x4238C45783551be0D848BbAdA853cCa6b265322f",
+    decimals: 18,
+    displayName: "oneUNI",
+    isOneToken: true,
+    isV2: true
+  },
   test_ichi: { 
     address: "0x9b5795db93d4c3cc727b5efdaa78f8ec5feb1af2",
     decimals: 9,
     displayName: "ICHI",
+    isOneToken: false
+  },
+  test_usdc: { 
+    address: "0x21632981cBf52eB788171e8dcB891C32F4834239",
+    decimals: 6,
+    displayName: "USDC",
+    isOneToken: false
+  },
+  test_uni: { 
+    address: "0xdF2661E2E6A35B482E3F105bDE628B5e1F68aB41",
+    decimals: 18,
+    displayName: "UNI",
     isOneToken: false
   },
   weenus: { 

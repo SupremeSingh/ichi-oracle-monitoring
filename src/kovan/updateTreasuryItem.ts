@@ -34,12 +34,29 @@ const getOneTokenAttributes = async function(tokenName) {
   if (tokenName == 'oti')
     return {
       address: TOKENS[tokenName]['address'],
+      decimals: TOKENS[tokenName]['decimals'],
       stimulus_address: TOKENS['token18']['address'],
       stimulus_name: 'token18',
       stimulus_display_name: 'Token18',
       stimulus_decimals: 18,
+      collateral_name: 'token6',
       abi_type: 'ONETOKEN',
       base_name: 'oti',
+      display_name: 'OTI',
+      isV2: TOKENS[tokenName]['isV2']
+    }
+  if (tokenName == 'test_oneuni')
+    return {
+      address: TOKENS[tokenName]['address'],
+      decimals: TOKENS[tokenName]['decimals'],
+      stimulus_address: TOKENS['test_uni']['address'],
+      stimulus_name: 'test_uni',
+      stimulus_display_name: 'UNI',
+      stimulus_decimals: 18,
+      collateral_name: 'test_usdc',
+      abi_type: 'ONETOKEN',
+      base_name: 'test_oneuni',
+      display_name: 'oneUNI',
       isV2: TOKENS[tokenName]['isV2']
     }
   return {};
@@ -57,12 +74,15 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const stimulusDisplayName = attr.stimulus_display_name;
   const stimulusTokenName = attr.stimulus_name;
   const stimulusDecimals = attr.stimulus_decimals;
+  const usdcName = attr.collateral_name;
+  const decimals = attr.decimals;
   const baseName = attr.base_name;
+  const displayName = attr.display_name;
   const isV2 = attr.isV2;
   const oneTokenABI = await getABI(attr.abi_type);
 
   const stimulusToken = new ethers.Contract(stimulusTokenAddress, ERC20_ABI, provider);
-  const USDC = new ethers.Contract(TOKENS['token6']['address'], ERC20_ABI, provider);
+  const USDC = new ethers.Contract(TOKENS[usdcName]['address'], ERC20_ABI, provider);
   const oneToken = new ethers.Contract(oneTokenAddress, oneTokenABI, provider);
 
   const oneToken_USDC = await USDC.balanceOf(oneTokenAddress);
@@ -81,21 +101,21 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
   let oneToken_withdrawFee = 0;
   if (isV2) {
-    oneToken_withdrawFee = Number(await oneToken.redemptionFee()) / 10 ** 19;
+    oneToken_withdrawFee = Number(await oneToken.redemptionFee()) / 10 ** 18;
   } else {
     oneToken_withdrawFee = Number(await oneToken.withdrawFee()) / 10 ** 11;
   }
   let oneToken_mintFee = 0;
   if (isV2) {
-    oneToken_mintFee = Number(await oneToken.mintingFee()) / 10 ** 19;
+    oneToken_mintFee = Number(await oneToken.mintingFee()) / 10 ** 18;
   } else {
     oneToken_mintFee = Number(await oneToken.mintFee()) / 10 ** 11;
   }
   let oneToken_mintingRatio = 0;
   if (isV2) {
     // assume USDC as collateral for V2 oneTokens for the time being
-    const mRatio = await oneToken.getMintingRatio(TOKENS['token6']['address']);
-    oneToken_mintingRatio = Number(mRatio[0]) / 10 ** 20;
+    const mRatio = await oneToken.getMintingRatio(TOKENS[usdcName]['address']);
+    oneToken_mintingRatio = Number(mRatio[0]) / 10 ** 18;
   } else {
     oneToken_mintingRatio = Number(await oneToken.reserveRatio()) / 10 ** 11;
   }
@@ -107,7 +127,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     10 ** stimulusDecimals +
     stimulusPositionsUSDValue;
 
-  let usdc_price = tokenPrices['token6'];
+  let usdc_price = tokenPrices[usdcName];
   let oneToken_collateral_USDC_only =
     usdc_price * (Number(oneToken_USDC) / 10 ** 6);
 
@@ -115,24 +135,24 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     collateralPositionsUSDValue;
 
   let oneToken_treasury_backed = 
-    ((Number(oneToken_SUPPLY) / 10 ** 9) * (1 - oneToken_withdrawFee)) - 
+    ((Number(oneToken_SUPPLY) / 10 ** decimals) * (1 - oneToken_withdrawFee)) - 
     oneToken_collateral_only;
 
     let oneToken_collateral_list = [];
     oneToken_collateral_list.push({ M: { 
-      name: { S: "token6" }, 
+      name: { S: usdcName }, 
       balance: { N: oneToken_collateral_USDC_only.toString() } 
     }});
 
     let oneToken_stimulus_list = [];
-    oneToken_stimulus_list.push({ M: { name: { S: stimulusDisplayName }, balance: { N: (Number(oneToken_stimulus) / 10 ** stimulusDecimals).toString() } }});
+    oneToken_stimulus_list.push({ M: { name: { S: stimulusDisplayName }, balance: { N: (Number(oneToken_stimulus) / 10 ** 18).toString() } }});
 
     let res = {
       name: itemName.toLowerCase(),
       displayName: itemName,
       base: baseName,
       usdc: Number(oneToken_USDC) / 10 ** 6,
-      circulation: Number(oneToken_SUPPLY) / 10 ** 9,
+      circulation: Number(oneToken_SUPPLY) / 10 ** decimals,
       collateral: oneToken_collateral_list,
       collateralPositions: oneTokenCollateralPostions,
       collateralPositionsUSD: collateralPositionsUSDValue,
@@ -182,9 +202,9 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         'reserveRatio = :reserveRatio',
       ExpressionAttributeValues: {
         ':baseName': { S: baseName },
-        ':displayName': { S: itemName },
+        ':displayName': { S: displayName },
         ':usdc': { N: (Number(oneToken_USDC) / 10 ** 6).toString() },
-        ':circulation': { N: (Number(oneToken_SUPPLY) / 10 ** 9).toString() },
+        ':circulation': { N: (Number(oneToken_SUPPLY) / 10 ** decimals).toString() },
         ':collateral' : { L: oneToken_collateral_list },
         ':collateralPositions' : { L: oneTokenCollateralPostions },
         ':collateralPositionsAPY' : { N: collateralPositionsAPY.toString() },
