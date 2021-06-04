@@ -50,6 +50,21 @@ async function lookUpVBTCPrice() {
   return price_vBTC_usd;
 };
 
+async function lookUpXICHIPrice() {
+  const ichiContract = new ethers.Contract(TOKENS["ichi"].address, ERC20_ABI as ContractInterface, provider);
+  const xichiContract = new ethers.Contract(TOKENS["xichi"].address, ERC20_ABI as ContractInterface, provider);
+
+  const xichiSupply = await xichiContract.totalSupply();
+  const xichiBalance = await ichiContract.balanceOf(TOKENS["xichi"].address);
+
+  const xichiRatio = Number(xichiBalance) / Number(xichiSupply);
+
+  const lookup_price = await lookUpTokenPrices([TOKENS["ichi"].address.toLowerCase()]);
+  const ichiPrice = lookup_price.data[TOKENS["ichi"].address.toLowerCase()].usd;
+
+  return Number(ichiPrice) * xichiRatio;
+}
+
 async function lookupStimulusUSDPrice(address: string, decimals: number) {
   const oneTokenContract = new ethers.Contract(address, ONEETH_ABI as ContractInterface, provider);
   let price = await oneTokenContract.getStimulusUSD();
@@ -89,7 +104,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
   } else {
     switch(tokenName) {
       case 'xichi':
-        price = 0;
+        price = await lookUpXICHIPrice();
         break;
       case 'vbtc':
         price = await lookUpVBTCPrice();

@@ -38,6 +38,12 @@ const TOKENS = {
     displayName: "ICHI",
     isOneToken: false
   },
+  test_xichi: { 
+    address: "0x4a8a50cd18ccd55078630a4b17d16c892ff7f4db",
+    decimals: 9,
+    displayName: "xICHI",
+    isOneToken: false
+  },
   test_usdc: { 
     address: "0x21632981cBf52eB788171e8dcB891C32F4834239",
     decimals: 6,
