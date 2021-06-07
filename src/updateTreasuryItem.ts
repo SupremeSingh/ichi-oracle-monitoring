@@ -315,6 +315,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       oneToken_stimulus_list.push({ M: { name: { S: "ICHI" }, balance: { N: (Number(oneToken_ichi) / 10 ** 9).toString() } }});
     }
 
+    const oneTokenVersion = isV2 ? 2 : 1;
+
     let res = {
       name: itemName.toLowerCase(),
       displayName: itemName,
@@ -333,6 +335,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       mintFee: oneToken_mintFee,
       mintingRatio: oneToken_mintingRatio,
       treasuryBacked: oneToken_treasury_backed,
+      oneTokenVersion: oneTokenVersion,
       reserveRatio: oneToken_stimulus_usd / oneToken_treasury_backed
     }
 
@@ -367,6 +370,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         'mintingRatio = :mintingRatio, ' + 
         'treasuryBacked = :treasuryBacked, ' + 
         'chainId = :chainId, ' +
+        'oneTokenVersion = :oneTokenVersion, ' +
         'reserveRatio = :reserveRatio',
       ExpressionAttributeValues: {
         ':baseName': { S: baseName },
@@ -388,6 +392,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         ':mintingRatio': { N: oneToken_mintingRatio.toString() },
         ':treasuryBacked': { N: Number(oneToken_treasury_backed).toString() },
         ':chainId': { N: Number(CHAIN_ID).toString() },
+        ':oneTokenVersion': { N: Number(oneTokenVersion).toString() },
         ':reserveRatio': { N: Number(oneToken_stimulus_usd / oneToken_treasury_backed).toString() }
       },
       ReturnValues: 'UPDATED_NEW'
