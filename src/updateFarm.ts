@@ -20,6 +20,8 @@ const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
 const RPC_HOST = `https://mainnet.infura.io/v3/${infuraId}`;
 
 const getExchangeName = async function(poolId: number) {
+  if (POOLS.depositPools.includes(poolId))
+    return "";
   if (POOLS.bancorPools.includes(poolId))
     return "bancor";
   if (POOLS.oneInchPools.includes(poolId))

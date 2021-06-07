@@ -18,7 +18,9 @@ const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
 const RPC_HOST = `https://kovan.infura.io/v3/${infuraId}`;
 
 const getExchangeName = async function(poolId: number) {
-  return "exchange";
+  if (POOLS.depositPools.includes(poolId))
+    return "";
+  return "test exchange";
 };
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
