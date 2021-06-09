@@ -96,7 +96,8 @@ LABELS[5001] = {
 LABELS[5002] = {
   name: 'OTI Deposit',
   lpName: 'OTI',
-  shortLpName: 'OTI'
+  shortLpName: 'OTI',
+  tradeUrl: 'https://app.1inch.io/#/1/dao/farming'
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID };

@@ -125,6 +125,9 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
   if (LABELS[poolId]['externalButton']) {
     extras['externalButton'] = { S: LABELS[poolId]['externalButton'] }
   }
+  if (LABELS[poolId]['tradeUrl']) {
+    extras['tradeUrl'] = { S: LABELS[poolId]['tradeUrl'] }
+  }
 
   // pool is retired if no rewards are given in it
   if (pool['yearlyAPY'] == 0)
