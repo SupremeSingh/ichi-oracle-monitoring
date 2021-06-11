@@ -24,6 +24,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
   const isOneToken = TOKENS[tokenName]['isOneToken'];
   const displayName = TOKENS[tokenName]['displayName'];
   let price = 0;
+  let priceChange = 0;
 
   const tokenContract = new ethers.Contract(address, ERC20_ABI as ContractInterface, provider);
 
@@ -38,12 +39,14 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
     switch(tokenName) {
       case 'token18':
         price = 25;
+        priceChange = 4.8876;
         break;
       case 'token6':
         price = 1;
         break;
       case 'test_ichi':
         price = 6;
+        priceChange = -2.5143526;
         break;
       case 'test_xichi':
         price = 6.2;
@@ -69,6 +72,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
       'decimals = :decimals, ' +
       'displayName = :displayName, ' +
       'price = :price, ' +
+      'price_24h_change = :price_24h_change, ' +
       'isOneToken = :isOneToken, ' +
       'chainId = :chainId, ' +
       'supply = :supply',
@@ -78,6 +82,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
       ':decimals': { N: decimals.toString() },
       ':displayName': { S: displayName },
       ':price': { N: Number(price).toString() },
+      ':price_24h_change': { N: Number(priceChange).toString() },
       ':isOneToken': { BOOL: isOneToken },
       ':chainId': { N: Number(CHAIN_ID).toString() },
       ':supply': { N: totalTokens.toString() }
