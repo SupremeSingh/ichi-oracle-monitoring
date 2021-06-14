@@ -3,12 +3,20 @@ import { updateTokens } from './updateTokens';
 import { updateTreasury } from './updateTreasury';
 import { updateFarms } from './updateFarms';
 import AWS from 'aws-sdk';
+import { updateFarm } from './updateFarm';
 
 const token_tableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
 const treasury_tableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
 const farms_tableName = process.env.FARMS_TABLE_NAME || 'farms-dev';
 
 export const handler = async (event: APIGatewayProxyEvent) => {
+  let poolId = -1;
+
+  if (event.queryStringParameters && event.queryStringParameters.poolId) {
+    console.log("Received poolId from queryStringParameters: " + event.queryStringParameters.poolId);
+    poolId = Number(event.pathParameters.poolId);
+  }
+
   AWS.config.update({
     region: process.env.AWS_REGION || 'us-east-1',
   });
@@ -62,7 +70,16 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   //console.log(tokenPrices);
   //console.log(tokenNames);
 
-  await updateFarms(farms_tableName, tokenPrices, tokenNames);
-  await updateTreasury(treasury_tableName, tokenPrices, tokenNames);
+  if (poolId === -1) {
+    await updateFarms(farms_tableName, tokenPrices, tokenNames);
+    await updateTreasury(treasury_tableName, tokenPrices, tokenNames);
+  } else {
+    await updateFarm(farms_tableName, poolId, tokenPrices, tokenNames);
+  }
+
+  return {
+    statusCode: 200,
+    body: {}
+  };
 
 };
