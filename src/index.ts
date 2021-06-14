@@ -13,8 +13,8 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   let poolId = -1;
 
   if (event.queryStringParameters && event.queryStringParameters.poolId) {
-    console.log("Received poolId from queryStringParameters: " + event.queryStringParameters.poolId);
-    poolId = Number(event.pathParameters.poolId);
+    console.log("Received poolId from pathParameters: " + event.queryStringParameters.poolId);
+    poolId = Number(event.queryStringParameters.poolId);
   }
 
   AWS.config.update({
@@ -80,8 +80,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   }
 
   return {
-    statusCode: 200,
-    body: {}
+    statusCode: 200
   };
 
 };
