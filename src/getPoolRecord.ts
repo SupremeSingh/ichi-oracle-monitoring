@@ -30,6 +30,15 @@ const farming_V2 = new ethers.Contract(
     provider
 );
 
+async function getICHIBNTContract() {
+  const poolContract = new ethers.Contract(
+    ADDRESSES.ICHI_BNT,
+    ICHI_BNT_ABI,
+    provider
+  );
+  return poolContract;
+}
+
 // useBasic - true when we need to get the base LP instead of the full pool contract
 // Used for Bancor and Smart Balancer pools 
 async function getPoolContract(poolID, useBasic) {
@@ -554,6 +563,50 @@ async function getPoolContract(poolID, useBasic) {
           decimals1: 18,
           token0: "ICHI",
           token1: "ETH"
+        };
+  
+        return poolRecord;
+      }
+      if (poolID === 10003) {
+        let token0 = TOKENS.bnt.address;
+        let token1 = TOKENS.ichi.address;
+
+        const poolContract = await getICHIBNTContract();
+  
+        let reserve = await getPoolReserves(poolID, poolContract);
+        let reserve0 = reserve._reserve0;
+        let reserve1 = reserve._reserve1;
+        let reserve0Raw = reserve0 / 10 ** 18; //bnt
+        let reserve1Raw = reserve1 / 10 ** 9; //ICHI
+  
+        let prices = {};
+        prices[token0] = tokenPrices["bnt"];
+        prices[token1] = tokenPrices["ichi"];
+
+        let TVL = reserve0Raw * prices[token0] + reserve1Raw * prices[token1];
+  
+        let farmTVL = reserve1Raw * prices[token1];
+        let dailyAPY = 0;
+  
+        let poolRecord = {
+          pool: poolID,
+          lpAddress: "0x563f6e19197A8567778180F66474E30122FD702A",
+          dailyAPY: dailyAPY,
+          weeklyAPY: dailyAPY * 7,
+          monthlyAPY: dailyAPY * 30,
+          yearlyAPY: dailyAPY * 365,
+          totalPoolLP: '0',
+          totalFarmLP: reserve1.toString(),
+          tvl: TVL,
+          farmTVL: farmTVL,
+          reserve0Raw: reserve0Raw,
+          reserve1Raw: reserve1Raw,
+          address0: token0,
+          address1: token1,
+          decimals0: 18,
+          decimals1: 9,
+          token0: "BNT",
+          token1: "ICHI"
         };
   
         return poolRecord;

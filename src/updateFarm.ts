@@ -133,6 +133,10 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
   if (pool['yearlyAPY'] == 0)
     isRetired = true;
 
+  // ICHI-BNT pool is not retired
+  if (poolId == 10003)
+    isRetired = false;
+
   // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
   console.log(`Attempting to update table: ${tableName}, token: ${poolId}`);
   const params: AWS.DynamoDB.UpdateItemInput = {

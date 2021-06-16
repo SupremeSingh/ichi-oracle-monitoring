@@ -121,8 +121,8 @@ const TOKENS = {
 }
 
 const POOLS = {
-  activePools : [1001, 1004, 1005, 1008, 10001, 10002],
-  //activePools : [8, 1006, 1007, 10001, 10002],
+  activePools : [1001, 1004, 1005, 1008, 10001, 10002, 10003],
+  // activePools : [10003],
   depositPools : [],
   upcomingPools : [],
   migratingPools : [],
@@ -130,7 +130,7 @@ const POOLS = {
   oneInchPools : [15, 16, 10001],
   balancerPools : [18, 1001, 1002, 1008],
   balancerSmartPools : [1003, 1007],
-  bancorPools : [14, 1006],
+  bancorPools : [14, 1006, 10003],
   uniPools : [1005],
   loopringPools : [10002],
   specialPricing : [19]
@@ -188,6 +188,15 @@ LABELS[10002] = {
   externalUrl: 'https://exchange.loopring.io/pool',
   externalText: 'Earn $ICHI',
   externalButton: 'Loopring'
+}
+LABELS[10003] = {
+  name: 'ICHI-BNT',
+  lpName: 'ICHI',
+  shortLpName: 'ICHI',
+  tradeUrl: 'https://app.bancor.network/eth/portfolio/stake/add/single/0x563f6e19197A8567778180F66474E30122FD702A',
+  externalUrl: 'https://app.bancor.network/eth/portfolio',
+  externalText: 'Earn xICHI',
+  externalButton: 'Earn'
 }
 LABELS[1001] = {
   name: '80/20 ICHI-ETH',
