@@ -59,6 +59,20 @@ const getOneTokenAttributes = async function(tokenName) {
       display_name: 'oneUNI',
       isV2: TOKENS[tokenName]['isV2']
     }
+  if (tokenName == 'test_onefil')
+    return {
+      address: TOKENS[tokenName]['address'],
+      decimals: TOKENS[tokenName]['decimals'],
+      stimulus_address: TOKENS['test_renfil']['address'],
+      stimulus_name: 'test_renfil',
+      stimulus_display_name: 'renFIL',
+      stimulus_decimals: 18,
+      collateral_name: 'test_usdc',
+      abi_type: 'ONETOKEN',
+      base_name: 'test_onefil',
+      display_name: 'oneFIL',
+      isV2: TOKENS[tokenName]['isV2']
+    }
   return {};
 };
 
@@ -149,6 +163,11 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
     const oneTokenVersion = isV2 ? 2 : 1;
 
+    let reserveRatio = 0;
+    if (oneToken_treasury_backed > 0) {
+      reserveRatio = oneToken_stimulus_usd / oneToken_treasury_backed;
+    }
+
     let res = {
       name: itemName.toLowerCase(),
       displayName: itemName,
@@ -168,7 +187,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       mintingRatio: oneToken_mintingRatio,
       treasuryBacked: oneToken_treasury_backed,
       oneTokenVersion: oneTokenVersion,
-      reserveRatio: oneToken_stimulus_usd / oneToken_treasury_backed
+      reserveRatio: reserveRatio
     }
 
     console.log(res);
@@ -225,7 +244,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         ':treasuryBacked': { N: Number(oneToken_treasury_backed).toString() },
         ':chainId': { N: Number(CHAIN_ID).toString() },
         ':oneTokenVersion': { N: Number(oneTokenVersion).toString() },
-        ':reserveRatio': { N: Number(oneToken_stimulus_usd / oneToken_treasury_backed).toString() }
+        ':reserveRatio': { N: Number(reserveRatio).toString() }
       },
       ReturnValues: 'UPDATED_NEW'
     };

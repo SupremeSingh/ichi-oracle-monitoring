@@ -10,8 +10,8 @@ const APIS = {
 
 const POOLS = {
 //  activePools : [5001,5002,5003],
-  activePools : [5000,5001,5002],
-  depositPools : [5002],
+  activePools : [5000,5001,5002,5003],
+  depositPools : [5002,5003],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : []
@@ -29,6 +29,13 @@ const TOKENS = {
     address: "0x4238C45783551be0D848BbAdA853cCa6b265322f",
     decimals: 18,
     displayName: "oneUNI",
+    isOneToken: true,
+    isV2: true
+  },
+  test_onefil: { 
+    address: "0x50633E780803b56a0d8606a3C674993080Ea98c1",
+    decimals: 18,
+    displayName: "oneFIL",
     isOneToken: true,
     isV2: true
   },
@@ -54,6 +61,12 @@ const TOKENS = {
     address: "0xdF2661E2E6A35B482E3F105bDE628B5e1F68aB41",
     decimals: 18,
     displayName: "UNI",
+    isOneToken: false
+  },
+  test_renfil: { 
+    address: "0x1A6d8B5a6b9461cf49654791e75c286F02bF1f82",
+    decimals: 18,
+    displayName: "renFIL",
     isOneToken: false
   },
   weenus: { 
@@ -98,6 +111,11 @@ LABELS[5002] = {
   lpName: 'OTI',
   shortLpName: 'OTI',
   tradeUrl: 'https://app.1inch.io/#/1/dao/farming'
+}
+LABELS[5003] = {
+  name: 'oneFIL Deposit',
+  lpName: 'oneFIL',
+  shortLpName: 'oneFIL'
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID };

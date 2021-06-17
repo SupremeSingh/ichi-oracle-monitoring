@@ -44,6 +44,9 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
       case 'token6':
         price = 1;
         break;
+      case 'test_renfil':
+        price = 69;
+        break;
       case 'test_ichi':
         price = 6;
         priceChange = -2.5143526;

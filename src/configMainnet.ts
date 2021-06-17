@@ -29,6 +29,12 @@ const TOKENS = {
     displayName: "xICHI",
     isOneToken: false
   },
+  renfil: {
+    address: "0xD5147bc8e386d91Cc5DBE72099DAC6C9b99276F5",
+    decimals: 18,
+    displayName: "renFIL",
+    isOneToken: false
+  },
   bnt: {
     address: "0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C",
     decimals: 18,
@@ -117,13 +123,20 @@ const TOKENS = {
     displayName: "oneLINK",
     isOneToken: true,
     isV2: false
+  },
+  onefil: { 
+    address: "0x6d82017e55b1D24C53c7B33BbB770A86f2ca229D",
+    decimals: 18,
+    displayName: "oneFIL",
+    isOneToken: true,
+    isV2: true
   }
 }
 
 const POOLS = {
-  activePools : [1001, 1004, 1005, 1008, 10001, 10002, 10003],
+  activePools : [1001, 1004, 1005, 1008, 1009, 10001, 10002, 10003],
   // activePools : [10003],
-  depositPools : [],
+  depositPools : [1009],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
@@ -239,6 +252,11 @@ LABELS[1008] = {
   lpName: 'BPT (Balancer Pool Token) ICHI-LINK',
   shortLpName: 'BPT ICHI-LINK',
   tradeUrl: 'https://pools.balancer.exchange/#/pool/0x960c437E2A9A9a25e0FEDC0C8A5899827B10F63c'
+}
+LABELS[1009] = {
+  name: 'oneFIL Deposit',
+  lpName: 'oneFIL',
+  shortLpName: 'oneFIL'
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID };
