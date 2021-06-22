@@ -104,6 +104,9 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
     price = 1;
   } else {
     switch(tokenName) {
+      case 'usdc':
+        price = 1;
+        break;
       case 'xichi':
         price = await lookUpXICHIPrice();
         break;
