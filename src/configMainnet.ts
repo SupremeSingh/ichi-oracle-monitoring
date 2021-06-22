@@ -256,7 +256,8 @@ LABELS[1008] = {
 LABELS[1009] = {
   name: 'oneFIL Deposit',
   lpName: 'oneFIL',
-  shortLpName: 'oneFIL'
+  shortLpName: 'oneFIL',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xd5147bc8e386d91cc5dbe72099dac6c9b99276f5'
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID };
