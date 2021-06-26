@@ -20,6 +20,7 @@ const POOLS = {
 const TOKENS = {
   oti: { 
     address: "0x5BF9b9bB304672c3d006955AbFC516e8b37693F9",
+    strategy: "",
     decimals: 18,
     displayName: "OTI",
     isOneToken: true,
@@ -27,6 +28,7 @@ const TOKENS = {
   },
   test_oneuni: { 
     address: "0x4238C45783551be0D848BbAdA853cCa6b265322f",
+    strategy: "",
     decimals: 18,
     displayName: "oneUNI",
     isOneToken: true,
@@ -34,6 +36,7 @@ const TOKENS = {
   },
   test_onefil: { 
     address: "0x50633E780803b56a0d8606a3C674993080Ea98c1",
+    strategy: "0xf2c642b993e98298477f3f20ea2de8e6f29db534",
     decimals: 18,
     displayName: "oneFIL",
     isOneToken: true,
@@ -64,7 +67,7 @@ const TOKENS = {
     isOneToken: false
   },
   test_renfil: { 
-    address: "0x1A6d8B5a6b9461cf49654791e75c286F02bF1f82",
+    address: "0x3CB15c7048e7CfAcFBc8eFe9362fAC5e60012BD1",
     decimals: 18,
     displayName: "renFIL",
     isOneToken: false

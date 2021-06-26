@@ -91,6 +91,7 @@ const TOKENS = {
   },
   oneeth: { 
     address: "0xEc0d77a58528a218cBf41Fa6E1585c8D7A085868",
+    strategy: "",
     decimals: 9,
     displayName: "oneETH",
     isOneToken: true,
@@ -98,6 +99,7 @@ const TOKENS = {
   },
   onebtc: { 
     address: "0xC88F47067dB2E25851317A2FDaE73a22c0777c37",
+    strategy: "",
     decimals: 9,
     displayName: "oneBTC",
     isOneToken: true,
@@ -105,6 +107,7 @@ const TOKENS = {
   },
   onevbtc: { 
     address: "0x7BD198b9107496fD5cC3d7655AF52f43a8eDBc4C",
+    strategy: "",
     decimals: 9,
     displayName: "oneVBTC",
     isOneToken: true,
@@ -112,6 +115,7 @@ const TOKENS = {
   },
   onewing: { 
     address: "0x8F041A3940a5e6FB580075C3774E15FcFA0E1618",
+    strategy: "",
     decimals: 9,
     displayName: "oneWING",
     isOneToken: true,
@@ -119,6 +123,7 @@ const TOKENS = {
   },
   onelink: { 
     address: "0x18Cc17a1EeD37C02A77B0B96b7890C7730E2a2CF",
+    strategy: "",
     decimals: 9,
     displayName: "oneLINK",
     isOneToken: true,
@@ -126,6 +131,7 @@ const TOKENS = {
   },
   onefil: { 
     address: "0x6d82017e55b1D24C53c7B33BbB770A86f2ca229D",
+    strategy: "",
     decimals: 18,
     displayName: "oneFIL",
     isOneToken: true,

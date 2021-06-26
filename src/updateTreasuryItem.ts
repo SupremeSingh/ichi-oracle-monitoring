@@ -38,6 +38,7 @@ const getOneTokenAttributes = async function(tokenName) {
     return {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
+      strategy: TOKENS[tokenName]['strategy'],
       stimulus_address: TOKENS['renfil']['address'],
       stimulus_name: 'renfil',
       stimulus_display_name: 'renFIL',
@@ -50,6 +51,7 @@ const getOneTokenAttributes = async function(tokenName) {
     return {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
+      strategy: TOKENS[tokenName]['strategy'],
       stimulus_address: TOKENS['wbtc']['address'],
       stimulus_name: 'wbtc',
       stimulus_display_name: 'BTC',
@@ -62,6 +64,7 @@ const getOneTokenAttributes = async function(tokenName) {
     return {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
+      strategy: TOKENS[tokenName]['strategy'],
       stimulus_address: TOKENS['vbtc']['address'],
       stimulus_name: 'vbtc',
       stimulus_display_name: 'VBTC',
@@ -74,6 +77,7 @@ const getOneTokenAttributes = async function(tokenName) {
     return {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
+      strategy: TOKENS[tokenName]['strategy'],
       stimulus_address: TOKENS['pwing']['address'],
       stimulus_name: 'pwing',
       stimulus_display_name: 'WING',
@@ -86,6 +90,7 @@ const getOneTokenAttributes = async function(tokenName) {
     return {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
+      strategy: TOKENS[tokenName]['strategy'],
       stimulus_address: TOKENS['weth']['address'],
       stimulus_name: 'weth',
       stimulus_display_name: 'ETH',
@@ -98,6 +103,7 @@ const getOneTokenAttributes = async function(tokenName) {
     return {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
+      strategy: TOKENS[tokenName]['strategy'],
       stimulus_address: TOKENS['link']['address'],
       stimulus_name: 'link',
       stimulus_display_name: 'LINK',
@@ -128,6 +134,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
   const attr = await getOneTokenAttributes(itemName.toLowerCase());
   const oneTokenAddress = attr.address;
+  const strategyAddress = attr.strategy;
   const stimulusTokenAddress = attr.stimulus_address;
   const stimulusDisplayName = attr.stimulus_display_name;
   const stimulusTokenName = attr.stimulus_name;
@@ -137,7 +144,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const isV2 = attr.isV2;
   const oneTokenABI = await getABI(attr.abi_type);
 
-  const ichi = new ethers.Contract(TOKENS['ichi']['address'], ERC20_ABI, provider);
+  const ICHI = new ethers.Contract(TOKENS['ichi']['address'], ERC20_ABI, provider);
   const stimulusToken = new ethers.Contract(stimulusTokenAddress, ERC20_ABI, provider);
   const USDC = new ethers.Contract(TOKENS['usdc']['address'], ERC20_ABI, provider);
   const oneToken = new ethers.Contract(oneTokenAddress, oneTokenABI, provider);
@@ -149,11 +156,25 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   );
   const oneToken_BPT_LP = oneToken_BPT_Farming_Position.amount;
 
-  const oneToken_ICHIBPT = await ICHIBPT.balanceOf(oneTokenAddress);
-  const oneToken_USDC = await USDC.balanceOf(oneTokenAddress);
-  const oneToken_stimulus = await stimulusToken.balanceOf(oneTokenAddress);
-  const oneToken_ichi = await ichi.balanceOf(oneTokenAddress);
+  const oneToken_ICHIBPT = Number(await ICHIBPT.balanceOf(oneTokenAddress));
+  const oneToken_USDC = Number(await USDC.balanceOf(oneTokenAddress));
+  const oneToken_stimulus = Number(await stimulusToken.balanceOf(oneTokenAddress));
+  const oneToken_ichi = Number(await ICHI.balanceOf(oneTokenAddress));
   
+  // =================================================================================
+  // get balances from the strategy, if it exists
+
+  let strategy_balance_usdc = 0;
+  let strategy_balance_stimulus = 0;
+  let strategy_balance_onetoken = 0;
+  let strategy_balance_ichi = 0;
+  if (strategyAddress !== "") {
+    strategy_balance_usdc = Number(await USDC.balanceOf(strategyAddress));
+    strategy_balance_stimulus = Number(await stimulusToken.balanceOf(strategyAddress));
+    strategy_balance_onetoken = Number(await oneToken.balanceOf(strategyAddress));
+    strategy_balance_ichi = Number(await ICHI.balanceOf(strategyAddress));
+  }
+
   let oneToken_stimulus_price = tokenPrices[stimulusTokenName.toLowerCase()];
 
   let oneTokenCollateralPostions = [];
@@ -185,6 +206,41 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       (collateralPositionsUSDValue + reserveBPT);
   }
   collateralPositionsUSDValue = collateralPositionsUSDValue + reserveBPT;
+
+  const oneToken_SUPPLY = await oneToken.totalSupply();
+
+  // =================================================================================
+  // get oneToken strategy position, if it exists
+
+  if (strategy_balance_onetoken > 0) {
+  
+    let percentOwnership = strategy_balance_onetoken / Number(oneToken_SUPPLY);
+    let usdValue = strategy_balance_onetoken / 10 ** 18;
+    let yAPY = 0;
+
+    assets = [];
+    assets.push({ M: { 
+      name: { S: itemName }, 
+      balance: { N: (Number(strategy_balance_onetoken / 10 ** 18)).toString() } 
+    }});
+    let oneToken_Strategy_Position = {
+      name:  { S: itemName + ' Position' },
+      LP:  { N: (strategy_balance_onetoken / 10 ** 18).toString() },
+      percentOwnership: { N: (percentOwnership * 100).toString() },
+      usdValue: { N: usdValue.toString() },
+      assets: { L: assets }
+    };
+
+    if (stimulusPositionsUSDValue + usdValue > 0) {
+      stimulusPositionsAPY = (stimulusPositionsUSDValue * stimulusPositionsAPY + usdValue * yAPY) / 
+        (stimulusPositionsUSDValue + usdValue);
+    }
+    stimulusPositionsUSDValue = stimulusPositionsUSDValue + usdValue;
+    oneTokenStimulusPostions.push({ M: oneToken_Strategy_Position });
+
+    //var jsonPretty = JSON.stringify(oneTokenStimulusPostions,null,20);    
+    //console.log(jsonPretty);
+  }
 
   // =================================================================================
   // special oneVBTC logic in this section
@@ -289,20 +345,18 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     oneToken_mintingRatio = Number(await oneToken.reserveRatio()) / 10 ** 11;
   }
 
-  const oneToken_SUPPLY = await oneToken.totalSupply();
-
+  let ichi_price = tokenPrices['ichi'];
   let oneToken_stimulus_usd =
-    (Number(oneToken_stimulus_price) * Number(oneToken_stimulus)) /
-    10 ** stimulusDecimals +
-    stimulusPositionsUSDValue +
-    tokenPrices['ichi'] * (oneToken_ichi / 10 ** 9);
+    (Number(oneToken_stimulus_price) * (oneToken_stimulus + strategy_balance_stimulus)) / 10 ** stimulusDecimals +
+    (ichi_price * (oneToken_ichi + strategy_balance_ichi)) / 10 ** 9 +
+    stimulusPositionsUSDValue;
 
   let usdc_price = tokenPrices['usdc'];
   let oneToken_collateral_USDC_only =
-    usdc_price * (Number(oneToken_USDC) / 10 ** 6);
+    usdc_price * ((oneToken_USDC + strategy_balance_usdc) / 10 ** 6);
 
   let oneToken_collateral_only = oneToken_collateral_USDC_only +
-    collateralPositionsUSDValue + Number(oneToken_ICHIBPT) / 10 ** 18;
+    collateralPositionsUSDValue + (oneToken_ICHIBPT / 10 ** 18);
 
   let oneToken_treasury_backed = 
     ((Number(oneToken_SUPPLY) / 10 ** decimals) * (1 - oneToken_withdrawFee)) - 
@@ -317,14 +371,19 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     }});
 
     if (oneToken_ICHIBPT > 0) {
-      oneToken_collateral_list.push({ M: { name: { S: "ICHIBPT" }, balance: { N: (Number(oneToken_ICHIBPT) / 10 ** 18).toString() } }});
+      oneToken_collateral_list.push({ M: { name: { S: "ICHIBPT" }, balance: { N: (Number(oneToken_ICHIBPT / 10 ** 18)).toString() } }});
     }
 
     let oneToken_stimulus_list = [];
-    oneToken_stimulus_list.push({ M: { name: { S: stimulusDisplayName }, balance: { N: (Number(oneToken_stimulus) / 10 ** stimulusDecimals).toString() } }});
-
-    if (Number(oneToken_ichi) > 0) {
-      oneToken_stimulus_list.push({ M: { name: { S: "ICHI" }, balance: { N: (Number(oneToken_ichi) / 10 ** 9).toString() } }});
+    oneToken_stimulus_list.push({ M: { 
+      name: { S: stimulusDisplayName }, 
+      balance: { N: ((oneToken_stimulus + strategy_balance_stimulus) / 10 ** 18).toString() } 
+    }});
+    if (oneToken_ichi + strategy_balance_ichi > 0) {
+      oneToken_stimulus_list.push({ M: { 
+        name: { S: "ICHI" }, 
+        balance: { N: (Number((oneToken_ichi + strategy_balance_ichi) / 10 ** 9)).toString() } 
+      }});
     }
 
     const oneTokenVersion = isV2 ? 2 : 1;
@@ -338,7 +397,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       name: itemName.toLowerCase(),
       displayName: itemName,
       base: baseName,
-      usdc: Number(oneToken_USDC) / 10 ** 6,
+      usdc: (oneToken_USDC + strategy_balance_usdc) / 10 ** 6,
       circulation: Number(oneToken_SUPPLY) / 10 ** decimals,
       collateral: oneToken_collateral_list,
       collateralPositions: oneTokenCollateralPostions,
@@ -392,7 +451,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       ExpressionAttributeValues: {
         ':baseName': { S: baseName },
         ':displayName': { S: itemName },
-        ':usdc': { N: (Number(oneToken_USDC) / 10 ** 6).toString() },
+        ':usdc': { N: ((oneToken_USDC + strategy_balance_usdc) / 10 ** 6).toString() },
         ':circulation': { N: (Number(oneToken_SUPPLY) / 10 ** decimals).toString() },
         ':collateral' : { L: oneToken_collateral_list },
         ':collateralPositions' : { L: oneTokenCollateralPostions },
