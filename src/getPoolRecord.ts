@@ -445,7 +445,15 @@ async function getPoolContract(poolID, useBasic) {
           tokenPrices['ichi'] / apyTVL;
           dailyAPY = ichiReturnUsd * 100;
         }
-  
+
+        // calculate future APY for deposits
+        let futureReward = 0.1; // 0.1 ichiPerBlock
+        let futureIchiReturnUsd =
+        6500 *
+        futureReward *
+        tokenPrices['ichi'] / apyTVL;
+        let futureAPY = futureIchiReturnUsd * 100;
+
         poolRecord = {
           pool: poolID,
           lpAddress: poolToken,
@@ -453,6 +461,7 @@ async function getPoolContract(poolID, useBasic) {
           weeklyAPY: dailyAPY * 7,
           monthlyAPY: dailyAPY * 30,
           yearlyAPY: dailyAPY * 365,
+          futureAPY: futureAPY * 365,
           totalPoolLP: totalPoolLP,
           totalFarmLP: inTheFarmLP.toString(),
           tvl: localTVL,

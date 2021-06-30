@@ -138,6 +138,16 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
   if (poolId == 10003 || poolId == 1010)
     isRetired = false;
 
+  let futureAPY = 0;
+  let launchDate = 0;
+  if (pool['futureAPY']) {
+    const currentDate = Date.now();
+    if (currentDate < LABELS[poolId]['launchDate']) {
+      futureAPY = pool['futureAPY'];
+      launchDate = LABELS[poolId]['launchDate'];
+    }
+  }
+
   // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
   console.log(`Attempting to update table: ${tableName}, token: ${poolId}`);
   const params: AWS.DynamoDB.UpdateItemInput = {
@@ -165,6 +175,8 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
       'weeklyAPY = :weeklyAPY, ' + 
       'monthlyAPY = :monthlyAPY, ' + 
       'yearlyAPY = :yearlyAPY, ' + 
+      'futureAPY = :futureAPY, ' + 
+      'launchDate = :launchDate, ' + 
       'isExternal = :isExternal, ' + 
       'isUpcoming = :isUpcoming, ' + 
       'isMigrating = :isMigrating, ' + 
@@ -191,6 +203,8 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
       ':weeklyAPY': { N: Number(pool['weeklyAPY']).toString() },
       ':monthlyAPY': { N: Number(pool['monthlyAPY']).toString() },
       ':yearlyAPY': { N: Number(pool['yearlyAPY']).toString() },
+      ':futureAPY': { N: Number(futureAPY).toString() },
+      ':launchDate': { N: Number(launchDate).toString() },
       ':isExternal': { BOOL: isExternal },
       ':isUpcoming': { BOOL: isUpcoming },
       ':isMigrating': { BOOL: isMigrating },

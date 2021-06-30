@@ -277,7 +277,8 @@ LABELS[1010] = {
   name: 'one1INCH Deposit',
   lpName: 'one1INCH',
   shortLpName: 'one1INCH',
-  tradeUrl: 'https://app.1inch.io/#/1/swap/ETH/1inch'
+  tradeUrl: 'https://app.1inch.io/#/1/swap/ETH/1inch',
+  launchDate: 1625245200000
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID };
