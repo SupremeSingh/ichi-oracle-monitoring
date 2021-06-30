@@ -135,7 +135,7 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
 
   // ICHI-BNT pool is not retired
 
-  if (poolId == 10003 || poolId == 1009)
+  if (poolId == 10003 || poolId == 1010)
     isRetired = false;
 
   // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03

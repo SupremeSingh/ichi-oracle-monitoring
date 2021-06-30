@@ -47,6 +47,19 @@ const getOneTokenAttributes = async function(tokenName) {
       base_name: 'onefil',
       isV2: TOKENS[tokenName]['isV2']
     }
+  if (tokenName == 'one1inch')
+    return {
+      address: TOKENS[tokenName]['address'],
+      decimals: TOKENS[tokenName]['decimals'],
+      strategy: TOKENS[tokenName]['strategy'],
+      stimulus_address: TOKENS['1inch']['address'],
+      stimulus_name: '1inch',
+      stimulus_display_name: '1INCH',
+      stimulus_decimals: 18,
+      abi_type: 'ONETOKEN',
+      base_name: 'one1inch',
+      isV2: TOKENS[tokenName]['isV2']
+    }
   if (tokenName == 'onebtc')
     return {
       address: TOKENS[tokenName]['address'],

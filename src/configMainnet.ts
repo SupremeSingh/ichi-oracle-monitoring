@@ -136,13 +136,21 @@ const TOKENS = {
     displayName: "oneFIL",
     isOneToken: true,
     isV2: true
+  },
+  one1inch: { 
+    address: "0x853bb55c1f469902f088a629db8c8803a9be3857",
+    strategy: "0x97B380Ae50160E400d68c92ABeAf24402C9CaA62",
+    decimals: 18,
+    displayName: "one1INCH",
+    isOneToken: true,
+    isV2: true
   }
 }
 
 const POOLS = {
-  activePools : [1001, 1004, 1005, 1008, 1009, 10001, 10002, 10003],
+  activePools : [1001, 1004, 1005, 1008, 1009, 1010, 10001, 10002, 10003],
   // activePools : [10003],
-  depositPools : [1009],
+  depositPools : [1009, 1010],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
@@ -264,6 +272,12 @@ LABELS[1009] = {
   lpName: 'oneFIL',
   shortLpName: 'oneFIL',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xd5147bc8e386d91cc5dbe72099dac6c9b99276f5'
+}
+LABELS[1010] = {
+  name: 'one1INCH Deposit',
+  lpName: 'one1INCH',
+  shortLpName: 'one1INCH',
+  tradeUrl: 'https://app.1inch.io/#/1/swap/ETH/1inch'
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID };
