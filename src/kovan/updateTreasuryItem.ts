@@ -138,7 +138,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   // =================================================================================
   // get oneToken strategy position, if it exists
 
-  if (strategy_balance_onetoken > 0) {
+  /* if (strategy_balance_onetoken > 0) {
   
     let percentOwnership = strategy_balance_onetoken / Number(oneToken_SUPPLY);
     let usdValue = strategy_balance_onetoken / 10 ** 18;
@@ -166,7 +166,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
     //var jsonPretty = JSON.stringify(oneTokenStimulusPostions,null,20);    
     //console.log(jsonPretty);
-  }
+  } */
 
   // =================================================================================
 
@@ -197,6 +197,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let oneToken_stimulus_usd =
     (Number(oneToken_stimulus_price) * (oneToken_stimulus + strategy_balance_stimulus)) / 10 ** stimulusDecimals +
     (ichi_price * (oneToken_ichi + strategy_balance_ichi)) / 10 ** 9 +
+    strategy_balance_onetoken / 10 ** 18 +
     stimulusPositionsUSDValue;
 
   let usdc_price = tokenPrices[usdcName];
@@ -227,7 +228,13 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         balance: { N: (Number((oneToken_ichi + strategy_balance_ichi) / 10 ** 9)).toString() } 
       }});
     }
-
+    if (strategy_balance_onetoken > 0) {
+      oneToken_stimulus_list.push({ M: { 
+        name: { S: TOKENS[itemName.toLowerCase()]['displayName'] }, 
+        balance: { N: (Number(strategy_balance_onetoken / 10 ** 18)).toString() } 
+      }});
+    }
+  
     const oneTokenVersion = isV2 ? 2 : 1;
 
     let reserveRatio = 0;

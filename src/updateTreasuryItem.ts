@@ -225,7 +225,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   // =================================================================================
   // get oneToken strategy position, if it exists
 
-  if (strategy_balance_onetoken > 0) {
+  /* if (strategy_balance_onetoken > 0) {
   
     let percentOwnership = strategy_balance_onetoken / Number(oneToken_SUPPLY);
     let usdValue = strategy_balance_onetoken / 10 ** 18;
@@ -253,7 +253,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
     //var jsonPretty = JSON.stringify(oneTokenStimulusPostions,null,20);    
     //console.log(jsonPretty);
-  }
+  } */
 
   // =================================================================================
   // special oneVBTC logic in this section
@@ -261,6 +261,21 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   if (itemName == 'oneVBTC') {
     // temp fix for oneVBTC (removing price of burned stablecoins for a specific address from the total)
     oneToken_burned_tokens = await oneToken.getBurnedStablecoin('0xcc71b8a0b9ea458ae7e17fa232a36816f6b27195');
+  }
+
+  if (itemName == 'one1INCH') {
+    const lpContract = new ethers.Contract(ADDRESSES._1inch_ICHI_LP, ERC20_ABI, provider);
+    const strategyLPs = Number(await lpContract.balanceOf(strategyAddress));
+    if (strategyLPs > 0) {
+      const lp_stimulus = Number(await stimulusToken.balanceOf(ADDRESSES._1inch_ICHI_LP));
+      const lp_ichi = Number(await ICHI.balanceOf(ADDRESSES._1inch_ICHI_LP));
+      const lpTotal  = Number(await lpContract.totalSupply());
+      const ratio = strategyLPs / lpTotal;
+      const strategy_lp_ichi = lp_ichi * ratio;  
+      const strategy_lp_stimulus = lp_stimulus * ratio;  
+      strategy_balance_ichi += strategy_lp_ichi;
+      strategy_balance_stimulus += strategy_lp_stimulus;
+    }
   }
 
   // =================================================================================
@@ -362,6 +377,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let oneToken_stimulus_usd =
     (Number(oneToken_stimulus_price) * (oneToken_stimulus + strategy_balance_stimulus)) / 10 ** stimulusDecimals +
     (ichi_price * (oneToken_ichi + strategy_balance_ichi)) / 10 ** 9 +
+    strategy_balance_onetoken / 10 ** 18 +
     stimulusPositionsUSDValue;
 
   let usdc_price = tokenPrices['usdc'];
@@ -396,6 +412,12 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       oneToken_stimulus_list.push({ M: { 
         name: { S: "ICHI" }, 
         balance: { N: (Number((oneToken_ichi + strategy_balance_ichi) / 10 ** 9)).toString() } 
+      }});
+    }
+    if (strategy_balance_onetoken > 0) {
+      oneToken_stimulus_list.push({ M: { 
+        name: { S: TOKENS[itemName.toLowerCase()]['displayName'] }, 
+        balance: { N: (Number(strategy_balance_onetoken / 10 ** 18)).toString() } 
       }});
     }
 
