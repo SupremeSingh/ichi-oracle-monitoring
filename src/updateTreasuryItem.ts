@@ -374,18 +374,27 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   }
 
   let ichi_price = tokenPrices['ichi'];
+
+  stimulusPositionsUSDValue = stimulusPositionsUSDValue +
+    Number(oneToken_stimulus_price) * (strategy_balance_stimulus / 10 ** stimulusDecimals) +
+    ichi_price * (strategy_balance_ichi / 10 ** 9);
+
   let oneToken_stimulus_usd =
-    (Number(oneToken_stimulus_price) * (oneToken_stimulus + strategy_balance_stimulus)) / 10 ** stimulusDecimals +
-    (ichi_price * (oneToken_ichi + strategy_balance_ichi)) / 10 ** 9 +
-    strategy_balance_onetoken / 10 ** 18 +
+    Number(oneToken_stimulus_price) * (oneToken_stimulus / 10 ** stimulusDecimals) +
+    ichi_price * (oneToken_ichi / 10 ** 9) +
     stimulusPositionsUSDValue;
 
   let usdc_price = tokenPrices['usdc'];
   let oneToken_collateral_USDC_only =
-    usdc_price * ((oneToken_USDC + strategy_balance_usdc) / 10 ** 6);
+    usdc_price * (oneToken_USDC / 10 ** 6);
+
+  collateralPositionsUSDValue = collateralPositionsUSDValue +
+    strategy_balance_onetoken / 10 ** 18 +
+    usdc_price * (strategy_balance_usdc / 10 ** 6);
 
   let oneToken_collateral_only = oneToken_collateral_USDC_only +
-    collateralPositionsUSDValue + (oneToken_ICHIBPT / 10 ** 18);
+    collateralPositionsUSDValue +
+    (oneToken_ICHIBPT / 10 ** 18);
 
   let oneToken_treasury_backed = 
     ((Number(oneToken_SUPPLY) / 10 ** decimals) * (1 - oneToken_withdrawFee)) - 
@@ -395,7 +404,6 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     let oneToken_collateral_list = [];
     oneToken_collateral_list.push({ M: { 
       name: { S: "USDC" }, 
-//      balance: { N: (oneToken_collateral_USDC_only - oneToken_burned_tokens / 10 ** 9).toString() } 
       balance: { N: oneToken_collateral_USDC_only.toString() } 
     }});
 
@@ -403,21 +411,55 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       oneToken_collateral_list.push({ M: { name: { S: "ICHIBPT" }, balance: { N: (Number(oneToken_ICHIBPT / 10 ** 18)).toString() } }});
     }
 
+    if (strategy_balance_usdc > 0 || strategy_balance_onetoken > 0) {
+      const assets = [];
+      if (strategy_balance_usdc > 0) {
+        assets.push({ M: { 
+          name: { S: "USDC" }, 
+          balance: { N: Number(strategy_balance_usdc / 10 ** 6).toString() } 
+        }});
+      }
+      if (strategy_balance_onetoken > 0) {
+        assets.push({ M: { 
+          name: { S: TOKENS[itemName.toLowerCase()]['displayName'] }, 
+          balance: { N: (Number(strategy_balance_onetoken / 10 ** 18)).toString() } 
+        }});
+      }
+      oneTokenCollateralPostions.push({ M: { 
+        name: { S: 'Vault' }, 
+        assets: { L: assets },
+      }});
+    }
+  
     let oneToken_stimulus_list = [];
     oneToken_stimulus_list.push({ M: { 
       name: { S: stimulusDisplayName }, 
-      balance: { N: ((oneToken_stimulus + strategy_balance_stimulus) / 10 ** 18).toString() } 
+      balance: { N: Number(oneToken_stimulus / 10 ** 18).toString() } 
     }});
-    if (oneToken_ichi + strategy_balance_ichi > 0) {
+    if (oneToken_ichi > 0) {
       oneToken_stimulus_list.push({ M: { 
         name: { S: "ICHI" }, 
-        balance: { N: (Number((oneToken_ichi + strategy_balance_ichi) / 10 ** 9)).toString() } 
+        balance: { N: Number(oneToken_ichi / 10 ** 9).toString() } 
       }});
     }
-    if (strategy_balance_onetoken > 0) {
-      oneToken_stimulus_list.push({ M: { 
-        name: { S: TOKENS[itemName.toLowerCase()]['displayName'] }, 
-        balance: { N: (Number(strategy_balance_onetoken / 10 ** 18)).toString() } 
+
+    if (strategy_balance_stimulus > 0 || strategy_balance_ichi > 0) {
+      const assets = [];
+      if (strategy_balance_stimulus > 0) {
+        assets.push({ M: { 
+          name: { S: stimulusDisplayName }, 
+          balance: { N: Number(strategy_balance_stimulus / 10 ** 18).toString() } 
+        }});
+      }
+      if (strategy_balance_ichi > 0) {
+        assets.push({ M: { 
+          name: { S: "ICHI" }, 
+          balance: { N: Number(strategy_balance_ichi / 10 ** 9).toString() } 
+        }});
+      }
+      oneTokenStimulusPostions.push({ M: { 
+        name: { S: 'Vault' }, 
+        assets: { L: assets },
       }});
     }
 

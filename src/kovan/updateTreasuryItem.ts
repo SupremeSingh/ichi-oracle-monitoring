@@ -194,15 +194,23 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   }
 
   let ichi_price = tokenPrices['test_ichi'];
+
+  stimulusPositionsUSDValue = stimulusPositionsUSDValue +
+    Number(oneToken_stimulus_price) * (strategy_balance_stimulus / 10 ** stimulusDecimals) +
+    ichi_price * (strategy_balance_ichi / 10 ** 9);
+
   let oneToken_stimulus_usd =
-    (Number(oneToken_stimulus_price) * (oneToken_stimulus + strategy_balance_stimulus)) / 10 ** stimulusDecimals +
-    (ichi_price * (oneToken_ichi + strategy_balance_ichi)) / 10 ** 9 +
-    strategy_balance_onetoken / 10 ** 18 +
+    Number(oneToken_stimulus_price) * (oneToken_stimulus / 10 ** stimulusDecimals) +
+    ichi_price * (oneToken_ichi / 10 ** 9) +
     stimulusPositionsUSDValue;
 
   let usdc_price = tokenPrices[usdcName];
   let oneToken_collateral_USDC_only =
-    usdc_price * ((oneToken_USDC + strategy_balance_usdc) / 10 ** 6);
+    usdc_price * (oneToken_USDC / 10 ** 6);
+
+  collateralPositionsUSDValue = collateralPositionsUSDValue +
+    strategy_balance_onetoken / 10 ** 18 +
+    usdc_price * (strategy_balance_usdc / 10 ** 6);
 
   let oneToken_collateral_only = oneToken_collateral_USDC_only +
     collateralPositionsUSDValue;
@@ -211,36 +219,70 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     ((Number(oneToken_SUPPLY) / 10 ** decimals) * (1 - oneToken_withdrawFee)) - 
     oneToken_collateral_only;
 
-    let oneToken_collateral_list = [];
-    oneToken_collateral_list.push({ M: { 
-      name: { S: usdcName }, 
-      balance: { N: oneToken_collateral_USDC_only.toString() } 
-    }});
+  let oneToken_collateral_list = [];
+  oneToken_collateral_list.push({ M: { 
+    name: { S: usdcName }, 
+    balance: { N: oneToken_collateral_USDC_only.toString() } 
+  }});
 
-    let oneToken_stimulus_list = [];
-    oneToken_stimulus_list.push({ M: { 
-      name: { S: stimulusDisplayName }, 
-      balance: { N: ((oneToken_stimulus + strategy_balance_stimulus) / 10 ** 18).toString() } 
-    }});
-    if (oneToken_ichi + strategy_balance_ichi > 0) {
-      oneToken_stimulus_list.push({ M: { 
-        name: { S: "ICHI" }, 
-        balance: { N: (Number((oneToken_ichi + strategy_balance_ichi) / 10 ** 9)).toString() } 
+  if (strategy_balance_usdc > 0 || strategy_balance_onetoken > 0) {
+    const assets = [];
+    if (strategy_balance_usdc > 0) {
+      assets.push({ M: { 
+        name: { S: usdcName }, 
+        balance: { N: Number(strategy_balance_usdc / 10 ** 6).toString() } 
       }});
     }
     if (strategy_balance_onetoken > 0) {
-      oneToken_stimulus_list.push({ M: { 
+      assets.push({ M: { 
         name: { S: TOKENS[itemName.toLowerCase()]['displayName'] }, 
         balance: { N: (Number(strategy_balance_onetoken / 10 ** 18)).toString() } 
       }});
     }
-  
-    const oneTokenVersion = isV2 ? 2 : 1;
+    oneTokenCollateralPostions.push({ M: { 
+      name: { S: 'Vault' }, 
+      assets: { L: assets },
+    }});
+  }
 
-    let reserveRatio = 0;
-    if (oneToken_treasury_backed > 0) {
-      reserveRatio = oneToken_stimulus_usd / oneToken_treasury_backed;
+  let oneToken_stimulus_list = [];
+  oneToken_stimulus_list.push({ M: { 
+    name: { S: stimulusDisplayName }, 
+    balance: { N: Number(oneToken_stimulus / 10 ** 18).toString() } 
+  }});
+  if (oneToken_ichi > 0) {
+    oneToken_stimulus_list.push({ M: { 
+      name: { S: "ICHI" }, 
+      balance: { N: Number(oneToken_ichi / 10 ** 9).toString() } 
+    }});
+  }
+  
+  if (strategy_balance_stimulus > 0 || strategy_balance_ichi > 0) {
+    const assets = [];
+    if (strategy_balance_stimulus > 0) {
+      assets.push({ M: { 
+        name: { S: stimulusDisplayName }, 
+        balance: { N: Number(strategy_balance_stimulus / 10 ** 18).toString() } 
+      }});
     }
+    if (strategy_balance_ichi > 0) {
+      assets.push({ M: { 
+        name: { S: "ICHI" }, 
+        balance: { N: Number(strategy_balance_ichi / 10 ** 9).toString() } 
+      }});
+    }
+    oneTokenStimulusPostions.push({ M: { 
+      name: { S: 'Vault' }, 
+      assets: { L: assets },
+    }});
+  }
+
+  const oneTokenVersion = isV2 ? 2 : 1;
+
+  let reserveRatio = 0;
+  if (oneToken_treasury_backed > 0) {
+    reserveRatio = oneToken_stimulus_usd / oneToken_treasury_backed;
+  }
 
     let res = {
       name: itemName.toLowerCase(),
