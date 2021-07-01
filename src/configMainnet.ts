@@ -131,7 +131,7 @@ const TOKENS = {
   },
   onefil: { 
     address: "0x6d82017e55b1D24C53c7B33BbB770A86f2ca229D",
-    strategy: "",
+    strategy: "0xc9682298cd1C39145EB34614a0B4356c7F29c92e",
     decimals: 18,
     displayName: "oneFIL",
     isOneToken: true,
