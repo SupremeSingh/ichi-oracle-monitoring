@@ -201,7 +201,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
   let oneToken_burned_tokens = 0;
 
-  let BPT_pool = await getPoolRecord(1007, tokenPrices);
+  let BPT_pool = await getPoolRecord(1007, tokenPrices, null);
   let BPT_poolAPY = BPT_pool['yearlyAPY'];
 
   const reserveBPT = Number(oneToken_BPT_LP) / 10 ** 18;
@@ -294,7 +294,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     );
     let oneLINK_67_33_LP = oneLINK_67_33_Farming_Position.amount;
 
-    let oneLINK_67_33_PoolRecord = await getPoolRecord(1008, tokenPrices);
+    let oneLINK_67_33_PoolRecord = await getPoolRecord(1008, tokenPrices, null);
     
     let totalOneLINKLP = oneLINK_67_33_PoolRecord['totalPoolLP'];
     let percentOwnership = Number(oneLINK_67_33_LP) / Number(totalOneLINKLP);

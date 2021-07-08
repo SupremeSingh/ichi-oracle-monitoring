@@ -267,9 +267,9 @@ async function getPoolContract(poolID, useBasic) {
     }
   }
   
-  export async function getPoolRecord(poolID, tokenPrices) {
+  export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
     if (poolID >= 10000)
-      return getExternalPoolRecord(poolID, tokenPrices);
+      return getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock);
 
     let isSpecialPricing = POOLS.specialPricing.includes(poolID);
   
@@ -492,7 +492,7 @@ async function getPoolContract(poolID, useBasic) {
     );
   };
   
-  async function getExternalPoolRecord(poolID, tokenPrices) {
+  async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
       if (poolID === 10001) {
         let allPools = await get1inchPools();
         let _1inchICHI_pool = allPools.data[5];
@@ -596,6 +596,15 @@ async function getPoolContract(poolID, useBasic) {
   
         let farmTVL = reserve1Raw * prices[token1];
         let dailyAPY = 0;
+        if (knownIchiPerBlock['10003']) {
+          if (farmTVL !== 0) {
+            let ichiReturnUsd =
+            6500 *
+            (Number(knownIchiPerBlock['10003']) / 10 ** 9) *
+            tokenPrices['ichi'] / farmTVL;
+            dailyAPY = ichiReturnUsd * 100;
+          }
+        }
   
         let poolRecord = {
           pool: poolID,

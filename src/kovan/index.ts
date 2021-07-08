@@ -8,6 +8,7 @@ import { updateFarm } from './updateFarm';
 const token_tableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
 const treasury_tableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
 const farms_tableName = process.env.FARMS_TABLE_NAME || 'farms-dev';
+const ichiPerBlock_tableName = process.env.ICHI_PER_BLOCK_TABLE_NAME || 'ichi-per-block';
 
 export const handler = async (event: APIGatewayProxyEvent) => {
   let poolId = -1;
@@ -67,14 +68,31 @@ export const handler = async (event: APIGatewayProxyEvent) => {
     throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
   }
 
+  const knownIchiPerBlock = {};
+
+  let params_ipb = {
+    TableName: ichiPerBlock_tableName
+  };
+  try {
+    const result = await dbClient.scan(params_ipb).promise();
+    for (let i = 0; i < result.Items.length; i++) {
+      let item = result.Items[i];
+      let poolId = item['poolId']['N'];
+      knownIchiPerBlock[poolId] = item['ichiPerBlock']['N']
+    }
+  } catch (error) {
+    throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
+  }
+
   //console.log(tokenPrices);
   //console.log(tokenNames);
+  //console.log(knownIchiPerBlock);
 
   if (poolId === -1) {
-    await updateFarms(farms_tableName, tokenPrices, tokenNames);
+    await updateFarms(farms_tableName, tokenPrices, tokenNames, knownIchiPerBlock);
     await updateTreasury(treasury_tableName, tokenPrices, tokenNames);
   } else {
-    await updateFarm(farms_tableName, poolId, tokenPrices, tokenNames);
+    await updateFarm(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock);
   }
 
   return {

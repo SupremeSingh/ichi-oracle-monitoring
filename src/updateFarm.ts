@@ -37,8 +37,10 @@ const getExchangeName = async function(poolId: number) {
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
-export const updateFarm = async (tableName: string, poolId: number, tokenPrices: {[name: string]: number}, 
-      tokenNames: {[name: string]: string}): Promise<APIGatewayProxyResult> => {
+export const updateFarm = async (tableName: string, poolId: number, 
+    tokenPrices: {[name: string]: number}, 
+    tokenNames: {[name: string]: string},
+    knownIchiPerBlock: {[poolId: string]: string}): Promise<APIGatewayProxyResult> => {
   const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
 
   const farming_V1 = new ethers.Contract(
@@ -52,7 +54,7 @@ export const updateFarm = async (tableName: string, poolId: number, tokenPrices:
     provider
   );
 
-  let pool = await getPoolRecord(poolId, tokenPrices);
+  let pool = await getPoolRecord(poolId, tokenPrices, knownIchiPerBlock);
   console.log(pool);
 
   let farmPoolId = 0;

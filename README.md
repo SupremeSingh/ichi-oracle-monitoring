@@ -99,3 +99,9 @@ aws lambda update-function-code --function-name ichi-api-updater-stage --zip-fil
 # Make sure you test stage before pushing to prod
 aws lambda update-function-code --function-name ichi-api-updater-prod --zip-file fileb://dist/function.zip
 ```
+
+## Updating ICHI per block for external farms
+
+```text
+npm run ichi-per-block -- farm1_Id:value1 farm2_Id:value2 ...
+```

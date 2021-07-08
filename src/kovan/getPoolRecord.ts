@@ -95,7 +95,7 @@ async function getTotalSupply(poolContract) {
   return tLP.toString();
 }
   
-export async function getPoolRecord(poolID, tokenPrices) {
+export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
   let adjusterPoolId = poolID - 5000;
   let poolToken = await farming_V2.lpToken(adjusterPoolId);
 
