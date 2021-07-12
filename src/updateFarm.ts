@@ -117,6 +117,13 @@ export const updateFarm = async (tableName: string, poolId: number,
   let lpName = LABELS[poolId]['lpName'];
   let shortLpName = LABELS[poolId]['shortLpName'];
 
+  let lpPrice = 0;
+  if (pool['totalPoolLP'] && Number(pool['totalPoolLP']) > 0 &&
+      pool['tvl'] && Number(pool['tvl']) > 0) {
+        lpPrice = Number(pool['tvl']) * 10 ** 18 / Number(pool['totalPoolLP']);
+        lpPrice = Math.round(lpPrice * 100) / 100;
+  }
+
   let extras = {};
   if (LABELS[poolId]['externalUrl']) {
     extras['externalUrl'] = { S: LABELS[poolId]['externalUrl'] }
@@ -165,6 +172,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       'displayName = :displayName, ' + 
       'lpName = :lpName, ' + 
       'lpAddress = :lpAddress, ' + 
+      'lpPrice = :lpPrice, ' + 
       'extras = :extras, ' + 
       'shortLpName = :shortLpName, ' + 
       'tokens = :tokens, ' + 
@@ -193,6 +201,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       ':displayName': { S: displayName },
       ':lpName': { S: lpName },
       ':lpAddress': { S: pool['lpAddress'] },
+      ':lpPrice': { N: Number(lpPrice).toString() },
       ':extras': { M: extras },
       ':shortLpName': { S: shortLpName },
       ':tokens': { L: tokens },
