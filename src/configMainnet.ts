@@ -89,6 +89,12 @@ const TOKENS = {
     displayName: "USDC",
     isOneToken: false
   },
+  fuse: {
+    address: "0x970B9bB2C0444F5E81e9d0eFb84C8ccdcdcAf84d",
+    decimals: 18,
+    displayName: "FUSE",
+    isOneToken: false
+  },
   oneeth: { 
     address: "0xEc0d77a58528a218cBf41Fa6E1585c8D7A085868",
     strategy: "",
@@ -144,13 +150,21 @@ const TOKENS = {
     displayName: "one1INCH",
     isOneToken: true,
     isV2: true
+  },
+  onefuse: { 
+    address: "0xBbcE03B2E7f53caDCA93251CA4c928aF01Db6404",
+    strategy: "0x8740C9f316241F905323920F4f4FA8A4d6aB100b",
+    decimals: 18,
+    displayName: "oneFUSE",
+    isOneToken: true,
+    isV2: true
   }
 }
 
 const POOLS = {
-  activePools : [1001, 1004, 1005, 1008, 1009, 1010, 10001, 10002, 10003],
+  activePools : [1001, 1004, 1005, 1008, 1009, 1010, 1011, 10001, 10002, 10003],
   // activePools : [10003],
-  depositPools : [1009, 1010],
+  depositPools : [1009, 1010, 1011],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
@@ -277,7 +291,13 @@ LABELS[1010] = {
   name: 'one1INCH Deposit',
   lpName: 'one1INCH',
   shortLpName: 'one1INCH',
-  tradeUrl: 'https://app.1inch.io/#/1/swap/ETH/1inch',
+  tradeUrl: 'https://app.1inch.io/#/1/swap/ETH/1inch'
+}
+LABELS[1011] = {
+  name: 'oneFUSE Deposit',
+  lpName: 'oneFUSE',
+  shortLpName: 'oneFUSE',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x970B9bB2C0444F5E81e9d0eFb84C8ccdcdcAf84d',
   launchDate: 1625245200000
 }
 

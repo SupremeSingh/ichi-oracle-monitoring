@@ -60,6 +60,19 @@ const getOneTokenAttributes = async function(tokenName) {
       base_name: 'one1inch',
       isV2: TOKENS[tokenName]['isV2']
     }
+  if (tokenName == 'onefuse')
+    return {
+      address: TOKENS[tokenName]['address'],
+      decimals: TOKENS[tokenName]['decimals'],
+      strategy: TOKENS[tokenName]['strategy'],
+      stimulus_address: TOKENS['fuse']['address'],
+      stimulus_name: 'fuse',
+      stimulus_display_name: 'FUSE',
+      stimulus_decimals: 18,
+      abi_type: 'ONETOKEN',
+      base_name: 'onefuse',
+      isV2: TOKENS[tokenName]['isV2']
+    }
   if (tokenName == 'onebtc')
     return {
       address: TOKENS[tokenName]['address'],
