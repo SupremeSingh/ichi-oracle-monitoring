@@ -36,6 +36,7 @@ const getOneTokenAttributes = async function(tokenName) {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
       strategy: TOKENS[tokenName]['strategy'],
+      tradeUrl: TOKENS[tokenName]['tradeUrl'],
       stimulus_address: TOKENS['token18']['address'],
       stimulus_name: 'token18',
       stimulus_display_name: 'Token18',
@@ -51,6 +52,7 @@ const getOneTokenAttributes = async function(tokenName) {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
       strategy: TOKENS[tokenName]['strategy'],
+      tradeUrl: TOKENS[tokenName]['tradeUrl'],
       stimulus_address: TOKENS['test_uni']['address'],
       stimulus_name: 'test_uni',
       stimulus_display_name: 'UNI',
@@ -66,6 +68,7 @@ const getOneTokenAttributes = async function(tokenName) {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
       strategy: TOKENS[tokenName]['strategy'],
+      tradeUrl: TOKENS[tokenName]['tradeUrl'],
       stimulus_address: TOKENS['test_renfil']['address'],
       stimulus_name: 'test_renfil',
       stimulus_display_name: 'renFIL',
@@ -96,6 +99,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const decimals = attr.decimals;
   const baseName = attr.base_name;
   const displayName = attr.display_name;
+  const tradeUrl = attr.tradeUrl;
   const isV2 = attr.isV2;
   const oneTokenABI = await getABI(attr.abi_type);
 
@@ -337,6 +341,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         'mintingRatio = :mintingRatio, ' + 
         'treasuryBacked = :treasuryBacked, ' + 
         'chainId = :chainId, ' +
+        'tradeUrl = :tradeUrl, ' +
         'oneTokenVersion = :oneTokenVersion, ' +
         'reserveRatio = :reserveRatio',
       ExpressionAttributeValues: {
@@ -359,6 +364,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         ':mintingRatio': { N: oneToken_mintingRatio.toString() },
         ':treasuryBacked': { N: Number(oneToken_treasury_backed).toString() },
         ':chainId': { N: Number(CHAIN_ID).toString() },
+        ':tradeUrl': { S: tradeUrl },
         ':oneTokenVersion': { N: Number(oneTokenVersion).toString() },
         ':reserveRatio': { N: Number(reserveRatio).toString() }
       },

@@ -1,7 +1,7 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { ethers } from 'ethers';
-import { POOLS, LABELS, CHAIN_ID } from './configKovan';
+import { POOLS, LABELS, CHAIN_ID, TOKENS } from './configKovan';
 import { getPoolRecord } from './getPoolRecord';
 
 const infuraId = process.env.INFURA_ID;
@@ -22,6 +22,22 @@ const getExchangeName = async function(poolId: number) {
     return "";
   return "test exchange";
 };
+
+const getTradeUrl = function(poolId: number) {
+  let isDeposit = POOLS.depositPools.includes(poolId);
+  if (isDeposit) {
+    let token_name = LABELS[poolId]['lpName'].toLowerCase();
+    if (!TOKENS[token_name]) {
+      token_name = "test_" + LABELS[poolId]['lpName'].toLowerCase();
+    }
+    if (TOKENS[token_name]['tradeUrl'])
+      return TOKENS[token_name]['tradeUrl'];
+  } else {
+    if (LABELS[poolId]['tradeUrl'])
+      return LABELS[poolId]['tradeUrl'];
+  }
+  return '';
+}
 
 export const updateFarmKovan = async (tableName: string, poolId: number, 
   tokenPrices: {[name: string]: number}, 
@@ -106,8 +122,9 @@ export const updateFarm = async (tableName: string, poolId: number,
   if (LABELS[poolId]['externalButton']) {
     extras['externalButton'] = { S: LABELS[poolId]['externalButton'] }
   }
-  if (LABELS[poolId]['tradeUrl']) {
-    extras['tradeUrl'] = { S: LABELS[poolId]['tradeUrl'] }
+  const tradeUrl = getTradeUrl(poolId);
+  if (tradeUrl != '') {
+    extras['tradeUrl'] = { S: tradeUrl }
   }
 
   // pool is retired if no rewards are given in it

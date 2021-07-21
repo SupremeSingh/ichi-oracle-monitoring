@@ -1,7 +1,7 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { ethers } from 'ethers';
-import { ADDRESSES, POOLS, LABELS, CHAIN_ID } from './configMainnet';
+import { ADDRESSES, POOLS, LABELS, CHAIN_ID, TOKENS } from './configMainnet';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import { getPoolRecord } from './getPoolRecord';
@@ -34,6 +34,18 @@ const getExchangeName = async function(poolId: number) {
     return "balancer";
   return "sushi";
 };
+
+const getTradeUrl = function(poolId: number) {
+  let isDeposit = POOLS.depositPools.includes(poolId);
+  if (isDeposit) {
+    if (TOKENS[LABELS[poolId]['lpName'].toLowerCase()]['tradeUrl'])
+      return TOKENS[LABELS[poolId]['lpName'].toLowerCase()]['tradeUrl'];
+  } else {
+    if (LABELS[poolId]['tradeUrl'])
+      return LABELS[poolId]['tradeUrl'];
+  }
+  return '';
+}
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
@@ -134,8 +146,9 @@ export const updateFarm = async (tableName: string, poolId: number,
   if (LABELS[poolId]['externalButton']) {
     extras['externalButton'] = { S: LABELS[poolId]['externalButton'] }
   }
-  if (LABELS[poolId]['tradeUrl']) {
-    extras['tradeUrl'] = { S: LABELS[poolId]['tradeUrl'] }
+  const tradeUrl = getTradeUrl(poolId);
+  if (tradeUrl != '') {
+    extras['tradeUrl'] = { S: tradeUrl }
   }
 
   // pool is retired if no rewards are given in it
@@ -144,7 +157,7 @@ export const updateFarm = async (tableName: string, poolId: number,
 
   // ICHI-BNT pool is not retired
 
-  if (poolId == 10003 || poolId == 1011)
+  if (poolId == 10003 || poolId == 1012)
     isRetired = false;
 
   let futureAPY = 0;

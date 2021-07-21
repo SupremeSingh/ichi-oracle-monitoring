@@ -39,6 +39,7 @@ const getOneTokenAttributes = async function(tokenName) {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
       strategy: TOKENS[tokenName]['strategy'],
+      tradeUrl: TOKENS[tokenName]['tradeUrl'],
       stimulus_address: TOKENS['renfil']['address'],
       stimulus_name: 'renfil',
       stimulus_display_name: 'renFIL',
@@ -52,6 +53,7 @@ const getOneTokenAttributes = async function(tokenName) {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
       strategy: TOKENS[tokenName]['strategy'],
+      tradeUrl: TOKENS[tokenName]['tradeUrl'],
       stimulus_address: TOKENS['1inch']['address'],
       stimulus_name: '1inch',
       stimulus_display_name: '1INCH',
@@ -65,6 +67,7 @@ const getOneTokenAttributes = async function(tokenName) {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
       strategy: TOKENS[tokenName]['strategy'],
+      tradeUrl: TOKENS[tokenName]['tradeUrl'],
       stimulus_address: TOKENS['fuse']['address'],
       stimulus_name: 'fuse',
       stimulus_display_name: 'FUSE',
@@ -73,11 +76,26 @@ const getOneTokenAttributes = async function(tokenName) {
       base_name: 'onefuse',
       isV2: TOKENS[tokenName]['isV2']
     }
+  if (tokenName == 'onemph')
+    return {
+      address: TOKENS[tokenName]['address'],
+      decimals: TOKENS[tokenName]['decimals'],
+      strategy: TOKENS[tokenName]['strategy'],
+      tradeUrl: TOKENS[tokenName]['tradeUrl'],
+      stimulus_address: TOKENS['mph']['address'],
+      stimulus_name: 'mph',
+      stimulus_display_name: 'MPH',
+      stimulus_decimals: 18,
+      abi_type: 'ONETOKEN',
+      base_name: 'onemph',
+      isV2: TOKENS[tokenName]['isV2']
+    }
   if (tokenName == 'onebtc')
     return {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
       strategy: TOKENS[tokenName]['strategy'],
+      tradeUrl: TOKENS[tokenName]['tradeUrl'],
       stimulus_address: TOKENS['wbtc']['address'],
       stimulus_name: 'wbtc',
       stimulus_display_name: 'BTC',
@@ -91,6 +109,7 @@ const getOneTokenAttributes = async function(tokenName) {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
       strategy: TOKENS[tokenName]['strategy'],
+      tradeUrl: TOKENS[tokenName]['tradeUrl'],
       stimulus_address: TOKENS['vbtc']['address'],
       stimulus_name: 'vbtc',
       stimulus_display_name: 'VBTC',
@@ -104,6 +123,7 @@ const getOneTokenAttributes = async function(tokenName) {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
       strategy: TOKENS[tokenName]['strategy'],
+      tradeUrl: TOKENS[tokenName]['tradeUrl'],
       stimulus_address: TOKENS['pwing']['address'],
       stimulus_name: 'pwing',
       stimulus_display_name: 'WING',
@@ -117,6 +137,7 @@ const getOneTokenAttributes = async function(tokenName) {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
       strategy: TOKENS[tokenName]['strategy'],
+      tradeUrl: TOKENS[tokenName]['tradeUrl'],
       stimulus_address: TOKENS['weth']['address'],
       stimulus_name: 'weth',
       stimulus_display_name: 'ETH',
@@ -130,6 +151,7 @@ const getOneTokenAttributes = async function(tokenName) {
       address: TOKENS[tokenName]['address'],
       decimals: TOKENS[tokenName]['decimals'],
       strategy: TOKENS[tokenName]['strategy'],
+      tradeUrl: TOKENS[tokenName]['tradeUrl'],
       stimulus_address: TOKENS['link']['address'],
       stimulus_name: 'link',
       stimulus_display_name: 'LINK',
@@ -167,6 +189,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const stimulusDecimals = attr.stimulus_decimals;
   const baseName = attr.base_name;
   const decimals = attr.decimals;
+  const tradeUrl = attr.tradeUrl;
   const isV2 = attr.isV2;
   const oneTokenABI = await getABI(attr.abi_type);
 
@@ -536,6 +559,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         'mintingRatio = :mintingRatio, ' + 
         'treasuryBacked = :treasuryBacked, ' + 
         'chainId = :chainId, ' +
+        'tradeUrl = :tradeUrl, ' +
         'oneTokenVersion = :oneTokenVersion, ' +
         'reserveRatio = :reserveRatio',
       ExpressionAttributeValues: {
@@ -558,6 +582,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         ':mintingRatio': { N: oneToken_mintingRatio.toString() },
         ':treasuryBacked': { N: Number(oneToken_treasury_backed).toString() },
         ':chainId': { N: Number(CHAIN_ID).toString() },
+        ':tradeUrl': { S: tradeUrl },
         ':oneTokenVersion': { N: Number(oneTokenVersion).toString() },
         ':reserveRatio': { N: Number(reserveRatio).toString() }
       },

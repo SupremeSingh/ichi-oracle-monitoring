@@ -24,7 +24,8 @@ const TOKENS = {
     decimals: 18,
     displayName: "OTI",
     isOneToken: true,
-    isV2: true
+    isV2: true,
+    tradeUrl: 'https://app.1inch.io/#/1/dao/farming'
   },
   test_oneuni: { 
     address: "0x4238C45783551be0D848BbAdA853cCa6b265322f",
@@ -32,7 +33,8 @@ const TOKENS = {
     decimals: 18,
     displayName: "oneUNI",
     isOneToken: true,
-    isV2: true
+    isV2: true,
+    tradeUrl: ''
   },
   test_onefil: { 
     address: "0x50633E780803b56a0d8606a3C674993080Ea98c1",
@@ -40,7 +42,8 @@ const TOKENS = {
     decimals: 18,
     displayName: "oneFIL",
     isOneToken: true,
-    isV2: true
+    isV2: true,
+    tradeUrl: ''
   },
   test_ichi: { 
     address: "0x883Cc74d965edB77311A3f9a93649e92E2aa14ba",
@@ -112,8 +115,7 @@ LABELS[5001] = {
 LABELS[5002] = {
   name: 'OTI Deposit',
   lpName: 'OTI',
-  shortLpName: 'OTI',
-  tradeUrl: 'https://app.1inch.io/#/1/dao/farming'
+  shortLpName: 'OTI'
 }
 LABELS[5003] = {
   name: 'oneFIL Deposit',
