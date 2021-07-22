@@ -7,12 +7,14 @@ const ADDRESSES = {
   ETH: "0x0000000000000000000000000000000000000000",
   farming_V1: "0xcC50953A743B9CE382f423E37b07Efa6F9d9B000",
   farming_V2: "0x275dFE03bc036257Cd0a713EE819Dbd4529739c8",
+  uniswap_V3_positions: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
   _1inch_ICHI_LP: "0x1dcE26F543E591c27717e25294AEbbF59AD9f3a5",
 };
 
 const APIS = {
   etherscanAPI: "2T21NRQVRKS7RHZG16K5X82FAQE8E4EPR7",
   loopringAPI: "https://api3.loopring.io/api/v3/poolsStats",
+  debunk_openapi: "https://openapi.debank.com/v1/user/protocol",
   _1inchPoolAPI: "https://governance.1inch.exchange/v1.1/farming/pools",
 };
 

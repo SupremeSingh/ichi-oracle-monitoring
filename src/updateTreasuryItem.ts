@@ -1,14 +1,16 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { ethers } from 'ethers';
-import { ADDRESSES, TOKENS, CHAIN_ID } from './configMainnet';
+import { ADDRESSES, TOKENS, CHAIN_ID, APIS } from './configMainnet';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import ERC20_ABI from './abis/ERC20_ABI.json';
 import ONETOKEN_ABI from './abis/ONETOKEN_ABI.json';
 import ONELINK_ABI from './abis/oneLINK_ABI.json';
 import ONEETH_ABI from './abis/oneETH_ABI.json';
+import UNISWAP_V3_POSITIONS from './abis/UNISWAP_V3_POSITIONS_ABI.json';
 import { getPoolRecord } from './getPoolRecord';
+import axios from 'axios';
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
@@ -163,6 +165,11 @@ const getOneTokenAttributes = async function(tokenName) {
   return {};
 };
 
+const callDebunkOpenAPI = async function(address) {
+  let url = APIS.debunk_openapi + "?id=" + address + "&protocol_id=uniswap3";
+  return await axios.get(url);
+};
+
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
 export const updateTreasuryItem = async (tableName: string, itemName: string, tokenPrices: {[name: string]: number}, 
@@ -177,6 +184,12 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const farming_V2 = new ethers.Contract(
     ADDRESSES.farming_V2,
     FARMING_V2_ABI,
+    provider
+  );
+
+  const uniswap_V3_positions = new ethers.Contract(
+    ADDRESSES.uniswap_V3_positions,
+    UNISWAP_V3_POSITIONS,
     provider
   );
 
@@ -217,11 +230,36 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let strategy_balance_stimulus = 0;
   let strategy_balance_onetoken = 0;
   let strategy_balance_ichi = 0;
+  let uni_v3_positions = 0;
   if (strategyAddress !== "") {
     strategy_balance_usdc = Number(await USDC.balanceOf(strategyAddress));
     strategy_balance_stimulus = Number(await stimulusToken.balanceOf(strategyAddress));
     strategy_balance_onetoken = Number(await oneToken.balanceOf(strategyAddress));
     strategy_balance_ichi = Number(await ICHI.balanceOf(strategyAddress));
+    strategy_balance_ichi = Number(await ICHI.balanceOf(strategyAddress));
+    uni_v3_positions = Number(await uniswap_V3_positions.balanceOf(strategyAddress));
+  }
+
+  if (uni_v3_positions > 0) {
+    let all_v3_positions = await callDebunkOpenAPI(strategyAddress);
+    if (all_v3_positions.data && all_v3_positions.data.portfolio_item_list && 
+      all_v3_positions.data.portfolio_item_list.length > 0) {
+      for (let i = 0; i < all_v3_positions.data.portfolio_item_list.length; i++ ) {
+        let detail = all_v3_positions.data.portfolio_item_list[i].detail;
+        if (detail.supply_token_list && detail.supply_token_list.length > 0) {
+          for (let k = 0; k < detail.supply_token_list.length; k++ ) {
+            let supply_token = detail.supply_token_list[k];
+            if (supply_token.id.toLowerCase() === oneTokenAddress.toLowerCase()) {
+              strategy_balance_onetoken += Number(supply_token.amount) * 10 ** 18;
+            }
+            if (supply_token.id.toLowerCase() === TOKENS['usdc']['address'].toLowerCase()) {
+              strategy_balance_usdc += Number(supply_token.amount) * 10 ** 6;
+            }
+          }
+        }
+      }
+    }
+
   }
 
   let oneToken_stimulus_price = tokenPrices[stimulusTokenName.toLowerCase()];
