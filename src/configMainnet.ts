@@ -182,7 +182,7 @@ const TOKENS = {
 }
 
 const POOLS = {
-  activePools : [1001, 1004, 1005, 1008, 1009, 1010, 1011, 1012, 10001, 10002, 10003],
+  activePools : [1001, 1004, 1005, 1008, 1009, 1010, 1011, 10001, 10002, 10003],
   // activePools : [10003],
   depositPools : [1009, 1010, 1011, 1012],
   upcomingPools : [],
