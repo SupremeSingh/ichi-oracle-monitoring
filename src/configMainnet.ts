@@ -304,23 +304,27 @@ LABELS[1008] = {
 LABELS[1009] = {
   name: 'oneFIL Deposit',
   lpName: 'oneFIL',
-  shortLpName: 'oneFIL'
+  shortLpName: 'oneFIL',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xd5147bc8e386d91cc5dbe72099dac6c9b99276f5'
 }
 LABELS[1010] = {
   name: 'one1INCH Deposit',
   lpName: 'one1INCH',
-  shortLpName: 'one1INCH'
+  shortLpName: 'one1INCH',
+  tradeUrl: 'https://app.1inch.io/#/1/swap/ETH/1inch'
 }
 LABELS[1011] = {
   name: 'oneFUSE Deposit',
   lpName: 'oneFUSE',
-  shortLpName: 'oneFUSE'
+  shortLpName: 'oneFUSE',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x970B9bB2C0444F5E81e9d0eFb84C8ccdcdcAf84d'
 }
 LABELS[1012] = {
   name: 'oneMPH Deposit',
   lpName: 'oneMPH',
   shortLpName: 'oneMPH',
-  launchDate: 1625245200000
+  launchDate: 1625245200000,
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x8888801aF4d980682e47f1A9036e589479e835C5'
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID };

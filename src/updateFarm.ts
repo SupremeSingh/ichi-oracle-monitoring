@@ -36,14 +36,8 @@ const getExchangeName = async function(poolId: number) {
 };
 
 const getTradeUrl = function(poolId: number) {
-  let isDeposit = POOLS.depositPools.includes(poolId);
-  if (isDeposit) {
-    if (TOKENS[LABELS[poolId]['lpName'].toLowerCase()]['tradeUrl'])
-      return TOKENS[LABELS[poolId]['lpName'].toLowerCase()]['tradeUrl'];
-  } else {
-    if (LABELS[poolId]['tradeUrl'])
-      return LABELS[poolId]['tradeUrl'];
-  }
+  if (LABELS[poolId]['tradeUrl'])
+    return LABELS[poolId]['tradeUrl'];
   return '';
 }
 
