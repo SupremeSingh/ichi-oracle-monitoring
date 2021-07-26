@@ -150,7 +150,7 @@ const TOKENS = {
     displayName: "oneFIL",
     isOneToken: true,
     isV2: true,
-    tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x6d82017e55b1d24c53c7b33bbb770a86f2ca229d'
+    tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xd5147bc8e386d91cc5dbe72099dac6c9b99276f5'
   },
   one1inch: { 
     address: "0x853bb55c1f469902f088a629db8c8803a9be3857",
@@ -305,7 +305,7 @@ LABELS[1009] = {
   name: 'oneFIL Deposit',
   lpName: 'oneFIL',
   shortLpName: 'oneFIL',
-  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xd5147bc8e386d91cc5dbe72099dac6c9b99276f5'
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x6d82017e55b1d24c53c7b33bbb770a86f2ca229d'
 }
 LABELS[1010] = {
   name: 'one1INCH Deposit',
