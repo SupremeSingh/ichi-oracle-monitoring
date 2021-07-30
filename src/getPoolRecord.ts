@@ -453,6 +453,9 @@ async function getPoolContract(poolID, useBasic) {
         futureReward *
         tokenPrices['ichi'] / apyTVL;
         let futureAPY = futureIchiReturnUsd * 100;
+        if (apyTVL == 0) {
+          futureAPY = 0;
+        }
 
         poolRecord = {
           pool: poolID,

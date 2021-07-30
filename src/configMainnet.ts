@@ -182,7 +182,7 @@ const TOKENS = {
 }
 
 const POOLS = {
-  activePools : [1001, 1004, 1005, 1008, 1009, 1010, 1011, 10001, 10002, 10003],
+  activePools : [1001, 1004, 1005, 1008, 1009, 1010, 1011, 1012, 10001, 10002, 10003],
   // activePools : [10003],
   depositPools : [1009, 1010, 1011, 1012],
   upcomingPools : [],
@@ -323,7 +323,7 @@ LABELS[1012] = {
   name: 'oneMPH Deposit',
   lpName: 'oneMPH',
   shortLpName: 'oneMPH',
-  launchDate: 1625245200000,
+  // launchDate: 1625245200000,
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x8888801aF4d980682e47f1A9036e589479e835C5'
 }
 

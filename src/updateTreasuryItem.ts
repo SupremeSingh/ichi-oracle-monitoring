@@ -227,6 +227,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   // get balances from the strategy, if it exists
 
   let strategy_balance_usdc = 0;
+  let strategy_balance_usdc_treasury = 0;
   let strategy_balance_stimulus = 0;
   let strategy_balance_onetoken = 0;
   let strategy_balance_ichi = 0;
@@ -247,14 +248,25 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       for (let i = 0; i < all_v3_positions.data.portfolio_item_list.length; i++ ) {
         let detail = all_v3_positions.data.portfolio_item_list[i].detail;
         if (detail.supply_token_list && detail.supply_token_list.length > 0) {
+          let usdc_in_position = 0;
+          let isCollateral = false;
           for (let k = 0; k < detail.supply_token_list.length; k++ ) {
             let supply_token = detail.supply_token_list[k];
             if (supply_token.id.toLowerCase() === oneTokenAddress.toLowerCase()) {
+              isCollateral = true;
               strategy_balance_onetoken += Number(supply_token.amount) * 10 ** 18;
             }
             if (supply_token.id.toLowerCase() === TOKENS['usdc']['address'].toLowerCase()) {
-              strategy_balance_usdc += Number(supply_token.amount) * 10 ** 6;
+              usdc_in_position += Number(supply_token.amount) * 10 ** 6;
             }
+            if (supply_token.id.toLowerCase() === stimulusTokenAddress.toLowerCase()) {
+              strategy_balance_stimulus += Number(supply_token.amount) * 10 ** stimulusDecimals;
+            }
+          }
+          if (isCollateral) {
+            strategy_balance_usdc += usdc_in_position;
+          } else {
+            strategy_balance_usdc_treasury += usdc_in_position;
           }
         }
       }
@@ -448,9 +460,11 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   }
 
   let ichi_price = tokenPrices['ichi'];
+  let usdc_price = tokenPrices['usdc'];
 
   stimulusPositionsUSDValue = stimulusPositionsUSDValue +
     Number(oneToken_stimulus_price) * (strategy_balance_stimulus / 10 ** stimulusDecimals) +
+    usdc_price * (strategy_balance_usdc_treasury / 10 ** 6) +    
     ichi_price * (strategy_balance_ichi / 10 ** 9);
 
   let oneToken_stimulus_usd =
@@ -458,7 +472,6 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     ichi_price * (oneToken_ichi / 10 ** 9) +
     stimulusPositionsUSDValue;
 
-  let usdc_price = tokenPrices['usdc'];
   let oneToken_collateral_USDC_only =
     usdc_price * (oneToken_USDC / 10 ** 6);
 
@@ -517,7 +530,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       }});
     }
 
-    if (strategy_balance_stimulus > 0 || strategy_balance_ichi > 0) {
+    if (strategy_balance_stimulus > 0 || strategy_balance_ichi > 0 || strategy_balance_usdc_treasury > 0) {
       const assets = [];
       if (strategy_balance_stimulus > 0) {
         assets.push({ M: { 
@@ -529,6 +542,12 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         assets.push({ M: { 
           name: { S: "ICHI" }, 
           balance: { N: Number(strategy_balance_ichi / 10 ** 9).toString() } 
+        }});
+      }
+      if (strategy_balance_usdc_treasury > 0) {
+        assets.push({ M: { 
+          name: { S: "USDC" }, 
+          balance: { N: Number(strategy_balance_usdc_treasury / 10 ** 6).toString() } 
         }});
       }
       oneTokenStimulusPostions.push({ M: { 
