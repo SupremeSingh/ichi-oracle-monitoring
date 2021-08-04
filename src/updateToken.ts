@@ -4,6 +4,8 @@ import { ContractInterface, ethers } from 'ethers';
 import ERC20_ABI from './abis/ERC20_ABI.json';
 import ONELINK_ABI from './abis/oneLINK_ABI.json';
 import ONEETH_ABI from './abis/oneETH_ABI.json';
+import ONETOKEN_ABI from './abis/ONETOKEN_ABI.json';
+import ORACLE_ABI from './abis/ORACLE_ABI.json';
 import { ADDRESSES, TOKENS, CHAIN_ID } from './configMainnet';
 import axios from 'axios';
 import { ChainId, Token, WETH, Fetcher, Route } from '@uniswap/sdk';
@@ -65,6 +67,19 @@ async function lookUpXICHIPrice() {
   return Number(ichiPrice) * xichiRatio;
 }
 
+async function lookUpMemberTokenPrice(address: string, memberToken: string, decimals: number) {
+  const oneTokenContract = new ethers.Contract(address, ONETOKEN_ABI as ContractInterface, provider);
+
+  const assets = await oneTokenContract.assets(memberToken);
+  const oracleAddress = assets["oracle"];
+
+  const oracleContract = new ethers.Contract(oracleAddress, ORACLE_ABI as ContractInterface, provider);
+
+  const price = await oracleContract.read(address, Number(10 ** decimals).toString());
+
+  return Number(price["amountUsd"]) / 10 ** 18;
+}
+
 async function lookupStimulusUSDPrice(address: string, decimals: number) {
   const oneTokenContract = new ethers.Contract(address, ONEETH_ABI as ContractInterface, provider);
   let price = await oneTokenContract.getStimulusUSD();
@@ -83,6 +98,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
   const address = TOKENS[tokenName]['address'];
   const decimals = TOKENS[tokenName]['decimals'];
   const isOneToken = TOKENS[tokenName]['isOneToken'];
+  const parentOneToken = TOKENS[tokenName]['parentOneToken'];
   const displayName = TOKENS[tokenName]['displayName'];
   let price = 0;
   let priceChange = 0;
@@ -100,7 +116,9 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
   }
 
   console.log(tokenName);
-  if (isOneToken) {
+  if (parentOneToken && parentOneToken != "") {
+    price = await lookUpMemberTokenPrice(TOKENS[parentOneToken]['address'], address, decimals);
+  } else if (isOneToken) {
     price = 1;
   } else {
     switch(tokenName) {

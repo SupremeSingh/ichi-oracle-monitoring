@@ -35,6 +35,7 @@ const TOKENS = {
     address: "0xD5147bc8e386d91Cc5DBE72099DAC6C9b99276F5",
     decimals: 18,
     displayName: "renFIL",
+    parentOneToken: "onefil",
     isOneToken: false
   },
   bnt: {
@@ -47,6 +48,7 @@ const TOKENS = {
     address: "0x111111111117dC0aa78b770fA6A738034120C302",
     decimals: 18,
     displayName: "1INCH",
+    parentOneToken: "one1inch",
     isOneToken: false
   },
   pwing: {
@@ -95,12 +97,14 @@ const TOKENS = {
     address: "0x970B9bB2C0444F5E81e9d0eFb84C8ccdcdcAf84d",
     decimals: 18,
     displayName: "FUSE",
+    parentOneToken: "onefuse",
     isOneToken: false
   },
   mph: {
     address: "0x8888801aF4d980682e47f1A9036e589479e835C5",
     decimals: 18,
     displayName: "MPH",
+    parentOneToken: "onemph",
     isOneToken: false
   },
   oneeth: { 
