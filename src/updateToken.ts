@@ -116,9 +116,10 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
   }
 
   console.log(tokenName);
-  if (parentOneToken && parentOneToken != "") {
+/*  if (parentOneToken && parentOneToken != "") {
     price = await lookUpMemberTokenPrice(TOKENS[parentOneToken]['address'], address, decimals);
-  } else if (isOneToken) {
+  } else if (isOneToken) {*/
+  if (isOneToken) {
     price = 1;
   } else {
     switch(tokenName) {
