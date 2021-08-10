@@ -315,7 +315,7 @@ LABELS[1010] = {
   name: 'one1INCH Deposit',
   lpName: 'one1INCH',
   shortLpName: 'one1INCH',
-  tradeUrl: 'https://app.1inch.io/#/1/swap/ETH/1inch'
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x853Bb55c1f469902F088A629db8C8803A9BE3857'
 }
 LABELS[1011] = {
   name: 'oneFUSE Deposit',
