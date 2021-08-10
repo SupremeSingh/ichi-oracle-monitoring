@@ -92,6 +92,20 @@ const getOneTokenAttributes = async function(tokenName) {
       base_name: 'onemph',
       isV2: TOKENS[tokenName]['isV2']
     }
+  if (tokenName == 'oneperl')
+    return {
+      address: TOKENS[tokenName]['address'],
+      decimals: TOKENS[tokenName]['decimals'],
+      strategy: TOKENS[tokenName]['strategy'],
+      tradeUrl: TOKENS[tokenName]['tradeUrl'],
+      stimulus_address: TOKENS['perl']['address'],
+      stimulus_name: 'perl',
+      stimulus_display_name: 'PERL',
+      stimulus_decimals: 18,
+      abi_type: 'ONETOKEN',
+      base_name: 'oneperl',
+      isV2: TOKENS[tokenName]['isV2']
+    }
   if (tokenName == 'onebtc')
     return {
       address: TOKENS[tokenName]['address'],

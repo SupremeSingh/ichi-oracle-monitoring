@@ -107,6 +107,13 @@ const TOKENS = {
     parentOneToken: "onemph",
     isOneToken: false
   },
+  perl: {
+    address: "0xeca82185adCE47f39c684352B0439f030f860318",
+    decimals: 18,
+    displayName: "PERL",
+    parentOneToken: "oneperl",
+    isOneToken: false
+  },
   oneeth: { 
     address: "0xEc0d77a58528a218cBf41Fa6E1585c8D7A085868",
     strategy: "",
@@ -182,13 +189,22 @@ const TOKENS = {
     isOneToken: true,
     isV2: true,
     tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x8888801aF4d980682e47f1A9036e589479e835C5',
+  },
+  oneperl: { 
+    address: "0xD9A24485e71B9148e0Fd51F0162072099DF0dB67",
+    strategy: "0x2Dfb5348CC20218426e566C1bD7B8b3789CBa9d5",
+    decimals: 18,
+    displayName: "onePERL",
+    isOneToken: true,
+    isV2: true,
+    tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xeca82185adCE47f39c684352B0439f030f860318&use=V2',
   }
 }
 
 const POOLS = {
-  activePools : [1001, 1004, 1005, 1008, 1009, 1010, 1011, 1012, 10001, 10002, 10003],
+  activePools : [1001, 1004, 1005, 1008, 1009, 1010, 1011, 1012, 1013, 10001, 10002, 10003],
   // activePools : [10003],
-  depositPools : [1009, 1010, 1011, 1012],
+  depositPools : [1009, 1010, 1011, 1012, 1013],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
@@ -327,8 +343,14 @@ LABELS[1012] = {
   name: 'oneMPH Deposit',
   lpName: 'oneMPH',
   shortLpName: 'oneMPH',
-  // launchDate: 1625245200000,
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x8888801aF4d980682e47f1A9036e589479e835C5'
+}
+LABELS[1013] = {
+  name: 'onePERL Deposit',
+  lpName: 'onePERL',
+  shortLpName: 'onePERL',
+  // launchDate: 1625245200000,
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xeca82185adCE47f39c684352B0439f030f860318&use=V2',
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID };
