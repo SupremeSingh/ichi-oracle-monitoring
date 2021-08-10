@@ -151,7 +151,7 @@ export const updateFarm = async (tableName: string, poolId: number,
 
   // ICHI-BNT pool is not retired
 
-  if (poolId == 10003 || poolId == 1012)
+  if (poolId == 10003 || poolId == 1013)
     isRetired = false;
 
   let futureAPY = 0;
