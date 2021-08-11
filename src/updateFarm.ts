@@ -128,6 +128,10 @@ export const updateFarm = async (tableName: string, poolId: number,
       pool['tvl'] && Number(pool['tvl']) > 0) {
         lpPrice = Number(pool['tvl']) * 10 ** 18 / Number(pool['totalPoolLP']);
         lpPrice = Math.round(lpPrice * 100) / 100;
+  } else {
+    if (isDeposit) {
+      lpPrice = 1;
+    }
   }
 
   let extras = {};
