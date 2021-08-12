@@ -337,13 +337,13 @@ LABELS[1011] = {
   name: 'oneFUSE Deposit',
   lpName: 'oneFUSE',
   shortLpName: 'oneFUSE',
-  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x970B9bB2C0444F5E81e9d0eFb84C8ccdcdcAf84d'
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0xbbce03b2e7f53cadca93251ca4c928af01db6404'
 }
 LABELS[1012] = {
   name: 'oneMPH Deposit',
   lpName: 'oneMPH',
   shortLpName: 'oneMPH',
-  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x8888801aF4d980682e47f1A9036e589479e835C5'
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0xBE3F88E18BE3944FdDa830695228ADBB82fA125F'
 }
 LABELS[1013] = {
   name: 'onePERL Deposit',
