@@ -350,7 +350,7 @@ LABELS[1013] = {
   lpName: 'onePERL',
   shortLpName: 'onePERL',
   // launchDate: 1625245200000,
-  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xeca82185adCE47f39c684352B0439f030f860318&use=V2',
+  tradeUrl: '/mint?name=oneperl&collateral=USDC',
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID };
