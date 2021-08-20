@@ -83,7 +83,7 @@ const TOKENS = {
   },
   uni: {
     address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
-    decimals: 9,
+    decimals: 18,
     displayName: "UNI",
     isOneToken: false
   },
@@ -198,13 +198,22 @@ const TOKENS = {
     isOneToken: true,
     isV2: true,
     tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xeca82185adCE47f39c684352B0439f030f860318&use=V2',
+  },
+  oneuni: { 
+    address: "0x8290d7a64f25e6b5002d98367e8367c1b532b534",
+    strategy: "0x6287d56e246EEE33beAd2D7DD3a99Db693f4554C",
+    decimals: 18,
+    displayName: "oneUNI",
+    isOneToken: true,
+    isV2: true,
+    tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
   }
 }
 
 const POOLS = {
-  activePools : [1001, 1004, 1005, 1008, 1009, 1010, 1011, 1012, 1013, 10001, 10002, 10003],
+  activePools : [1001, 1004, 1005, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 10001, 10002, 10003],
   // activePools : [10003],
-  depositPools : [1009, 1010, 1011, 1012, 1013],
+  depositPools : [1009, 1010, 1011, 1012, 1013, 1014],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
@@ -349,8 +358,14 @@ LABELS[1013] = {
   name: 'onePERL Deposit',
   lpName: 'onePERL',
   shortLpName: 'onePERL',
-  // launchDate: 1625245200000,
   tradeUrl: '/mint?name=oneperl&collateral=USDC',
+}
+LABELS[1014] = {
+  name: 'oneUNI Deposit',
+  lpName: 'oneUNI',
+  shortLpName: 'oneUNI',
+  // launchDate: 1625245200000,
+  tradeUrl: '/mint?name=oneuni&collateral=USDC',
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID };
