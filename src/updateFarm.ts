@@ -27,11 +27,11 @@ const getExchangeName = async function(poolId: number) {
   if (POOLS.oneInchPools.includes(poolId))
     return "1inch";
   if (POOLS.uniPools.includes(poolId))
-    return "uni";
+    return "uni v2";
   if (POOLS.loopringPools.includes(poolId))
     return "loopring";
   if (POOLS.balancerPools.includes(poolId) || POOLS.balancerSmartPools.includes(poolId))
-    return "balancer";
+    return "balancer v1";
   return "sushi";
 };
 
