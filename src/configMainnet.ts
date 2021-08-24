@@ -358,7 +358,7 @@ LABELS[1013] = {
   name: 'onePERL Deposit',
   lpName: 'onePERL',
   shortLpName: 'onePERL',
-  tradeUrl: '/mint?name=oneperl&collateral=USDC',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0xD9A24485e71B9148e0Fd51F0162072099DF0dB67',
 }
 LABELS[1014] = {
   name: 'oneUNI Deposit',
