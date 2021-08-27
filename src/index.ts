@@ -11,6 +11,32 @@ const treasury_tableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
 const farms_tableName = process.env.FARMS_TABLE_NAME || 'farms-dev';
 const ichiPerBlock_tableName = process.env.ICHI_PER_BLOCK_TABLE_NAME || 'ichi-per-block';
 
+AWS.config.update({
+  region: process.env.AWS_REGION || 'us-east-1',
+});
+const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
+
+const getAllData = async (params) => {
+  
+  const _getAllData = async (params, startKey) => {
+    if (startKey) {
+      params.ExclusiveStartKey = startKey
+    }
+    return dbClient.scan(params).promise()
+  }
+
+  let lastEvaluatedKey = null
+  let rows = []
+  
+  do {
+    const result = await _getAllData(params, lastEvaluatedKey)
+    rows = rows.concat(result.Items)
+    lastEvaluatedKey = result.LastEvaluatedKey
+  } while (lastEvaluatedKey)
+  
+  return rows
+}
+
 export const handler = async (event: APIGatewayProxyEvent) => {
   let poolId = -1;
 
@@ -18,11 +44,6 @@ export const handler = async (event: APIGatewayProxyEvent) => {
     console.log("Received poolId from pathParameters: " + event.queryStringParameters.poolId);
     poolId = Number(event.queryStringParameters.poolId);
   }
-
-  AWS.config.update({
-    region: process.env.AWS_REGION || 'us-east-1',
-  });
-  const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
 
   if (poolId === -1) {
     await updateTokens(token_tableName);
@@ -41,9 +62,9 @@ export const handler = async (event: APIGatewayProxyEvent) => {
     ExpressionAttributeValues: { ":is_one_token": { BOOL: false } }
   };
   try {
-    const result = await dbClient.scan(params).promise();
-    for (let i = 0; i < result.Items.length; i++) {
-      let item = result.Items[i];
+    const result = await getAllData(params);
+    for (let i = 0; i < result.length; i++) {
+      let item = result[i];
       let name = item['name']['S'].toLowerCase();
       tokenPrices[name] = Number(item['price']['N'])
       tokenNames[name] = item['displayName']['S']
@@ -61,9 +82,9 @@ export const handler = async (event: APIGatewayProxyEvent) => {
     ExpressionAttributeValues: { ":is_one_token": { BOOL: true } }
   };
   try {
-    const result = await dbClient.scan(params).promise();
-    for (let i = 0; i < result.Items.length; i++) {
-      let item = result.Items[i];
+    const result = await getAllData(params);
+    for (let i = 0; i < result.length; i++) {
+      let item = result[i];
       let name = item['name']['S'].toLowerCase();
       tokenNames[name] = item['displayName']['S']
     }
@@ -77,9 +98,9 @@ export const handler = async (event: APIGatewayProxyEvent) => {
     TableName: ichiPerBlock_tableName
   };
   try {
-    const result = await dbClient.scan(params_ipb).promise();
-    for (let i = 0; i < result.Items.length; i++) {
-      let item = result.Items[i];
+    const result = await getAllData(params_ipb);
+    for (let i = 0; i < result.length; i++) {
+      let item = result[i];
       let poolId = item['poolId']['N'];
       knownIchiPerBlock[poolId] = item['ichiPerBlock']['N']
     }
