@@ -31,55 +31,36 @@ const getABI = async function(abiType) {
 };
 
 const getOneTokenAttributes = async function(tokenName) {
-  if (tokenName == 'oti')
-    return {
-      address: TOKENS[tokenName]['address'],
-      decimals: TOKENS[tokenName]['decimals'],
-      strategy: TOKENS[tokenName]['strategy'],
-      tradeUrl: TOKENS[tokenName]['tradeUrl'],
-      stimulus_address: TOKENS['token18']['address'],
-      stimulus_name: 'token18',
-      stimulus_display_name: 'Token18',
-      stimulus_decimals: 18,
-      collateral_name: 'token6',
-      abi_type: 'ONETOKEN',
-      base_name: 'oti',
-      display_name: 'OTI',
-      isV2: TOKENS[tokenName]['isV2']
-    }
-  if (tokenName == 'test_oneuni')
-    return {
-      address: TOKENS[tokenName]['address'],
-      decimals: TOKENS[tokenName]['decimals'],
-      strategy: TOKENS[tokenName]['strategy'],
-      tradeUrl: TOKENS[tokenName]['tradeUrl'],
-      stimulus_address: TOKENS['test_uni']['address'],
-      stimulus_name: 'test_uni',
-      stimulus_display_name: 'UNI',
-      stimulus_decimals: 18,
-      collateral_name: 'test_usdc',
-      abi_type: 'ONETOKEN',
-      base_name: 'test_oneuni',
-      display_name: 'oneUNI',
-      isV2: TOKENS[tokenName]['isV2']
-    }
-  if (tokenName == 'test_onefil')
-    return {
-      address: TOKENS[tokenName]['address'],
-      decimals: TOKENS[tokenName]['decimals'],
-      strategy: TOKENS[tokenName]['strategy'],
-      tradeUrl: TOKENS[tokenName]['tradeUrl'],
-      stimulus_address: TOKENS['test_renfil']['address'],
-      stimulus_name: 'test_renfil',
-      stimulus_display_name: 'renFIL',
-      stimulus_decimals: 18,
-      collateral_name: 'test_usdc',
-      abi_type: 'ONETOKEN',
-      base_name: 'test_onefil',
-      display_name: 'oneFIL',
-      isV2: TOKENS[tokenName]['isV2']
-    }
-  return {};
+  let template = {
+    address: TOKENS[tokenName]['address'],
+    decimals: TOKENS[tokenName]['decimals'],
+    strategy: TOKENS[tokenName]['strategy'],
+    tradeUrl: TOKENS[tokenName]['tradeUrl'],
+    stimulus_address: '',
+    stimulus_name: TOKENS[tokenName]['stimulusName'],
+    stimulus_display_name: TOKENS[tokenName]['stimulusDisplayName'],
+    stimulus_decimals: 18,
+    abi_type: 'ONETOKEN',
+    collateral_name: 'test_usdc',
+    base_name: tokenName.toLowerCase(),
+    display_name: tokenName,
+    isV2: TOKENS[tokenName]['isV2']
+  }
+
+  if (tokenName == 'oti') {
+    template.display_name = 'OTI',
+    template.collateral_name = 'token6'
+  }
+  if (tokenName == 'test_oneuni') {
+    template.display_name = 'oneUNI'
+  }
+  if (tokenName == 'test_onefil') {
+    template.display_name = 'oneFIL'
+  }
+
+  template.stimulus_address = TOKENS[template.stimulus_name]['address'];
+
+  return template;
 };
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a

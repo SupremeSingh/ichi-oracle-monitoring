@@ -36,161 +36,46 @@ const getABI = async function(abiType) {
 };
 
 const getOneTokenAttributes = async function(tokenName) {
-  if (tokenName == 'onefil')
-    return {
-      address: TOKENS[tokenName]['address'],
-      decimals: TOKENS[tokenName]['decimals'],
-      strategy: TOKENS[tokenName]['strategy'],
-      tradeUrl: TOKENS[tokenName]['tradeUrl'],
-      stimulus_address: TOKENS['renfil']['address'],
-      stimulus_name: 'renfil',
-      stimulus_display_name: 'renFIL',
-      stimulus_decimals: 18,
-      abi_type: 'ONETOKEN',
-      base_name: 'onefil',
-      isV2: TOKENS[tokenName]['isV2']
-    }
-  if (tokenName == 'one1inch')
-    return {
-      address: TOKENS[tokenName]['address'],
-      decimals: TOKENS[tokenName]['decimals'],
-      strategy: TOKENS[tokenName]['strategy'],
-      tradeUrl: TOKENS[tokenName]['tradeUrl'],
-      stimulus_address: TOKENS['1inch']['address'],
-      stimulus_name: '1inch',
-      stimulus_display_name: '1INCH',
-      stimulus_decimals: 18,
-      abi_type: 'ONETOKEN',
-      base_name: 'one1inch',
-      isV2: TOKENS[tokenName]['isV2']
-    }
-  if (tokenName == 'onefuse')
-    return {
-      address: TOKENS[tokenName]['address'],
-      decimals: TOKENS[tokenName]['decimals'],
-      strategy: TOKENS[tokenName]['strategy'],
-      tradeUrl: TOKENS[tokenName]['tradeUrl'],
-      stimulus_address: TOKENS['fuse']['address'],
-      stimulus_name: 'fuse',
-      stimulus_display_name: 'FUSE',
-      stimulus_decimals: 18,
-      abi_type: 'ONETOKEN',
-      base_name: 'onefuse',
-      isV2: TOKENS[tokenName]['isV2']
-    }
-  if (tokenName == 'onemph')
-    return {
-      address: TOKENS[tokenName]['address'],
-      decimals: TOKENS[tokenName]['decimals'],
-      strategy: TOKENS[tokenName]['strategy'],
-      tradeUrl: TOKENS[tokenName]['tradeUrl'],
-      stimulus_address: TOKENS['mph']['address'],
-      stimulus_name: 'mph',
-      stimulus_display_name: 'MPH',
-      stimulus_decimals: 18,
-      abi_type: 'ONETOKEN',
-      base_name: 'onemph',
-      isV2: TOKENS[tokenName]['isV2']
-    }
-  if (tokenName == 'oneperl')
-    return {
-      address: TOKENS[tokenName]['address'],
-      decimals: TOKENS[tokenName]['decimals'],
-      strategy: TOKENS[tokenName]['strategy'],
-      tradeUrl: TOKENS[tokenName]['tradeUrl'],
-      stimulus_address: TOKENS['perl']['address'],
-      stimulus_name: 'perl',
-      stimulus_display_name: 'PERL',
-      stimulus_decimals: 18,
-      abi_type: 'ONETOKEN',
-      base_name: 'oneperl',
-      isV2: TOKENS[tokenName]['isV2']
-    }
-  if (tokenName == 'oneuni')
-    return {
-      address: TOKENS[tokenName]['address'],
-      decimals: TOKENS[tokenName]['decimals'],
-      strategy: TOKENS[tokenName]['strategy'],
-      tradeUrl: TOKENS[tokenName]['tradeUrl'],
-      stimulus_address: TOKENS['uni']['address'],
-      stimulus_name: 'uni',
-      stimulus_display_name: 'UNI',
-      stimulus_decimals: 18,
-      abi_type: 'ONETOKEN',
-      base_name: 'oneuni',
-      isV2: TOKENS[tokenName]['isV2']
-    }
-  if (tokenName == 'onebtc')
-    return {
-      address: TOKENS[tokenName]['address'],
-      decimals: TOKENS[tokenName]['decimals'],
-      strategy: TOKENS[tokenName]['strategy'],
-      tradeUrl: TOKENS[tokenName]['tradeUrl'],
-      stimulus_address: TOKENS['wbtc']['address'],
-      stimulus_name: 'wbtc',
-      stimulus_display_name: 'BTC',
-      stimulus_decimals: 8,
-      abi_type: 'ONELINK',
-      base_name: 'btc',
-      isV2: TOKENS[tokenName]['isV2']
-    }
-  if (tokenName == 'onevbtc')
-    return {
-      address: TOKENS[tokenName]['address'],
-      decimals: TOKENS[tokenName]['decimals'],
-      strategy: TOKENS[tokenName]['strategy'],
-      tradeUrl: TOKENS[tokenName]['tradeUrl'],
-      stimulus_address: TOKENS['vbtc']['address'],
-      stimulus_name: 'vbtc',
-      stimulus_display_name: 'VBTC',
-      stimulus_decimals: 18,
-      abi_type: 'ONEETH',
-      base_name: 'vbtc',
-      isV2: TOKENS[tokenName]['isV2']
-    }
-  if (tokenName == 'onewing')
-    return {
-      address: TOKENS[tokenName]['address'],
-      decimals: TOKENS[tokenName]['decimals'],
-      strategy: TOKENS[tokenName]['strategy'],
-      tradeUrl: TOKENS[tokenName]['tradeUrl'],
-      stimulus_address: TOKENS['pwing']['address'],
-      stimulus_name: 'pwing',
-      stimulus_display_name: 'WING',
-      stimulus_decimals: 9,
-      abi_type: 'ONEETH',
-      base_name: 'wing',
-      isV2: TOKENS[tokenName]['isV2']
-    }
-  if (tokenName == 'oneeth')
-    return {
-      address: TOKENS[tokenName]['address'],
-      decimals: TOKENS[tokenName]['decimals'],
-      strategy: TOKENS[tokenName]['strategy'],
-      tradeUrl: TOKENS[tokenName]['tradeUrl'],
-      stimulus_address: TOKENS['weth']['address'],
-      stimulus_name: 'weth',
-      stimulus_display_name: 'ETH',
-      stimulus_decimals: 18,
-      abi_type: 'ONEETH',
-      base_name: 'eth',
-      isV2: TOKENS[tokenName]['isV2']
-    }
-  if (tokenName == 'onelink')
-    return {
-      address: TOKENS[tokenName]['address'],
-      decimals: TOKENS[tokenName]['decimals'],
-      strategy: TOKENS[tokenName]['strategy'],
-      tradeUrl: TOKENS[tokenName]['tradeUrl'],
-      stimulus_address: TOKENS['link']['address'],
-      stimulus_name: 'link',
-      stimulus_display_name: 'LINK',
-      stimulus_decimals: 18,
-      abi_type: 'ONELINK',
-      base_name: 'link',
-      isV2: TOKENS[tokenName]['isV2']
-    }
-  return {};
+  let template = {
+    address: TOKENS[tokenName]['address'],
+    decimals: TOKENS[tokenName]['decimals'],
+    strategy: TOKENS[tokenName]['strategy'],
+    tradeUrl: TOKENS[tokenName]['tradeUrl'],
+    stimulus_address: '',
+    stimulus_name: TOKENS[tokenName]['stimulusName'],
+    stimulus_display_name: TOKENS[tokenName]['stimulusDisplayName'],
+    stimulus_decimals: 18,
+    abi_type: 'ONETOKEN',
+    base_name: tokenName.toLowerCase(),
+    isV2: TOKENS[tokenName]['isV2']
+  }
+
+  if (tokenName == 'onebtc') {
+    template.stimulus_decimals = 8,
+    template.abi_type = 'ONELINK',
+    template.base_name = 'btc'
+  }
+  if (tokenName == 'onevbtc') {
+    template.abi_type = 'ONEETH',
+    template.base_name = 'vbtc'
+  }
+  if (tokenName == 'onewing') {
+    template.stimulus_decimals = 9,
+    template.abi_type = 'ONEETH',
+    template.base_name = 'wing'
+  }
+  if (tokenName == 'oneeth') {
+    template.abi_type = 'ONEETH',
+    template.base_name = 'eth'
+  }
+  if (tokenName == 'onelink') {
+    template.abi_type = 'ONELINK',
+    template.base_name = 'link'
+  }
+
+  template.stimulus_address = TOKENS[template.stimulus_name]['address'];
+
+  return template;
 };
 
 const callDebunkOpenAPI = async function(address) {

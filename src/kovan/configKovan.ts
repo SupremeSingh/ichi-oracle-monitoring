@@ -25,6 +25,8 @@ const TOKENS = {
     displayName: "OTI",
     isOneToken: true,
     isV2: true,
+    stimulusName: 'token18',
+    stimulusDisplayName: 'Token18',
     tradeUrl: 'https://app.1inch.io/#/1/dao/farming'
   },
   test_oneuni: { 
@@ -34,6 +36,8 @@ const TOKENS = {
     displayName: "oneUNI",
     isOneToken: true,
     isV2: true,
+    stimulusName: 'test_uni',
+    stimulusDisplayName: 'UNI',
     tradeUrl: ''
   },
   test_onefil: { 
@@ -43,6 +47,8 @@ const TOKENS = {
     displayName: "oneFIL",
     isOneToken: true,
     isV2: true,
+    stimulusName: 'test_renfil',
+    stimulusDisplayName: 'renFIL',
     tradeUrl: ''
   },
   test_ichi: { 

@@ -114,12 +114,15 @@ const TOKENS = {
     parentOneToken: "oneperl",
     isOneToken: false
   },
+
   oneeth: { 
     address: "0xEc0d77a58528a218cBf41Fa6E1585c8D7A085868",
     strategy: "",
     decimals: 9,
     displayName: "oneETH",
     isOneToken: true,
+    stimulusName: 'weth',
+    stimulusDisplayName: 'ETH',
     isV2: false
   },
   onebtc: { 
@@ -128,6 +131,8 @@ const TOKENS = {
     decimals: 9,
     displayName: "oneBTC",
     isOneToken: true,
+    stimulusName: 'wbtc',
+    stimulusDisplayName: 'BTC',
     isV2: false
   },
   onevbtc: { 
@@ -136,6 +141,8 @@ const TOKENS = {
     decimals: 9,
     displayName: "oneVBTC",
     isOneToken: true,
+    stimulusName: 'vbtc',
+    stimulusDisplayName: 'VBTC',
     isV2: false
   },
   onewing: { 
@@ -144,6 +151,8 @@ const TOKENS = {
     decimals: 9,
     displayName: "oneWING",
     isOneToken: true,
+    stimulusName: 'pwing',
+    stimulusDisplayName: 'WING',
     isV2: false
   },
   onelink: { 
@@ -152,6 +161,8 @@ const TOKENS = {
     decimals: 9,
     displayName: "oneLINK",
     isOneToken: true,
+    stimulusName: 'link',
+    stimulusDisplayName: 'LINK',
     isV2: false
   },
   onefil: { 
@@ -161,6 +172,8 @@ const TOKENS = {
     displayName: "oneFIL",
     isOneToken: true,
     isV2: true,
+    stimulusName: 'renfil',
+    stimulusDisplayName: 'renFIL',
     tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xd5147bc8e386d91cc5dbe72099dac6c9b99276f5'
   },
   one1inch: { 
@@ -170,6 +183,8 @@ const TOKENS = {
     displayName: "one1INCH",
     isOneToken: true,
     isV2: true,
+    stimulusName: '1inch',
+    stimulusDisplayName: '1INCH',
     tradeUrl: 'https://app.1inch.io/#/1/swap/ETH/1inch'
   },
   onefuse: { 
@@ -179,6 +194,8 @@ const TOKENS = {
     displayName: "oneFUSE",
     isOneToken: true,
     isV2: true,
+    stimulusName: 'fuse',
+    stimulusDisplayName: 'FUSE',
     tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x970B9bB2C0444F5E81e9d0eFb84C8ccdcdcAf84d',
   },
   onemph: { 
@@ -188,6 +205,8 @@ const TOKENS = {
     displayName: "oneMPH",
     isOneToken: true,
     isV2: true,
+    stimulusName: 'mph',
+    stimulusDisplayName: 'MPH',
     tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x8888801aF4d980682e47f1A9036e589479e835C5',
   },
   oneperl: { 
@@ -197,6 +216,8 @@ const TOKENS = {
     displayName: "onePERL",
     isOneToken: true,
     isV2: true,
+    stimulusName: 'perl',
+    stimulusDisplayName: 'PERL',
     tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xeca82185adCE47f39c684352B0439f030f860318&use=V2',
   },
   oneuni: { 
@@ -206,6 +227,8 @@ const TOKENS = {
     displayName: "oneUNI",
     isOneToken: true,
     isV2: true,
+    stimulusName: 'uni',
+    stimulusDisplayName: 'UNI',
     tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
   }
 }
