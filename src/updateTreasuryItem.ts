@@ -511,6 +511,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       },
       UpdateExpression: 'set ' + 
         'baseName = :baseName, ' + 
+        'address = :address, ' + 
+        'strategy = :strategy, ' + 
         'displayName = :displayName, ' + 
         'usdc = :usdc, ' + 
         'circulation = :circulation, ' + 
@@ -534,6 +536,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         'reserveRatio = :reserveRatio',
       ExpressionAttributeValues: {
         ':baseName': { S: baseName },
+        ':address': { S: oneTokenAddress },
+        ':strategy': { S: strategyAddress },
         ':displayName': { S: itemName },
         ':usdc': { N: ((oneToken_USDC + strategy_balance_usdc) / 10 ** 6).toString() },
         ':circulation': { N: (Number(oneToken_SUPPLY) / 10 ** decimals).toString() },
