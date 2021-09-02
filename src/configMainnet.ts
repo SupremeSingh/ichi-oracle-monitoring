@@ -234,7 +234,7 @@ const TOKENS = {
 }
 
 const POOLS = {
-  activePools : [1001, 1004, 1005, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 10001, 10002, 10003],
+  activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 10001, 10003],
   // activePools : [10003],
   depositPools : [1009, 1010, 1011, 1012, 1013, 1014],
   upcomingPools : [],
@@ -294,14 +294,14 @@ LABELS[10001] = {
   externalText: 'Earn $ICHI & $1INCH',
   externalButton: '1INCH'
 }
-LABELS[10002] = {
+/* LABELS[10002] = {
   name: 'ICHI-ETH',
   lpName: '1LP-1INCH-ICHI',
   shortLpName: '1LP-1INCH-ICHI',
   externalUrl: 'https://exchange.loopring.io/pool',
   externalText: 'Earn $ICHI',
   externalButton: 'Loopring'
-}
+} */
 LABELS[10003] = {
   name: 'ICHI-BNT',
   lpName: 'ICHI',
@@ -347,12 +347,12 @@ LABELS[1005] = {
   shortLpName: 'ICHIBNT',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48&outputCurrency=0x96855edefc3ad2d9efd0421f301d1324e1e93a52'
 } */
-LABELS[1008] = {
+/* LABELS[1008] = {
   name: '67/33 ICHI-LINK',
   lpName: 'BPT (Balancer Pool Token) ICHI-LINK',
   shortLpName: 'BPT ICHI-LINK',
   tradeUrl: 'https://pools.balancer.exchange/#/pool/0x960c437E2A9A9a25e0FEDC0C8A5899827B10F63c'
-}
+} */
 LABELS[1009] = {
   name: 'oneFIL Deposit',
   lpName: 'oneFIL',
