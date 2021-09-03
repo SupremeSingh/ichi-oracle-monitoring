@@ -5,6 +5,7 @@ import { ADDRESSES, TOKENS, CHAIN_ID, APIS } from './configMainnet';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import ERC20_ABI from './abis/ERC20_ABI.json';
+import BMI_STAKING_ABI from './abis/BMI_STAKING_ABI.json';
 import ONETOKEN_ABI from './abis/ONETOKEN_ABI.json';
 import ONELINK_ABI from './abis/oneLINK_ABI.json';
 import ONEETH_ABI from './abis/oneETH_ABI.json';
@@ -124,6 +125,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const USDC = new ethers.Contract(TOKENS['usdc']['address'], ERC20_ABI, provider);
   const oneToken = new ethers.Contract(oneTokenAddress, oneTokenABI, provider);
   const ICHIBPT = new ethers.Contract(ADDRESSES.ICHIBPT, ERC20_ABI, provider);
+  const BMI_STAKING = new ethers.Contract(ADDRESSES.bmi_staking, BMI_STAKING_ABI, provider);
 
   const oneToken_BPT_Farming_Position = await farming_V2.userInfo(
     7,
@@ -144,6 +146,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let strategy_balance_stimulus = 0;
   let strategy_balance_onetoken = 0;
   let strategy_balance_ichi = 0;
+  let strategy_balance_bmi_usdt = 0;
   let uni_v3_positions = 0;
   if (strategyAddress !== "") {
     strategy_balance_usdc = Number(await USDC.balanceOf(strategyAddress));
@@ -151,6 +154,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     strategy_balance_onetoken = Number(await oneToken.balanceOf(strategyAddress));
     strategy_balance_ichi = Number(await ICHI.balanceOf(strategyAddress));
     strategy_balance_ichi = Number(await ICHI.balanceOf(strategyAddress));
+    strategy_balance_bmi_usdt = Number(await BMI_STAKING.totalStaked(strategyAddress));
     uni_v3_positions = Number(await uniswap_V3_positions.balanceOf(strategyAddress));
   }
 
@@ -374,6 +378,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
   let ichi_price = tokenPrices['ichi'];
   let usdc_price = tokenPrices['usdc'];
+  let usdt_price = 1;
 
   stimulusPositionsUSDValue = stimulusPositionsUSDValue +
     Number(oneToken_stimulus_price) * (strategy_balance_stimulus / 10 ** stimulusDecimals) +
@@ -390,7 +395,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
   collateralPositionsUSDValue = collateralPositionsUSDValue +
     strategy_balance_onetoken / 10 ** 18 +
-    usdc_price * (strategy_balance_usdc / 10 ** 6);
+    usdc_price * (strategy_balance_usdc / 10 ** 6) +
+    usdt_price * (strategy_balance_bmi_usdt / 10 ** 18);
 
   let oneToken_collateral_only = oneToken_collateral_USDC_only +
     collateralPositionsUSDValue +
@@ -411,8 +417,10 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       oneToken_collateral_list.push({ M: { name: { S: "ICHIBPT" }, balance: { N: (Number(oneToken_ICHIBPT / 10 ** 18)).toString() } }});
     }
 
-    if (strategy_balance_usdc > 0 || strategy_balance_onetoken > 0) {
-      const assets = [];
+    if (strategy_balance_usdc > 0 
+      || strategy_balance_onetoken > 0
+      || strategy_balance_bmi_usdt > 0) {
+          const assets = [];
       if (strategy_balance_usdc > 0) {
         assets.push({ M: { 
           name: { S: "USDC" }, 
@@ -423,6 +431,12 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         assets.push({ M: { 
           name: { S: TOKENS[itemName.toLowerCase()]['displayName'] }, 
           balance: { N: (Number(strategy_balance_onetoken / 10 ** 18)).toString() } 
+        }});
+      }
+      if (strategy_balance_bmi_usdt > 0) {
+        assets.push({ M: { 
+          name: { S: "bmiICHICover" }, 
+          balance: { N: Number(strategy_balance_bmi_usdt / 10 ** 18).toString() } 
         }});
       }
       oneTokenCollateralPostions.push({ M: { 
@@ -476,11 +490,14 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       reserveRatio = oneToken_stimulus_usd / oneToken_treasury_backed;
     }
 
+    let totalUSDC = (oneToken_USDC + strategy_balance_usdc) / 10 ** 6 +
+      strategy_balance_bmi_usdt / 10 ** 18;
+
     let res = {
       name: itemName.toLowerCase(),
       displayName: itemName,
       base: baseName,
-      usdc: (oneToken_USDC + strategy_balance_usdc) / 10 ** 6,
+      usdc: totalUSDC,
       circulation: Number(oneToken_SUPPLY) / 10 ** decimals,
       collateral: oneToken_collateral_list,
       collateralPositions: oneTokenCollateralPostions,
@@ -539,7 +556,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         ':address': { S: oneTokenAddress },
         ':strategy': { S: strategyAddress },
         ':displayName': { S: itemName },
-        ':usdc': { N: ((oneToken_USDC + strategy_balance_usdc) / 10 ** 6).toString() },
+        ':usdc': { N: Number(totalUSDC).toString() },
         ':circulation': { N: (Number(oneToken_SUPPLY) / 10 ** decimals).toString() },
         ':collateral' : { L: oneToken_collateral_list },
         ':collateralPositions' : { L: oneTokenCollateralPostions },
