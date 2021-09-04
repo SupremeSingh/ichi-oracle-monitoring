@@ -523,6 +523,8 @@ async function getPoolContract(poolID, useBasic) {
   
         let farmTVL = _1inchICHI_pool.liquidity_locked;
         let dailyAPY = (_1inchICHI_pool.apys[0].value + _1inchICHI_pool.apys[1].value) / 365;
+
+        dailyAPY = 0; // hardcoded because the pool has ended
   
         let poolRecord = {
           pool: poolID,
