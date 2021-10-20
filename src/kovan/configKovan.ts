@@ -12,6 +12,7 @@ const POOLS = {
 //  activePools : [5001,5002,5003],
   activePools : [5000,5001,5002,5003],
   depositPools : [5002,5003],
+  activeVaults: [5004],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : []
@@ -127,6 +128,11 @@ LABELS[5003] = {
   name: 'oneFIL Deposit',
   lpName: 'oneFIL',
   shortLpName: 'oneFIL'
+}
+LABELS[5004] = {
+  name: 'oneFIL Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP'
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID };

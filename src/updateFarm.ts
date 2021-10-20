@@ -116,6 +116,7 @@ export const updateFarm = async (tableName: string, poolId: number,
   let isMigrating = POOLS.migratingPools.includes(poolId);
   let isRetired = POOLS.retiredPools.includes(poolId);
   let isDeposit = POOLS.depositPools.includes(poolId);
+  let isVault = POOLS.activeVaults.includes(poolId);
 
   let exchange = await getExchangeName(poolId);
 
@@ -135,14 +136,16 @@ export const updateFarm = async (tableName: string, poolId: number,
   }
 
   let extras = {};
-  if (LABELS[poolId]['externalUrl']) {
-    extras['externalUrl'] = { S: LABELS[poolId]['externalUrl'] }
-  }
-  if (LABELS[poolId]['externalText']) {
-    extras['externalText'] = { S: LABELS[poolId]['externalText'] }
-  }
-  if (LABELS[poolId]['externalButton']) {
-    extras['externalButton'] = { S: LABELS[poolId]['externalButton'] }
+  if (LABELS[poolId]) {
+    if (LABELS[poolId]['externalUrl']) {
+      extras['externalUrl'] = { S: LABELS[poolId]['externalUrl'] }
+    }
+    if (LABELS[poolId]['externalText']) {
+      extras['externalText'] = { S: LABELS[poolId]['externalText'] }
+    }
+    if (LABELS[poolId]['externalButton']) {
+      extras['externalButton'] = { S: LABELS[poolId]['externalButton'] }
+    }
   }
   const tradeUrl = getTradeUrl(poolId);
   if (tradeUrl != '') {
@@ -204,6 +207,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       'isRetired = :isRetired, ' + 
       'isIchiPool = :isIchiPool, ' + 
       'isDeposit = :isDeposit, ' + 
+      'isPosition = :isPosition, ' + 
       'chainId = :chainId, ' +
       'farmName = :farmName', 
     ExpressionAttributeValues: {
@@ -233,6 +237,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       ':isRetired': { BOOL: isRetired },
       ':isIchiPool': { BOOL: isIchiPool },
       ':isDeposit': { BOOL: isDeposit },
+      ':isPosition': { BOOL: isVault },
       ':chainId': { N: Number(CHAIN_ID).toString() },
       ':farmName': { S: farmName }
     },

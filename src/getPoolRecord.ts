@@ -7,6 +7,7 @@ import BALANCER_ABI from './abis/BALANCER_ABI.json';
 import BALANCER_SMART_LP_ABI from './abis/BALANCER_SMART_LP_ABI.json';
 import PAIR_ABI from './abis/PAIR_ABI.json';
 import ICHI_BNT_ABI from './abis/ICHI_BNT_ABI.json';
+import VAULT_ABI from './abis/ICHI_VAULT_ABI.json';
 import axios from 'axios';
 
 const infuraId = process.env.INFURA_ID;
@@ -46,6 +47,7 @@ async function getPoolContract(poolID, useBasic) {
     let isBalancerPool = POOLS.balancerPools.includes(poolID);
     let isBancorPool = POOLS.bancorPools.includes(poolID);
     let isBalancerSmartPool = POOLS.balancerSmartPools.includes(poolID);
+    let isVault = POOLS.activeVaults.includes(poolID);
   
     let poolToken = '';
     if (poolID < 1000 || poolID >= 10000) {
@@ -98,7 +100,14 @@ async function getPoolContract(poolID, useBasic) {
             provider
         );
         return poolContract;
-    } else {
+    } else if (isVault) {
+      const poolContract = new ethers.Contract(
+        poolToken,
+        VAULT_ABI,
+        provider
+      );
+      return poolContract;
+  } else {
         const poolContract = new ethers.Contract(
           poolToken,
           PAIR_ABI,
@@ -213,6 +222,7 @@ async function getPoolContract(poolID, useBasic) {
   async function getPoolReserves(poolID, poolContract) {
   
     let isBancorPool = POOLS.bancorPools.includes(poolID);
+    let isVault = POOLS.activeVaults.includes(poolID);
   
     if (isBancorPool) {
       // exception for Bancor pool, getting proxy (pool owner) contract
@@ -220,6 +230,13 @@ async function getPoolContract(poolID, useBasic) {
       return {
         _reserve0: Number(reserveBalances[0]),
         _reserve1: Number(reserveBalances[1])
+      }
+    } else if (isVault) {
+      // vaults
+      let reserveBalances = await poolContract.getTotalAmounts();
+      return {
+        _reserve0: Number(reserveBalances.total0),
+        _reserve1: Number(reserveBalances.total1)
       }
     } else {
       // everything else

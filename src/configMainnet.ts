@@ -245,6 +245,7 @@ const POOLS = {
   activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 10001, 10003],
   // activePools : [10003],
   depositPools : [1009, 1010, 1011, 1012, 1013, 1014],
+  activeVaults: [],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],

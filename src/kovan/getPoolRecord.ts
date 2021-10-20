@@ -3,6 +3,7 @@ import { ADDRESSES, TOKENS, POOLS } from './configKovan';
 import FARMING_V2_ABI from './../abis/FARMING_V2_ABI.json';
 import ERC20_ABI from './../abis/ERC20_ABI.json';
 import PAIR_ABI from './../abis/PAIR_ABI.json';
+import VAULT_ABI from './../abis/ICHI_VAULT_ABI.json';
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
@@ -20,11 +21,17 @@ const farming_V2 = new ethers.Contract(
     provider
 );
 
-async function getPoolContract(poolID) {
+async function getPoolContract(poolID, isVault) {
   const poolToken = await farming_V2.lpToken(poolID);
+
+  let ABI = PAIR_ABI;
+  if (isVault) {
+    ABI = VAULT_ABI;
+  }
+
   const poolContract = new ethers.Contract(
     poolToken,
-    PAIR_ABI,
+    ABI,
     provider
   );
   return poolContract;
@@ -82,11 +89,19 @@ async function getPoolTokens(poolContract) {
   }
 }
   
-async function getPoolReserves(poolContract) {
-  let reserveBalances = await poolContract.getReserves();
-  return {
-    _reserve0: Number(reserveBalances._reserve0),
-    _reserve1: Number(reserveBalances._reserve1)
+async function getPoolReserves(poolContract, isVault) {
+  if (isVault) {
+    let reserveBalances = await poolContract.getTotalAmounts();
+    return {
+      _reserve0: Number(reserveBalances.total0),
+      _reserve1: Number(reserveBalances.total1)
+    }
+  } else {
+    let reserveBalances = await poolContract.getReserves();
+    return {
+      _reserve0: Number(reserveBalances._reserve0),
+      _reserve1: Number(reserveBalances._reserve1)
+    }
   }
 }
   
@@ -113,7 +128,9 @@ export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
   reward = Number(ichiPerBlock_V2) * poolAllocPoint / totalAllocPoint;
   inTheFarmLP = await farming_V2.getLPSupply(adjusterPoolId);
 
-  const poolContract = await getPoolContract(adjusterPoolId);
+  let isVault = POOLS.activeVaults.includes(poolID);
+
+  const poolContract = await getPoolContract(adjusterPoolId, isVault);
 
   let poolRecord = {};
 
@@ -165,7 +182,7 @@ export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
     token1Decimals = token1data.decimals;
   
     let reserve = {};
-    reserve = await getPoolReserves(poolContract);
+    reserve = await getPoolReserves(poolContract, isVault);
   
     let reserve0 = reserve['_reserve0'];
     let reserve1 = reserve['_reserve1'];
