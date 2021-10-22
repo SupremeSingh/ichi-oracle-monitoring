@@ -122,6 +122,13 @@ const TOKENS = {
     parentOneToken: "oneperl",
     isOneToken: false
   },
+  dodo: {
+    address: "0x43Dfc4159D86F3A37A5A4B3D4580b888ad7d4DDd",
+    decimals: 18,
+    displayName: "DODO",
+    parentOneToken: "onedodo",
+    isOneToken: false
+  },
 
   oneeth: { 
     address: "0xEc0d77a58528a218cBf41Fa6E1585c8D7A085868",
@@ -238,6 +245,17 @@ const TOKENS = {
     stimulusName: 'uni',
     stimulusDisplayName: 'UNI',
     tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
+  },
+  onedodo: { 
+    address: "0xcA37530E7c5968627BE470081d1C993eb1dEaf90",
+    strategy: "0x1faac4842054F2dB2DdDFC8152D7C259d5102c13",
+    decimals: 18,
+    displayName: "oneDODO",
+    isOneToken: true,
+    isV2: true,
+    stimulusName: 'dodo',
+    stimulusDisplayName: 'DODO',
+    tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x43Dfc4159D86F3A37A5A4B3D4580b888ad7d4DDd',
   }
 }
 
