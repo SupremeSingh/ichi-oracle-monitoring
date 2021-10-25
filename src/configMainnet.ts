@@ -255,7 +255,7 @@ const TOKENS = {
     isV2: true,
     stimulusName: 'dodo',
     stimulusDisplayName: 'DODO',
-    tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x43Dfc4159D86F3A37A5A4B3D4580b888ad7d4DDd',
+    tradeUrl: 'https://app.dodoex.io/exchange/USDC-DODO?network=mainnet',
   }
 }
 
