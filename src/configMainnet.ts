@@ -11,7 +11,8 @@ const ADDRESSES = {
   _1inch_ICHI_LP: "0x1dcE26F543E591c27717e25294AEbbF59AD9f3a5",
   _1inch_staking: "0x0F85A912448279111694F4Ba4F85dC641c54b594",
   st1inch: "0xA0446D8804611944F1B527eCD37d7dcbE442caba",
-  bmi_staking: "0x6771Fd8968488Eb590Dff1730FE099c0eFA415bF"  
+  bmi_staking: "0x6771Fd8968488Eb590Dff1730FE099c0eFA415bF",
+  risk_harbor: "0x39c9c00B3651767A7BFdCE3Fd3d714C937E07587"
 };
 
 const DEBUNK_PROTOCOLS = {
@@ -133,6 +134,7 @@ const TOKENS = {
   oneeth: { 
     address: "0xEc0d77a58528a218cBf41Fa6E1585c8D7A085868",
     strategy: "",
+    aux_strategy: "",
     decimals: 9,
     displayName: "oneETH",
     isOneToken: true,
@@ -143,6 +145,7 @@ const TOKENS = {
   onebtc: { 
     address: "0xC88F47067dB2E25851317A2FDaE73a22c0777c37",
     strategy: "",
+    aux_strategy: "",
     decimals: 9,
     displayName: "oneBTC",
     isOneToken: true,
@@ -153,6 +156,7 @@ const TOKENS = {
   onevbtc: { 
     address: "0x7BD198b9107496fD5cC3d7655AF52f43a8eDBc4C",
     strategy: "",
+    aux_strategy: "",
     decimals: 9,
     displayName: "oneVBTC",
     isOneToken: true,
@@ -163,6 +167,7 @@ const TOKENS = {
   onewing: { 
     address: "0x8F041A3940a5e6FB580075C3774E15FcFA0E1618",
     strategy: "",
+    aux_strategy: "",
     decimals: 9,
     displayName: "oneWING",
     isOneToken: true,
@@ -173,6 +178,7 @@ const TOKENS = {
   onelink: { 
     address: "0x18Cc17a1EeD37C02A77B0B96b7890C7730E2a2CF",
     strategy: "",
+    aux_strategy: "",
     decimals: 9,
     displayName: "oneLINK",
     isOneToken: true,
@@ -183,6 +189,7 @@ const TOKENS = {
   onefil: { 
     address: "0x6d82017e55b1D24C53c7B33BbB770A86f2ca229D",
     strategy: "0xc9682298cd1C39145EB34614a0B4356c7F29c92e",
+    aux_strategy: "",
     decimals: 18,
     displayName: "oneFIL",
     isOneToken: true,
@@ -194,6 +201,7 @@ const TOKENS = {
   one1inch: { 
     address: "0x853bb55c1f469902f088a629db8c8803a9be3857",
     strategy: "0x97B380Ae50160E400d68c92ABeAf24402C9CaA62",
+    aux_strategy: "",
     decimals: 18,
     displayName: "one1INCH",
     isOneToken: true,
@@ -205,6 +213,7 @@ const TOKENS = {
   onefuse: { 
     address: "0xBbcE03B2E7f53caDCA93251CA4c928aF01Db6404",
     strategy: "0x8740C9f316241F905323920F4f4FA8A4d6aB100b",
+    aux_strategy: "",
     decimals: 18,
     displayName: "oneFUSE",
     isOneToken: true,
@@ -216,6 +225,7 @@ const TOKENS = {
   onemph: { 
     address: "0xBE3F88E18BE3944FdDa830695228ADBB82fA125F",
     strategy: "0xF1587Cb51349CDf5bb408845249De36466C35F41",
+    aux_strategy: "",
     decimals: 18,
     displayName: "oneMPH",
     isOneToken: true,
@@ -227,6 +237,7 @@ const TOKENS = {
   oneperl: { 
     address: "0xD9A24485e71B9148e0Fd51F0162072099DF0dB67",
     strategy: "0x2Dfb5348CC20218426e566C1bD7B8b3789CBa9d5",
+    aux_strategy: "",
     decimals: 18,
     displayName: "onePERL",
     isOneToken: true,
@@ -238,6 +249,7 @@ const TOKENS = {
   oneuni: { 
     address: "0x8290d7a64f25e6b5002d98367e8367c1b532b534",
     strategy: "0x6287d56e246EEE33beAd2D7DD3a99Db693f4554C",
+    aux_strategy: "0x55922Fa5084f9367B73FC0df9163B089D8Ac4CB7",
     decimals: 18,
     displayName: "oneUNI",
     isOneToken: true,
@@ -249,6 +261,7 @@ const TOKENS = {
   onedodo: { 
     address: "0xcA37530E7c5968627BE470081d1C993eb1dEaf90",
     strategy: "0x1faac4842054F2dB2DdDFC8152D7C259d5102c13",
+    aux_strategy: "",
     decimals: 18,
     displayName: "oneDODO",
     isOneToken: true,

@@ -11,6 +11,7 @@ import ONETOKEN_ABI from './abis/ONETOKEN_ABI.json';
 import ONELINK_ABI from './abis/oneLINK_ABI.json';
 import ONEETH_ABI from './abis/oneETH_ABI.json';
 import UNISWAP_V3_POSITIONS from './abis/UNISWAP_V3_POSITIONS_ABI.json';
+import RISKHARBOR_ABI from './abis/RISKHARBOR_ABI.json';
 import { getPoolRecord } from './getPoolRecord';
 import axios from 'axios';
 
@@ -42,6 +43,7 @@ const getOneTokenAttributes = async function(tokenName) {
     address: TOKENS[tokenName]['address'],
     decimals: TOKENS[tokenName]['decimals'],
     strategy: TOKENS[tokenName]['strategy'],
+    aux_strategy: TOKENS[tokenName]['aux_strategy'],
     tradeUrl: TOKENS[tokenName]['tradeUrl'],
     stimulus_address: '',
     stimulus_name: TOKENS[tokenName]['stimulusName'],
@@ -111,6 +113,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const attr = await getOneTokenAttributes(itemName.toLowerCase());
   const oneTokenAddress = attr.address;
   const strategyAddress = attr.strategy;
+  const auxStrategyAddress = attr.aux_strategy;
   const stimulusTokenAddress = attr.stimulus_address;
   const stimulusDisplayName = attr.stimulus_display_name;
   const stimulusTokenName = attr.stimulus_name;
@@ -130,6 +133,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const BMI_STAKING = new ethers.Contract(ADDRESSES.bmi_staking, BMI_STAKING_ABI, provider);
   const _1INCH_STAKING = new ethers.Contract(ADDRESSES._1inch_staking, _1INCH_STAKING_ABI, provider);
   const st1INCH = new ethers.Contract(ADDRESSES.st1inch, ERC20_ABI, provider);
+  const riskHarbor = new ethers.Contract(ADDRESSES.risk_harbor, RISKHARBOR_ABI, provider);
 
   const oneToken_BPT_Farming_Position = await farming_V2.userInfo(
     7,
@@ -152,6 +156,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let strategy_balance_one_uni = 0;
   let strategy_balance_ichi = 0;
   let strategy_balance_bmi_usdt = 0;
+  let strategy_balance_riskharbor_usdc = 0;
   let uni_v3_positions = 0;
   let strategy_balance_st1inch = 0;
   if (strategyAddress !== "") {
@@ -166,6 +171,11 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       strategy_balance_st1inch = Number(await st1INCH.balanceOf(strategyAddress));
       strategy_balance_stimulus += Number(await _1INCH_STAKING.earned(strategyAddress));
     }
+  }
+  if (auxStrategyAddress !== "") {
+    const rhBPS = 9;
+    let strategy_balance_riskharbor_shares = Number(await riskHarbor.balanceOf(auxStrategyAddress, rhBPS));
+    strategy_balance_riskharbor_usdc = Number(await riskHarbor.getSharesPrice(rhBPS, strategy_balance_riskharbor_shares));
   }
 
   if (uni_v3_positions > 0) {
@@ -413,6 +423,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     strategy_balance_onetoken / 10 ** 18 +
     strategy_balance_one_uni / 10 ** 18 +
     usdc_price * (strategy_balance_usdc / 10 ** 6) +
+    usdc_price * (strategy_balance_riskharbor_usdc / 10 ** 6) +
     usdt_price * (strategy_balance_bmi_usdt / 10 ** 18);
 
   let oneToken_collateral_only = oneToken_collateral_USDC_only +
@@ -437,12 +448,14 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     if (strategy_balance_usdc > 0 
       || strategy_balance_onetoken > 0
       || strategy_balance_one_uni > 0
+      || strategy_balance_riskharbor_usdc > 0
       || strategy_balance_bmi_usdt > 0) {
           const assets = [];
       if (strategy_balance_usdc > 0) {
         assets.push({ M: { 
           name: { S: "USDC" }, 
-          balance: { N: Number(strategy_balance_usdc / 10 ** 6).toString() } 
+          // balance: { N: Number(strategy_balance_usdc / 10 ** 6).toString() } 
+          balance: { N: Number((strategy_balance_usdc + strategy_balance_riskharbor_usdc) / 10 ** 6).toString() } 
         }});
       }
       if (strategy_balance_onetoken > 0) {
@@ -463,6 +476,12 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
           balance: { N: Number(strategy_balance_bmi_usdt / 10 ** 18).toString() } 
         }});
       }
+      /* if (strategy_balance_riskharbor_usdc > 0) {
+        assets.push({ M: { 
+          name: { S: "Risk Harbor" }, 
+          balance: { N: Number(strategy_balance_riskharbor_usdc / 10 ** 6).toString() } 
+        }});
+      } */
       oneTokenCollateralPostions.push({ M: { 
         name: { S: 'Vault' }, 
         assets: { L: assets },
@@ -523,7 +542,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       reserveRatio = oneToken_stimulus_usd / oneToken_treasury_backed;
     }
 
-    let totalUSDC = (oneToken_USDC + strategy_balance_usdc) / 10 ** 6 +
+    let totalUSDC = (oneToken_USDC + strategy_balance_usdc + strategy_balance_riskharbor_usdc) / 10 ** 6 +
       strategy_balance_bmi_usdt / 10 ** 18;
 
     let res = {
