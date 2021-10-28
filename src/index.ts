@@ -86,6 +86,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
     for (let i = 0; i < result.length; i++) {
       let item = result[i];
       let name = item['name']['S'].toLowerCase();
+      tokenPrices[name] = Number(item['price']['N'])
       tokenNames[name] = item['displayName']['S']
     }
   } catch (error) {

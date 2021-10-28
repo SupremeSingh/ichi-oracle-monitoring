@@ -173,7 +173,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     }
   }
   if (auxStrategyAddress !== "") {
-    const rhBPS = 9;
+    const rhBPS = 1;
     let strategy_balance_riskharbor_shares = Number(await riskHarbor.balanceOf(auxStrategyAddress, rhBPS));
     strategy_balance_riskharbor_usdc = Number(await riskHarbor.getSharesPrice(rhBPS, strategy_balance_riskharbor_shares));
   }
