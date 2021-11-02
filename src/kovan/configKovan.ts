@@ -12,7 +12,7 @@ const POOLS = {
 //  activePools : [5001,5002,5003],
   activePools : [5000,5001,5002,5003],
   depositPools : [5002,5003],
-  activeVaults: [5004],
+  activeVaults: [5004,5005],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : []
@@ -131,6 +131,11 @@ LABELS[5003] = {
 }
 LABELS[5004] = {
   name: 'oneFIL Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP'
+}
+LABELS[5005] = {
+  name: 'oneUNI Vault',
   lpName: 'ICHI_VAULT_LP',
   shortLpName: 'VAULT_LP'
 }

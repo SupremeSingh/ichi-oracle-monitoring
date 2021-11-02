@@ -135,7 +135,7 @@ export const updateFarm = async (tableName: string, poolId: number,
     isRetired = true;
 
   // oneFIL pool is not retired
-  if (poolId == 5003)
+  if (poolId == 5003 || poolId == 5004 || poolId == 5005)
     isRetired = false;
 
     // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
