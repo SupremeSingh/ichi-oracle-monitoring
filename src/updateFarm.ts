@@ -24,10 +24,14 @@ const getExchangeName = async function(poolId: number) {
     return "";
   if (POOLS.bancorPools.includes(poolId))
     return "bancor";
+  if (POOLS.dodoPools.includes(poolId))
+    return "dodo";
   if (POOLS.oneInchPools.includes(poolId))
     return "1inch";
   if (POOLS.uniPools.includes(poolId))
     return "uni v2";
+  if (POOLS.activeVaults.includes(poolId))
+    return "uni v3";
   if (POOLS.loopringPools.includes(poolId))
     return "loopring";
   if (POOLS.balancerPools.includes(poolId) || POOLS.balancerSmartPools.includes(poolId))
@@ -112,6 +116,7 @@ export const updateFarm = async (tableName: string, poolId: number,
 
   let isExternal = poolId >= 10000;
   let isIchiPool = pool['token0'].toLowerCase() == 'ichi' || pool['token1'].toLowerCase() == 'ichi';
+  isIchiPool = isIchiPool || poolId == 10004; // oneDODO-USDC to include into ICHI farms for now
   let isUpcoming = POOLS.upcomingPools.includes(poolId);
   let isMigrating = POOLS.migratingPools.includes(poolId);
   let isRetired = POOLS.retiredPools.includes(poolId);
@@ -156,9 +161,8 @@ export const updateFarm = async (tableName: string, poolId: number,
   if (pool['yearlyAPY'] == 0)
     isRetired = true;
 
-  // ICHI-BNT pool is not retired
-
-  if (poolId == 10001 || poolId == 10003 || poolId == 1014)
+  // these pools may have 0 APY, but they are not retired
+  if (poolId == 10001 || poolId == 10003)
     isRetired = false; 
 
   let futureAPY = 0;

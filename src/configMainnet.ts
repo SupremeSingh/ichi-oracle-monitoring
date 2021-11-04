@@ -273,8 +273,8 @@ const TOKENS = {
 }
 
 const POOLS = {
-  activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 10001, 10003],
-  // activePools : [10003],
+  activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 10001, 10003, 10004],
+  // activePools : [10004],
   depositPools : [1009, 1010, 1011, 1012, 1013, 1014],
   activeVaults: [],
   upcomingPools : [],
@@ -286,6 +286,7 @@ const POOLS = {
   bancorPools : [14, 1006, 10003],
   uniPools : [1005],
   loopringPools : [10002],
+  dodoPools : [10004],
   specialPricing : [19]
 }
 
@@ -350,6 +351,14 @@ LABELS[10003] = {
   externalUrl: 'https://app.bancor.network/eth/portfolio',
   externalText: 'Earn xICHI',
   externalButton: 'Earn'
+}
+LABELS[10004] = {
+  name: 'oneDODO-USDC',
+  lpName: 'DLP',
+  shortLpName: 'DLP',
+  externalAddress: '0xf9B8500b5012c059f30daA734d3A7131d668b1cd',
+  externalUrl: 'https://app.dodoex.io/mining?network=mainnet&address=0xaa89cab926dcd65b3779aa98d9342fd9a21e5d1c',
+  externalButton: 'DODO'
 }
 LABELS[1001] = {
   name: '80/20 ICHI-ETH',
