@@ -462,7 +462,8 @@ LABELS[1015] = {
   name: 'oneFOX Deposit',
   lpName: 'oneFOX',
   shortLpName: 'oneFOX',
-  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x03352D267951E96c6F7235037C5DFD2AB1466232',
+  tradeUrl: '/mint?name=onefox&collateral=USDC'
+  // tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x03352D267951E96c6F7235037C5DFD2AB1466232',
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID, DEBUNK_PROTOCOLS };
