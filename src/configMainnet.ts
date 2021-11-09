@@ -130,6 +130,13 @@ const TOKENS = {
     parentOneToken: "onedodo",
     isOneToken: false
   },
+  fox: {
+    address: "0x43Dfc4159D86F3A37A5A4B3D4580b888ad7d4DDd",
+    decimals: 18,
+    displayName: "FOX",
+    parentOneToken: "onefox",
+    isOneToken: false
+  },
 
   oneeth: { 
     address: "0xEc0d77a58528a218cBf41Fa6E1585c8D7A085868",
@@ -269,13 +276,25 @@ const TOKENS = {
     stimulusName: 'dodo',
     stimulusDisplayName: 'DODO',
     tradeUrl: 'https://app.dodoex.io/exchange/USDC-DODO?network=mainnet',
+  },
+  onefox: { 
+    address: "0x03352D267951E96c6F7235037C5DFD2AB1466232",
+    strategy: "0xeB370EE6927e4655a463F898fFF30479b34708f6",
+    aux_strategy: "",
+    decimals: 18,
+    displayName: "oneFOX",
+    isOneToken: true,
+    isV2: true,
+    stimulusName: 'fox',
+    stimulusDisplayName: 'FOX',
+    tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xc770EEfAd204B5180dF6a14Ee197D99d808ee52d',
   }
 }
 
 const POOLS = {
-  activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 10001, 10003, 10004],
-  // activePools : [10004],
-  depositPools : [1009, 1010, 1011, 1012, 1013, 1014],
+  activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 10001, 10003, 10004],
+  // activePools : [1015],
+  depositPools : [1009, 1010, 1011, 1012, 1013, 1014, 1015],
   activeVaults: [],
   upcomingPools : [],
   migratingPools : [],
@@ -438,6 +457,12 @@ LABELS[1014] = {
   shortLpName: 'oneUNI',
   // launchDate: 1625245200000,
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x8290d7a64f25e6b5002d98367e8367c1b532b534',
+}
+LABELS[1015] = {
+  name: 'oneFOX Deposit',
+  lpName: 'oneFOX',
+  shortLpName: 'oneFOX',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x03352D267951E96c6F7235037C5DFD2AB1466232',
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID, DEBUNK_PROTOCOLS };
