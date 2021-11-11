@@ -131,7 +131,7 @@ const TOKENS = {
     isOneToken: false
   },
   fox: {
-    address: "0x43Dfc4159D86F3A37A5A4B3D4580b888ad7d4DDd",
+    address: "0xc770EEfAd204B5180dF6a14Ee197D99d808ee52d",
     decimals: 18,
     displayName: "FOX",
     parentOneToken: "onefox",
