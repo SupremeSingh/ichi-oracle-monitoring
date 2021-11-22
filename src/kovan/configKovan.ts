@@ -130,14 +130,16 @@ LABELS[5003] = {
   shortLpName: 'oneFIL'
 }
 LABELS[5004] = {
-  name: 'oneFIL Vault',
+  name: 'oneFIL Vault Deposit',
   lpName: 'ICHI_VAULT_LP',
-  shortLpName: 'VAULT_LP'
+  shortLpName: 'VAULT_LP',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x6d82017e55b1d24c53c7b33bbb770a86f2ca229d'
 }
 LABELS[5005] = {
-  name: 'oneUNI Vault',
+  name: 'oneUNI Vault Deposit',
   lpName: 'ICHI_VAULT_LP',
-  shortLpName: 'VAULT_LP'
+  shortLpName: 'VAULT_LP',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x8290d7a64f25e6b5002d98367e8367c1b532b534',
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID };
