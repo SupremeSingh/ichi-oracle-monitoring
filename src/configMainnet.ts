@@ -296,7 +296,7 @@ const POOLS = {
   activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 10001, 10003, 10004],
   // activePools : [1015],
   depositPools : [1009, 1010, 1011, 1012, 1013, 1014, 1015],
-  activeVaults: [],
+  activeVaults: [1016],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
@@ -465,6 +465,12 @@ LABELS[1015] = {
   shortLpName: 'oneFOX',
   tradeUrl: '/mint?name=onefox&collateral=USDC'
   // tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x03352D267951E96c6F7235037C5DFD2AB1466232',
+}
+LABELS[1016] = {
+  name: 'oneUNI Vault Deposit',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x8290d7a64f25e6b5002d98367e8367c1b532b534',
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID, DEBUNK_PROTOCOLS };
