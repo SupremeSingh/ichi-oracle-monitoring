@@ -161,8 +161,10 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let strategy_balance_st1inch = 0;
   if (strategyAddress !== "") {
     strategy_balance_usdc = Number(await USDC.balanceOf(strategyAddress));
-    let aux_strategy_balance_usdc = Number(await USDC.balanceOf(auxStrategyAddress));
-    strategy_balance_usdc = strategy_balance_usdc + aux_strategy_balance_usdc;
+    if (auxStrategyAddress !== "") {
+      let aux_strategy_balance_usdc = Number(await USDC.balanceOf(auxStrategyAddress));
+      strategy_balance_usdc = strategy_balance_usdc + aux_strategy_balance_usdc;
+    }
     strategy_balance_stimulus = Number(await stimulusToken.balanceOf(strategyAddress));
     strategy_balance_onetoken = Number(await oneToken.balanceOf(strategyAddress));
     strategy_balance_one_uni = Number(await oneUNI.balanceOf(strategyAddress));
