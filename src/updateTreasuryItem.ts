@@ -161,6 +161,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let strategy_balance_st1inch = 0;
   if (strategyAddress !== "") {
     strategy_balance_usdc = Number(await USDC.balanceOf(strategyAddress));
+    let aux_strategy_balance_usdc = Number(await USDC.balanceOf(auxStrategyAddress));
+    strategy_balance_usdc = strategy_balance_usdc + aux_strategy_balance_usdc;
     strategy_balance_stimulus = Number(await stimulusToken.balanceOf(strategyAddress));
     strategy_balance_onetoken = Number(await oneToken.balanceOf(strategyAddress));
     strategy_balance_one_uni = Number(await oneUNI.balanceOf(strategyAddress));
@@ -173,7 +175,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     }
   }
   if (auxStrategyAddress !== "") {
-    const rhBPS = 1;
+    const rhBPS = 10;
     let strategy_balance_riskharbor_shares = Number(await riskHarbor.balanceOf(auxStrategyAddress, rhBPS));
     strategy_balance_riskharbor_usdc = Number(await riskHarbor.getSharesPrice(rhBPS, strategy_balance_riskharbor_shares));
   }
