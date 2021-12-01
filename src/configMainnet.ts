@@ -262,6 +262,11 @@ const TOKENS = {
     displayName: "oneUNI",
     isOneToken: true,
     isV2: true,
+    ichiVault: { 
+      address: '0xfaeCcee632912c42a7c88c3544885A8D455408FA',
+      farm: 16,
+      ichi: 'token1'
+    },
     stimulusName: 'uni',
     stimulusDisplayName: 'UNI',
     tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',

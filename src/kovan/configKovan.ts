@@ -37,6 +37,11 @@ const TOKENS = {
     displayName: "oneUNI",
     isOneToken: true,
     isV2: true,
+    ichiVault: { 
+      address: '',
+      farm: 0,
+      ichi: ''
+    },
     stimulusName: 'test_uni',
     stimulusDisplayName: 'UNI',
     tradeUrl: ''
@@ -48,6 +53,11 @@ const TOKENS = {
     displayName: "oneFIL",
     isOneToken: true,
     isV2: true,
+    ichiVault: { 
+      address: '0xA0D500fd3479CBCb64a2238082b7a1Df9f87d98D',
+      farm: 4,
+      ichi: 'token1'
+    },
     stimulusName: 'test_renfil',
     stimulusDisplayName: 'renFIL',
     tradeUrl: ''
@@ -130,13 +140,13 @@ LABELS[5003] = {
   shortLpName: 'oneFIL'
 }
 LABELS[5004] = {
-  name: 'oneFIL Vault Deposit',
+  name: 'oneFIL Vault',
   lpName: 'ICHI_VAULT_LP',
   shortLpName: 'VAULT_LP',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x6d82017e55b1d24c53c7b33bbb770a86f2ca229d'
 }
 LABELS[5005] = {
-  name: 'oneUNI Vault Deposit',
+  name: 'oneUNI Vault',
   lpName: 'ICHI_VAULT_LP',
   shortLpName: 'VAULT_LP',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x8290d7a64f25e6b5002d98367e8367c1b532b534',

@@ -1,16 +1,18 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { ethers } from 'ethers';
+import { ethers, utils } from 'ethers';
 import { ADDRESSES, TOKENS, CHAIN_ID, APIS, DEBUNK_PROTOCOLS } from './configMainnet';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import ERC20_ABI from './abis/ERC20_ABI.json';
 import _1INCH_STAKING_ABI from './abis/1INCH_STAKING_ABI.json';
+import VAULT_ABI from './abis/ICHI_VAULT_ABI.json';
 import BMI_STAKING_ABI from './abis/BMI_STAKING_ABI.json';
 import ONETOKEN_ABI from './abis/ONETOKEN_ABI.json';
 import ONELINK_ABI from './abis/oneLINK_ABI.json';
 import ONEETH_ABI from './abis/oneETH_ABI.json';
 import UNISWAP_V3_POSITIONS from './abis/UNISWAP_V3_POSITIONS_ABI.json';
+import UNI_V3_POOL from './abis/UNI_V3_POOL_ABI.json';
 import RISKHARBOR_ABI from './abis/RISKHARBOR_ABI.json';
 import { getPoolRecord } from './getPoolRecord';
 import axios from 'axios';
@@ -51,7 +53,12 @@ const getOneTokenAttributes = async function(tokenName) {
     stimulus_decimals: 18,
     abi_type: 'ONETOKEN',
     base_name: tokenName.toLowerCase(),
-    isV2: TOKENS[tokenName]['isV2']
+    isV2: TOKENS[tokenName]['isV2'],
+    ichiVault: {
+      address: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['address'] : '',
+      farm: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['farm'] : 0,
+      ichi: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['ichi'] : ''
+    }
   }
 
   if (tokenName == 'onebtc') {
@@ -169,6 +176,27 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     strategy_balance_onetoken = Number(await oneToken.balanceOf(strategyAddress));
     strategy_balance_one_uni = Number(await oneUNI.balanceOf(strategyAddress));
     strategy_balance_ichi = Number(await ICHI.balanceOf(strategyAddress));
+
+    let strategy_balance_vault_lp = 0;
+    if (attr.ichiVault.farm > 0) {
+      const userInfo = await farming_V2.userInfo(attr.ichiVault.farm, strategyAddress);
+      strategy_balance_vault_lp += Number(userInfo.amount);
+    }
+    if (attr.ichiVault.address !== '') {
+      const vault = new ethers.Contract(attr.ichiVault.address, VAULT_ABI, provider);
+      strategy_balance_vault_lp += Number(await vault.balanceOf(strategyAddress));
+      const vault_total_lp = Number(await vault.totalSupply());
+      const vault_total_amounts = await vault.getTotalAmounts();
+      const vault_ratio = strategy_balance_vault_lp / vault_total_lp;
+      if (attr.ichiVault.ichi === 'token0') {
+        strategy_balance_ichi += Number(vault_total_amounts.total0) * vault_ratio;
+        strategy_balance_onetoken += Number(vault_total_amounts.total1) * vault_ratio;
+      } else {
+        strategy_balance_ichi += Number(vault_total_amounts.total1) * vault_ratio;
+        strategy_balance_onetoken += Number(vault_total_amounts.total0) * vault_ratio;
+      }
+    }
+
     strategy_balance_bmi_usdt = Number(await BMI_STAKING.totalStaked(strategyAddress));
     uni_v3_positions = Number(await uniswap_V3_positions.balanceOf(strategyAddress));
     if (itemName == 'one1INCH') {

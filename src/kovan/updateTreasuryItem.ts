@@ -1,11 +1,13 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { ethers } from 'ethers';
-import { TOKENS, CHAIN_ID } from './configKovan';
+import { ethers, utils } from 'ethers';
+import { TOKENS, CHAIN_ID, ADDRESSES } from './configKovan';
 import ERC20_ABI from './../abis/ERC20_ABI.json';
 import ONETOKEN_ABI from './../abis/ONETOKEN_ABI.json';
 import ONELINK_ABI from './../abis/oneLINK_ABI.json';
 import ONEETH_ABI from './../abis/oneETH_ABI.json';
+import VAULT_ABI from './../abis/ICHI_VAULT_ABI.json';
+import FARMING_V2_ABI from './../abis/FARMING_V2_ABI.json';
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
@@ -44,7 +46,12 @@ const getOneTokenAttributes = async function(tokenName) {
     collateral_name: 'test_usdc',
     base_name: tokenName.toLowerCase(),
     display_name: tokenName,
-    isV2: TOKENS[tokenName]['isV2']
+    isV2: TOKENS[tokenName]['isV2'],
+    ichiVault: {
+      address: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['address'] : '',
+      farm: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['farm'] : 0,
+      ichi: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['ichi'] : ''
+    }
   }
 
   if (tokenName == 'oti') {
@@ -101,6 +108,27 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     strategy_balance_stimulus = Number(await stimulusToken.balanceOf(strategyAddress));
     strategy_balance_onetoken = Number(await oneToken.balanceOf(strategyAddress));
     strategy_balance_ichi = Number(await ICHI.balanceOf(strategyAddress));
+
+    let strategy_balance_vault_lp = 0;
+    if (attr.ichiVault.farm > 0) {
+      const farming_V2 = new ethers.Contract(ADDRESSES.farming_V2, FARMING_V2_ABI, provider);
+      const userInfo = await farming_V2.userInfo(attr.ichiVault.farm, strategyAddress);
+      strategy_balance_vault_lp += Number(userInfo.amount);
+    }
+    if (attr.ichiVault.address !== '') {
+      const vault = new ethers.Contract(attr.ichiVault.address, VAULT_ABI, provider);
+      strategy_balance_vault_lp += Number(await vault.balanceOf(strategyAddress));
+      const vault_total_lp = Number(await vault.totalSupply());
+      const vault_total_amounts = await vault.getTotalAmounts();
+      const vault_ratio = strategy_balance_vault_lp / vault_total_lp;
+      if (attr.ichiVault.ichi === 'token0') {
+        strategy_balance_ichi += Number(vault_total_amounts.total0) * vault_ratio;
+        strategy_balance_onetoken += Number(vault_total_amounts.total1) * vault_ratio;
+      } else {
+        strategy_balance_ichi += Number(vault_total_amounts.total1) * vault_ratio;
+        strategy_balance_onetoken += Number(vault_total_amounts.total0) * vault_ratio;
+      }
+    }
   }
 
   let oneToken_USDC = Number(await USDC.balanceOf(oneTokenAddress));
