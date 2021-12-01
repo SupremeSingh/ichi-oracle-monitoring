@@ -174,7 +174,9 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     }
     strategy_balance_stimulus = Number(await stimulusToken.balanceOf(strategyAddress));
     strategy_balance_onetoken = Number(await oneToken.balanceOf(strategyAddress));
-    strategy_balance_one_uni = Number(await oneUNI.balanceOf(strategyAddress));
+    if (itemName !== 'oneUNI') {
+      strategy_balance_one_uni = Number(await oneUNI.balanceOf(strategyAddress));
+    }
     strategy_balance_ichi = Number(await ICHI.balanceOf(strategyAddress));
 
     let strategy_balance_vault_lp = 0;
@@ -225,7 +227,11 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
               isCollateral = true;
               strategy_balance_onetoken += Number(supply_token.amount) * 10 ** 18;
             } else if (supply_token.id.toLowerCase() === TOKENS['oneuni']['address'].toLowerCase()) {
-              strategy_balance_one_uni += Number(supply_token.amount) * 10 ** 18;
+              if (itemName !== 'oneUNI') {
+                strategy_balance_one_uni += Number(supply_token.amount) * 10 ** 18;
+              } else {
+                strategy_balance_onetoken += Number(supply_token.amount) * 10 ** 18;
+              }
             }
             if (supply_token.id.toLowerCase() === TOKENS['usdc']['address'].toLowerCase()) {
               usdc_in_position += Number(supply_token.amount) * 10 ** 6;
