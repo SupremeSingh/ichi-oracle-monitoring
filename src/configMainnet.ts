@@ -298,9 +298,9 @@ const TOKENS = {
 }
 
 const POOLS = {
-  activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 10001, 10003 /*, 10004*/],
-  // activePools : [1015],
-  depositPools : [1009, 1010, 1011, 1012, 1013, 1014, 1015],
+  activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 10001, 10003, 10004],
+  // activePools : [1017],
+  depositPools : [1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017],
   activeVaults: [1016],
   upcomingPools : [],
   migratingPools : [],
@@ -476,6 +476,13 @@ LABELS[1016] = {
   lpName: 'ICHI_VAULT_LP',
   shortLpName: 'VAULT_LP',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x8290d7a64f25e6b5002d98367e8367c1b532b534',
+}
+LABELS[1017] = {
+  name: 'oneDODO Deposit',
+  lpName: 'oneDODO',
+  shortLpName: 'oneDODO',
+  tradeUrl: '/mint?name=onedodo&collateral=USDC'
+  // tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x03352D267951E96c6F7235037C5DFD2AB1466232',
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID, DEBUNK_PROTOCOLS };
