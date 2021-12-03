@@ -703,7 +703,11 @@ async function getPoolContract(poolID, useBasic) {
         let lpFarm = info["balance"];
         let blocks_year = Number(info["blocks_count_perYear"]);
         let ichi_reward_usd = Number(info["mining_reward_usd"]);
-        //console.log(info);
+        // console.log(info);
+
+        if (!lpAddress) {
+          return { pool: null }
+        }
   
         const poolContract = await getDLPContract(lpAddress);
   

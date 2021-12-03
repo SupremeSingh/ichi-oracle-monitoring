@@ -65,6 +65,11 @@ export const updateFarm = async (tableName: string, poolId: number,
   );
 
   let pool = await getPoolRecord(poolId, tokenPrices, knownIchiPerBlock);
+  if (pool['pool'] == null) {
+    // failed to get pool's data, not updating
+    console.log("Can't get pool's data: "+poolId);
+    return;
+  }
   console.log(pool);
 
   let farmPoolId = 0;
