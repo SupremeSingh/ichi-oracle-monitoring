@@ -172,17 +172,6 @@ const TOKENS = {
     stimulusDisplayName: 'VBTC',
     isV2: false
   },
-  onewing: { 
-    address: "0x8F041A3940a5e6FB580075C3774E15FcFA0E1618",
-    strategy: "",
-    aux_strategy: "",
-    decimals: 9,
-    displayName: "oneWING",
-    isOneToken: true,
-    stimulusName: 'pwing',
-    stimulusDisplayName: 'WING',
-    isV2: false
-  },
   onelink: { 
     address: "0x18Cc17a1EeD37C02A77B0B96b7890C7730E2a2CF",
     strategy: "",
@@ -294,13 +283,25 @@ const TOKENS = {
     stimulusName: 'fox',
     stimulusDisplayName: 'FOX',
     tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xc770EEfAd204B5180dF6a14Ee197D99d808ee52d',
+  },
+  onewing: { 
+    address: "0x5047fc5C9D7c49Ab22e390d13646a6A3a2476eff",
+    strategy: "0xac20007A5CBDA40d8E16df26bAD89E8738404691",
+    aux_strategy: "",
+    decimals: 18,
+    displayName: "oneWING",
+    isOneToken: true,
+    isV2: true,
+    stimulusName: 'pwing',
+    stimulusDisplayName: 'pWING',
+    tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xDb0f18081b505A7DE20B18ac41856BCB4Ba86A1a',
   }
 }
 
 const POOLS = {
-  activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 10001, 10003, 10004],
+  activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004],
   // activePools : [1017],
-  depositPools : [1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017],
+  depositPools : [1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018],
   activeVaults: [1016],
   upcomingPools : [],
   migratingPools : [],
@@ -482,6 +483,13 @@ LABELS[1017] = {
   lpName: 'oneDODO',
   shortLpName: 'oneDODO',
   tradeUrl: '/mint?name=onedodo&collateral=USDC'
+  // tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x03352D267951E96c6F7235037C5DFD2AB1466232',
+}
+LABELS[1018] = {
+  name: 'oneWING Deposit',
+  lpName: 'oneWING',
+  shortLpName: 'oneWING',
+  tradeUrl: '/mint?name=onewing&collateral=USDC'
   // tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x03352D267951E96c6F7235037C5DFD2AB1466232',
 }
 

@@ -71,9 +71,7 @@ const getOneTokenAttributes = async function(tokenName) {
     template.base_name = 'vbtc'
   }
   if (tokenName == 'onewing') {
-    template.stimulus_decimals = 9,
-    template.abi_type = 'ONEETH',
-    template.base_name = 'wing'
+    template.stimulus_decimals = 9
   }
   if (tokenName == 'oneeth') {
     template.abi_type = 'ONEETH',
@@ -529,7 +527,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     let oneToken_stimulus_list = [];
     oneToken_stimulus_list.push({ M: { 
       name: { S: stimulusDisplayName }, 
-      balance: { N: Number(oneToken_stimulus / 10 ** 18).toString() } 
+      balance: { N: Number(oneToken_stimulus / 10 ** stimulusDecimals).toString() } 
     }});
     if (oneToken_ichi > 0) {
       oneToken_stimulus_list.push({ M: { 
@@ -546,7 +544,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       if (strategy_balance_stimulus > 0) {
         assets.push({ M: { 
           name: { S: stimulusDisplayName }, 
-          balance: { N: Number(strategy_balance_stimulus / 10 ** 18).toString() } 
+          balance: { N: Number(strategy_balance_stimulus / 10 ** stimulusDecimals).toString() } 
         }});
       }
       if (strategy_balance_ichi > 0) {

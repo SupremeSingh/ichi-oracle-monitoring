@@ -133,7 +133,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
         price = await lookUpVBTCPrice();
         break;
       case 'pwing':
-        price = await lookupStimulusUSDPrice(TOKENS['onewing']['address'], 9);
+        price = await lookUpMemberTokenPrice(TOKENS['onewing']['address'], TOKENS['pwing']['address'], 9);
         break;
       case 'weth':
         price = await lookupStimulusUSDPrice(TOKENS['oneeth']['address'], 9);
