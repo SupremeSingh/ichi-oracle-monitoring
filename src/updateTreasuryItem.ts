@@ -134,19 +134,11 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const USDC = new ethers.Contract(TOKENS['usdc']['address'], ERC20_ABI, provider);
   const oneToken = new ethers.Contract(oneTokenAddress, oneTokenABI, provider);
   const oneUNI = new ethers.Contract(TOKENS['oneuni']['address'], oneTokenABI, provider);
-  const ICHIBPT = new ethers.Contract(ADDRESSES.ICHIBPT, ERC20_ABI, provider);
   const BMI_STAKING = new ethers.Contract(ADDRESSES.bmi_staking, BMI_STAKING_ABI, provider);
   const _1INCH_STAKING = new ethers.Contract(ADDRESSES._1inch_staking, _1INCH_STAKING_ABI, provider);
   const st1INCH = new ethers.Contract(ADDRESSES.st1inch, ERC20_ABI, provider);
   const riskHarbor = new ethers.Contract(ADDRESSES.risk_harbor, RISKHARBOR_ABI, provider);
 
-  const oneToken_BPT_Farming_Position = await farming_V2.userInfo(
-    7,
-    oneTokenAddress
-  );
-  const oneToken_BPT_LP = oneToken_BPT_Farming_Position.amount;
-
-  const oneToken_ICHIBPT = Number(await ICHIBPT.balanceOf(oneTokenAddress));
   const oneToken_USDC = Number(await USDC.balanceOf(oneTokenAddress));
   const oneToken_stimulus = Number(await stimulusToken.balanceOf(oneTokenAddress));
   const oneToken_ichi = Number(await ICHI.balanceOf(oneTokenAddress));
@@ -262,24 +254,10 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
   let oneToken_burned_tokens = 0;
 
-  let BPT_pool = await getPoolRecord(1007, tokenPrices, null);
-  let BPT_poolAPY = BPT_pool['yearlyAPY'];
-
-  const reserveBPT = Number(oneToken_BPT_LP) / 10 ** 18;
-  let assets = [];
-  assets.push({ M: { 
-    name: { S: "ICHIBPT" }, 
-    balance: { N: reserveBPT.toString() } 
-  }});
-  const oneToken_BPT_Position = {
-    name: { S: "oneTokens Farm" },
-    assets: { L: assets }
-  };
-  if (collateralPositionsUSDValue + reserveBPT > 0) {
-    collateralPositionsAPY = (collateralPositionsUSDValue * collateralPositionsAPY + reserveBPT * BPT_poolAPY) / 
-      (collateralPositionsUSDValue + reserveBPT);
+  if (collateralPositionsUSDValue > 0) {
+    collateralPositionsAPY = (collateralPositionsUSDValue * collateralPositionsAPY) / 
+      (collateralPositionsUSDValue);
   }
-  collateralPositionsUSDValue = collateralPositionsUSDValue + reserveBPT;
 
   const oneToken_SUPPLY = await oneToken.totalSupply();
 
@@ -368,7 +346,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     let usdValue = Number(tvl) * percentOwnership;
     let yAPY = oneLINK_67_33_PoolRecord['yearlyAPY'];
 
-    assets = [];
+    let assets = [];
     assets.push({ M: { 
       name: { S: tokenNames[token0.toLowerCase()] }, 
       balance: { N: (Number(reserve0) * percentOwnership).toString() } 
@@ -395,12 +373,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
   // =================================================================================
 
-
-  if (reserveBPT > 0) {
-    oneTokenCollateralPostions.push({ M: oneToken_BPT_Position });
-  }
-
-  assets = [];
+  let assets = [];
   assets.push({ M: { 
     name: { S: "USDC" }, 
     balance: { N: (Number(oneToken_burned_tokens) / 10 ** decimals).toString() } 
@@ -463,8 +436,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     usdt_price * (strategy_balance_bmi_usdt / 10 ** 18);
 
   let oneToken_collateral_only = oneToken_collateral_USDC_only +
-    collateralPositionsUSDValue +
-    (oneToken_ICHIBPT / 10 ** 18);
+    collateralPositionsUSDValue;
 
   let oneToken_treasury_backed = 
     ((Number(oneToken_SUPPLY) / 10 ** decimals) * (1 - oneToken_withdrawFee)) - 
@@ -476,10 +448,6 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       name: { S: "USDC" }, 
       balance: { N: oneToken_collateral_USDC_only.toString() } 
     }});
-
-    if (oneToken_ICHIBPT > 0) {
-      oneToken_collateral_list.push({ M: { name: { S: "ICHIBPT" }, balance: { N: (Number(oneToken_ICHIBPT / 10 ** 18)).toString() } }});
-    }
 
     if (strategy_balance_usdc > 0 
       || strategy_balance_onetoken > 0
