@@ -14,7 +14,9 @@ const BANNERS = {
         link: 'https://docs.ichi.farm/earn-yield/angel-vaults' 
       }
     ],
-    baseColor: '#751F95'
+    baseColor: '#751F95',
+    gradientColor0: '#751F95',
+    gradientColor1: '#0676FF'
   },
   '1': {
     image: "https://ichi-images.s3.amazonaws.com/banners/bg_blue.png",
@@ -31,7 +33,9 @@ const BANNERS = {
         link: 'https://docs.ichi.farm/earn-yield/deposit' 
       }
     ],
-    baseColor: '#0676FF'
+    baseColor: '#0676FF',
+    gradientColor0: '#751F95',
+    gradientColor1: '#0676FF'
   },
   '2': {
     image: "https://ichi-images.s3.amazonaws.com/banners/bg_olympus.png",
@@ -44,7 +48,9 @@ const BANNERS = {
         link: 'https://pro.olympusdao.finance/#/bond/oneuni_ichi_ichi' 
       }
     ],
-    baseColor: '#0676FF'
+    baseColor: '#0676FF',
+    gradientColor0: '#751F95',
+    gradientColor1: '#0676FF'
   }
 }
 
