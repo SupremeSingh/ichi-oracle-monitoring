@@ -34,14 +34,14 @@ const BANNERS = {
     baseColor: '#0676FF'
   },
   '2': {
-    image: "https://ichi-images.s3.amazonaws.com/banners/bg_blue.png",
+    image: "https://ichi-images.s3.amazonaws.com/banners/bg_olympus.png",
     countdown: '',
     textBase: 'Olympus bonds are now LIVE - get ICHI at a discount for your Angel Vault LP',
     textCountdown: '',
     buttons: [
       { 
-        label: 'Learn More',
-        link: 'https://docs.ichi.farm/' 
+        label: 'Bond',
+        link: 'https://pro.olympusdao.finance/#/bond/oneuni_ichi_ichi' 
       }
     ],
     baseColor: '#0676FF'
