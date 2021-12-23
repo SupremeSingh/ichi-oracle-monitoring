@@ -119,7 +119,8 @@ export const updateFarm = async (tableName: string, poolId: number,
     }
   }
 
-  let isExternal = poolId >= 10000;
+  let isExternal = poolId >= 10000 && poolId < 20000;
+  let isGeneric = poolId >= 20000;
   let isIchiPool = pool['token0'].toLowerCase() == 'ichi' || pool['token1'].toLowerCase() == 'ichi';
   isIchiPool = isIchiPool || poolId == 10004; // oneDODO-USDC to include into ICHI farms for now
   let isUpcoming = POOLS.upcomingPools.includes(poolId);
@@ -162,6 +163,23 @@ export const updateFarm = async (tableName: string, poolId: number,
     extras['tradeUrl'] = { S: tradeUrl }
   }
 
+  let farm = {};
+  if (LABELS[poolId]) {
+    if (LABELS[poolId]['farmAddress']) {
+      farm['farmAddress'] = { S: LABELS[poolId]['farmAddress'] }
+      farm['farmId'] = { N: Number(LABELS[poolId]['farmId']).toString() }
+    }
+    if (LABELS[poolId]['farmRewardTokenName']) {
+      farm['farmRewardTokenName'] = { S: LABELS[poolId]['farmRewardTokenName'] }
+    }
+    if (LABELS[poolId]['farmRewardTokenDecimals']) {
+      farm['farmRewardTokenDecimals'] = { N: Number(LABELS[poolId]['farmRewardTokenDecimals']).toString() }
+    }
+    if (LABELS[poolId]['farmRewardTokenAddress']) {
+      farm['farmRewardTokenAddress'] = { S: LABELS[poolId]['farmRewardTokenAddress'] }
+    }
+  }
+
   // pool is retired if no rewards are given in it
   if (pool['yearlyAPY'] == 0)
     isRetired = true;
@@ -197,6 +215,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       'lpAddress = :lpAddress, ' + 
       'lpPrice = :lpPrice, ' + 
       'extras = :extras, ' + 
+      'farm = :farm, ' + 
       'shortLpName = :shortLpName, ' + 
       'tokens = :tokens, ' + 
       'exchange = :exchange, ' + 
@@ -211,6 +230,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       'futureAPY = :futureAPY, ' + 
       'launchDate = :launchDate, ' + 
       'isExternal = :isExternal, ' + 
+      'isGeneric = :isGeneric, ' + 
       'isUpcoming = :isUpcoming, ' + 
       'isMigrating = :isMigrating, ' + 
       'isRetired = :isRetired, ' + 
@@ -227,6 +247,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       ':lpAddress': { S: pool['lpAddress'] },
       ':lpPrice': { N: Number(lpPrice).toString() },
       ':extras': { M: extras },
+      ':farm': { M: farm },
       ':shortLpName': { S: shortLpName },
       ':tokens': { L: tokens },
       ':exchange': { S: exchange },
@@ -241,6 +262,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       ':futureAPY': { N: Number(futureAPY).toString() },
       ':launchDate': { N: Number(launchDate).toString() },
       ':isExternal': { BOOL: isExternal },
+      ':isGeneric': { BOOL: isGeneric },
       ':isUpcoming': { BOOL: isUpcoming },
       ':isMigrating': { BOOL: isMigrating },
       ':isRetired': { BOOL: isRetired },

@@ -294,7 +294,7 @@ const TOKENS = {
     isV2: true,
     stimulusName: 'pwing',
     stimulusDisplayName: 'pWING',
-    tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xDb0f18081b505A7DE20B18ac41856BCB4Ba86A1a',
+    tradeUrl: 'https://app.sushi.com/swap?inputCurrency=ETH&outputCurrency=0xDb0f18081b505A7DE20B18ac41856BCB4Ba86A1a',
   }
 }
 

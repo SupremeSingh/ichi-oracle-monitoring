@@ -2,6 +2,7 @@ import { ethers } from 'ethers';
 import { ADDRESSES, POOLS, TOKENS, APIS, LABELS } from './configMainnet';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
+import GENERIC_FARMING_V2_ABI from './abis/GENERIC_FARMING_V2_ABI.json';
 import ERC20_ABI from './abis/ERC20_ABI.json';
 import BALANCER_ABI from './abis/BALANCER_ABI.json';
 import BALANCER_SMART_LP_ABI from './abis/BALANCER_SMART_LP_ABI.json';
@@ -53,7 +54,7 @@ async function getDLPContract(address) {
 
 // useBasic - true when we need to get the base LP instead of the full pool contract
 // Used for Bancor and Smart Balancer pools 
-async function getPoolContract(poolID, useBasic) {
+async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
 
     let isBalancerPool = POOLS.balancerPools.includes(poolID);
     let isBancorPool = POOLS.bancorPools.includes(poolID);
@@ -61,12 +62,12 @@ async function getPoolContract(poolID, useBasic) {
     let isVault = POOLS.activeVaults.includes(poolID);
   
     let poolToken = '';
-    if (poolID < 1000 || poolID >= 10000) {
+    if (poolID < 1000) {
       // farm V1
-      poolToken = await farming_V1.getPoolToken(poolID);
+      poolToken = await farm.getPoolToken(adjusterPoolId);
     } else {
-      // farm V2
-      poolToken = await farming_V2.lpToken(poolID-1000);
+      // farm V2 and generic farm V2
+      poolToken = await farm.lpToken(adjusterPoolId);
     }
   
     if (isBancorPool) {
@@ -304,7 +305,7 @@ async function getPoolContract(poolID, useBasic) {
   }
   
   export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
-    if (poolID >= 10000)
+    if (poolID >= 10000 && poolID < 20000)
       return getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock);
 
     let isSpecialPricing = POOLS.specialPricing.includes(poolID);
@@ -312,11 +313,23 @@ async function getPoolContract(poolID, useBasic) {
     let isOneInchPool = POOLS.oneInchPools.includes(poolID);
     let isBalancerPool = POOLS.balancerPools.includes(poolID) || POOLS.balancerSmartPools.includes(poolID);
   
+    let farm = farming_V2;
     let poolToken = '';
-    if (poolID < 1000 || poolID >= 10000) {
-      poolToken = await farming_V1.getPoolToken(poolID);
+    let adjusterPoolId = poolID;
+    if (poolID < 1000) {
+      farm = farming_V1;
+      poolToken = await farm.getPoolToken(adjusterPoolId);
+    } else if (poolID >= 20000) {
+      farm = new ethers.Contract(
+        LABELS[poolID]['farmAddress'],
+        GENERIC_FARMING_V2_ABI,
+        provider
+      );
+      adjusterPoolId = LABELS[poolID]['farmId'];
+      poolToken = await farm.lpToken(adjusterPoolId);
     } else {
-      poolToken = await farming_V2.lpToken(poolID-1000);
+      adjusterPoolId = adjusterPoolId - 1000;
+      poolToken = await farm.lpToken(adjusterPoolId);
     }
   
       // getting data for an active pool (or inactive pool not cached yet)
@@ -324,23 +337,28 @@ async function getPoolContract(poolID, useBasic) {
       let bonusToRealRatio = 1;
       let inTheFarmLP = '';
       
-      if (poolID < 1000 || poolID >= 10000) {
-        reward = await farming_V1.ichiReward(poolID);
-        // bonusToRealRatio = await farming_V1.getBonusToRealRatio(poolID);
-        // bonusToRealRatio = (100 - Number(bonusToRealRatio)) / 50;
-        inTheFarmLP = await farming_V1.getLPSupply(poolID);
+      if (poolID < 1000) {
+        reward = await farm.ichiReward(adjusterPoolId);
+        inTheFarmLP = await farm.getLPSupply(adjusterPoolId);
       } else {
-        let ichiPerBlock_V2 = await farming_V2.ichiPerBlock();
-  
-        let totalAllocPoint = await farming_V2.totalAllocPoint();
-        let poolInfo = await farming_V2.poolInfo(poolID-1000);
+        let rewardsPerBlock = 0;
+        if (poolID >= 20000) {
+          let res = await farm.rewardTokensPerBlock();
+          rewardsPerBlock = Number(res);
+        } else {
+          let ichiPerBlock_V2 = await farm.ichiPerBlock();
+          rewardsPerBlock = Number(ichiPerBlock_V2);
+        }
+
+        let totalAllocPoint = await farm.totalAllocPoint();
+        let poolInfo = await farm.poolInfo(adjusterPoolId);
         let poolAllocPoint = poolInfo.allocPoint;
   
-        reward = Number(ichiPerBlock_V2) * poolAllocPoint / totalAllocPoint;
-        inTheFarmLP = await farming_V2.getLPSupply(poolID-1000);
+        reward = rewardsPerBlock * poolAllocPoint / totalAllocPoint;
+        inTheFarmLP = await farm.getLPSupply(adjusterPoolId);
       }
   
-      const poolContract = await getPoolContract(poolID, false);
+      const poolContract = await getPoolContract(poolID, false, farm, adjusterPoolId);
   
       let poolRecord = {};
   

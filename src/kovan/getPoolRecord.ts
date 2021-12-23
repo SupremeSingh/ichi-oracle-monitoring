@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
-import { ADDRESSES, TOKENS, POOLS } from './configKovan';
+import { ADDRESSES, TOKENS, POOLS, LABELS } from './configKovan';
 import FARMING_V2_ABI from './../abis/FARMING_V2_ABI.json';
+import GENERIC_FARMING_V2_ABI from './../abis/GENERIC_FARMING_V2_ABI.json';
 import ERC20_ABI from './../abis/ERC20_ABI.json';
 import PAIR_ABI from './../abis/PAIR_ABI.json';
 import VAULT_ABI from './../abis/ICHI_VAULT_ABI.json';
@@ -21,8 +22,8 @@ const farming_V2 = new ethers.Contract(
     provider
 );
 
-async function getPoolContract(poolID, isVault) {
-  const poolToken = await farming_V2.lpToken(poolID);
+async function getPoolContract(poolID, isVault, farm) {
+  const poolToken = await farm.lpToken(poolID);
 
   let ABI = PAIR_ABI;
   if (isVault) {
@@ -112,25 +113,43 @@ async function getTotalSupply(poolContract) {
   
 export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
   let adjusterPoolId = poolID - 5000;
-  let poolToken = await farming_V2.lpToken(adjusterPoolId);
+
+  let farm = farming_V2;
+  if (poolID >= 20000) {
+    farm = new ethers.Contract(
+      LABELS[poolID]['farmAddress'],
+      GENERIC_FARMING_V2_ABI,
+      provider
+    );
+    adjusterPoolId = LABELS[poolID]['farmId'];
+  }
+
+  let poolToken = await farm.lpToken(adjusterPoolId);
 
   // getting data for an active pool (or inactive pool not cached yet)
   let reward = 0;
   let bonusToRealRatio = 1;
   let inTheFarmLP = '';
   
-  let ichiPerBlock_V2 = await farming_V2.ichiPerBlock();
+  let rewardsPerBlock = 0;
+  if (poolID >= 20000) {
+    let res = await farm.rewardTokensPerBlock();
+    rewardsPerBlock = Number(res);
+  } else {
+    let ichiPerBlock_V2 = await farm.ichiPerBlock();
+    rewardsPerBlock = Number(ichiPerBlock_V2);
+  }
 
-  let totalAllocPoint = await farming_V2.totalAllocPoint();
-  let poolInfo = await farming_V2.poolInfo(adjusterPoolId);
+  let totalAllocPoint = await farm.totalAllocPoint();
+  let poolInfo = await farm.poolInfo(adjusterPoolId);
   let poolAllocPoint = poolInfo.allocPoint;
 
-  reward = Number(ichiPerBlock_V2) * poolAllocPoint / totalAllocPoint;
-  inTheFarmLP = await farming_V2.getLPSupply(adjusterPoolId);
+  reward = rewardsPerBlock * poolAllocPoint / totalAllocPoint;
+  inTheFarmLP = await farm.getLPSupply(adjusterPoolId);
 
   let isVault = POOLS.activeVaults.includes(poolID);
 
-  const poolContract = await getPoolContract(adjusterPoolId, isVault);
+  const poolContract = await getPoolContract(adjusterPoolId, isVault, farm);
 
   let poolRecord = {};
 
