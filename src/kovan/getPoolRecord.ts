@@ -130,11 +130,15 @@ export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
   let reward = 0;
   let bonusToRealRatio = 1;
   let inTheFarmLP = '';
+  let rewardTokenDecimals = 9;
+  let rewardTokenName = 'test_ichi';
   
   let rewardsPerBlock = 0;
   if (poolID >= 20000) {
     let res = await farm.rewardTokensPerBlock();
     rewardsPerBlock = Number(res);
+    rewardTokenDecimals = LABELS[poolID]['farmRewardTokenDecimals'];
+    rewardTokenName = LABELS[poolID]['farmRewardTokenName'].toLowerCase();
   } else {
     let ichiPerBlock_V2 = await farm.ichiPerBlock();
     rewardsPerBlock = Number(ichiPerBlock_V2);
@@ -154,7 +158,7 @@ export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
   let poolRecord = {};
 
   // common calls
-  reward = Number(reward) / 10 ** 9;
+  reward = Number(reward) / 10 ** rewardTokenDecimals;
   reward = reward * bonusToRealRatio;
 
   let totalPoolLP = await getTotalSupply(poolContract);
@@ -242,7 +246,7 @@ export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
     let ichiReturnUsd =
     6500 *
     reward *
-    tokenPrices['test_ichi'] / apyTVL;
+    tokenPrices[rewardTokenName] / apyTVL;
     dailyAPY = ichiReturnUsd * 100;
   }
 

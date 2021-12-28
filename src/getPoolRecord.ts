@@ -336,6 +336,8 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
       let reward = 0;
       let bonusToRealRatio = 1;
       let inTheFarmLP = '';
+      let rewardTokenDecimals = 9;
+      let rewardTokenName = 'ichi';
       
       if (poolID < 1000) {
         reward = await farm.ichiReward(adjusterPoolId);
@@ -345,6 +347,8 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
         if (poolID >= 20000) {
           let res = await farm.rewardTokensPerBlock();
           rewardsPerBlock = Number(res);
+          rewardTokenDecimals = LABELS[poolID]['farmRewardTokenDecimals'];
+          rewardTokenName = LABELS[poolID]['farmRewardTokenName'].toLowerCase();
         } else {
           let ichiPerBlock_V2 = await farm.ichiPerBlock();
           rewardsPerBlock = Number(ichiPerBlock_V2);
@@ -363,7 +367,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
       let poolRecord = {};
   
       // common calls
-      reward = Number(reward) / 10 ** 9;
+      reward = Number(reward) / 10 ** rewardTokenDecimals;
       reward = reward * bonusToRealRatio;
   
       let totalPoolLP = await getTotalSupply(poolID, poolContract, poolToken);
@@ -382,7 +386,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
           let ichiReturnUsd =
           6500 *
           reward *
-          tokenPrices['ichi'] / apyTVL;
+          tokenPrices[rewardTokenName] / apyTVL;
           dailyAPY = ichiReturnUsd * 100;
         }
   
@@ -496,7 +500,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
           let ichiReturnUsd =
           6500 *
           reward *
-          tokenPrices['ichi'] / apyTVL;
+          tokenPrices[rewardTokenName] / apyTVL;
           dailyAPY = ichiReturnUsd * 100;
         }
 
@@ -505,7 +509,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
         let futureIchiReturnUsd =
         6500 *
         futureReward *
-        tokenPrices['ichi'] / apyTVL;
+        tokenPrices[rewardTokenName] / apyTVL;
         let futureAPY = futureIchiReturnUsd * 100;
         if (apyTVL == 0) {
           futureAPY = 0;
