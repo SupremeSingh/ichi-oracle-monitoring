@@ -273,17 +273,10 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
     let isBancorPool = POOLS.bancorPools.includes(poolID);
     let isBalancerSmartPool = POOLS.balancerSmartPools.includes(poolID);
   
-    let poolToken = '';
-    if (poolID < 1000 || poolID >= 10000) {
-      poolToken = await farming_V1.getPoolToken(poolID);
-    } else {
-      poolToken = await farming_V2.lpToken(poolID-1000);
-    }
-  
     if (isBancorPool) {
       // exception for Bancor pools, getting proxy (pool owner) contract
       const bntContract = new ethers.Contract(
-        poolToken,
+        lpToken,
         PAIR_ABI,
         provider
       );

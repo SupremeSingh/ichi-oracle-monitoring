@@ -302,7 +302,7 @@ const POOLS = {
   activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004],
   // activePools : [1017],
   depositPools : [1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018],
-  activeVaults: [1016],
+  activeVaults: [1016, 20001],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
@@ -491,6 +491,17 @@ LABELS[1018] = {
   shortLpName: 'oneWING',
   tradeUrl: '/mint?name=onewing&collateral=USDC'
   // tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x03352D267951E96c6F7235037C5DFD2AB1466232',
+}
+LABELS[20001] = {
+  name: 'oneFUSE Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  farmAddress: '0xBDf32c838e1b5d927B9ecb099b1f01F81d677A30',
+  farmId: 0,
+  farmRewardTokenName: 'FUSE',
+  farmRewardTokenDecimals: 18,
+  farmRewardTokenAddress: '0x970B9bB2C0444F5E81e9d0eFb84C8ccdcdcAf84d',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0xbbce03b2e7f53cadca93251ca4c928af01db6404'
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID, DEBUNK_PROTOCOLS };
