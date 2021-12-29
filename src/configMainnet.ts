@@ -469,8 +469,7 @@ LABELS[1015] = {
   name: 'oneFOX Deposit',
   lpName: 'oneFOX',
   shortLpName: 'oneFOX',
-  tradeUrl: '/mint?name=onefox&collateral=USDC'
-  // tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x03352D267951E96c6F7235037C5DFD2AB1466232',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x03352D267951E96c6F7235037C5DFD2AB1466232',
 }
 LABELS[1016] = {
   name: 'oneUNI Vault',
@@ -489,8 +488,7 @@ LABELS[1018] = {
   name: 'oneWING Deposit',
   lpName: 'oneWING',
   shortLpName: 'oneWING',
-  tradeUrl: '/mint?name=onewing&collateral=USDC'
-  // tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x03352D267951E96c6F7235037C5DFD2AB1466232',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x5047fc5C9D7c49Ab22e390d13646a6A3a2476eff',
 }
 LABELS[20001] = {
   name: 'oneFUSE Vault',
