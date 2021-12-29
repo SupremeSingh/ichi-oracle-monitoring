@@ -215,6 +215,14 @@ const TOKENS = {
     displayName: "oneFUSE",
     isOneToken: true,
     isV2: true,
+    ichiVault: { 
+      address: '0x3A4411a33CfeF8BC01f23ED7518208aA38cca824',
+      farm: 0,
+      externalFarm: '0xBDf32c838e1b5d927B9ecb099b1f01F81d677A30',
+      scarceToken: 'token0',
+      scarceTokenName: 'fuse',
+      scarceTokenDecimals: 18
+    },
     stimulusName: 'fuse',
     stimulusDisplayName: 'FUSE',
     tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x970B9bB2C0444F5E81e9d0eFb84C8ccdcdcAf84d',
@@ -254,7 +262,10 @@ const TOKENS = {
     ichiVault: { 
       address: '0xfaeCcee632912c42a7c88c3544885A8D455408FA',
       farm: 16,
-      ichi: 'token1'
+      externalFarm: '',
+      scarceToken: 'token1',
+      scarceTokenName: 'ichi',
+      scarceTokenDecimals: 9
     },
     stimulusName: 'uni',
     stimulusDisplayName: 'UNI',

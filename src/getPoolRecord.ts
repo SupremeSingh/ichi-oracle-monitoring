@@ -351,7 +351,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
         let poolInfo = await farm.poolInfo(adjusterPoolId);
         let poolAllocPoint = poolInfo.allocPoint;
   
-        reward = rewardsPerBlock * poolAllocPoint / totalAllocPoint;
+        reward = Number(totalAllocPoint) === 0 ? 0 : rewardsPerBlock * poolAllocPoint / Number(totalAllocPoint);
         inTheFarmLP = await farm.getLPSupply(adjusterPoolId);
       }
   
@@ -443,7 +443,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
           token0Decimals = token0data.decimals;
           token1Symbol = token1data.symbol;
           token1Decimals = token1data.decimals;
-      
+
           let reserve = {};
           if (isOneInchPool) {
             reserve = await getOneInchPoolReserves(token0, token1, poolToken);
@@ -457,7 +457,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
           let reserve1 = reserve['_reserve1'];
           reserve0Raw = reserve0 / 10 ** token0Decimals;
           reserve1Raw = reserve1 / 10 ** token1Decimals;
-      
+
           token0 = (token0 === ADDRESSES.ETH ? tokens['weth']['address'] : token0);
           token1 = (token1 === ADDRESSES.ETH ? tokens['weth']['address'] : token1);
       

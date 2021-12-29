@@ -4,6 +4,7 @@ import { ethers, utils } from 'ethers';
 import { ADDRESSES, TOKENS, CHAIN_ID, APIS, DEBUNK_PROTOCOLS } from './configMainnet';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
+import GENERIC_FARMING_V2_ABI from './abis/GENERIC_FARMING_V2_ABI.json';
 import ERC20_ABI from './abis/ERC20_ABI.json';
 import _1INCH_STAKING_ABI from './abis/1INCH_STAKING_ABI.json';
 import VAULT_ABI from './abis/ICHI_VAULT_ABI.json';
@@ -57,7 +58,10 @@ const getOneTokenAttributes = async function(tokenName) {
     ichiVault: {
       address: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['address'] : '',
       farm: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['farm'] : 0,
-      ichi: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['ichi'] : ''
+      externalFarm: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['externalFarm'] : '',
+      scarceTokenName: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['scarceTokenName'] : '',
+      scarceTokenDecimals: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['scarceTokenDecimals'] : 18,
+      scarceToken: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['scarceToken'] : ''
     }
   }
 
@@ -170,8 +174,17 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     strategy_balance_ichi = Number(await ICHI.balanceOf(strategyAddress));
 
     let strategy_balance_vault_lp = 0;
-    if (attr.ichiVault.farm > 0) {
+    if (attr.ichiVault.farm > 0 && attr.ichiVault.externalFarm === '') {
       const userInfo = await farming_V2.userInfo(attr.ichiVault.farm, strategyAddress);
+      strategy_balance_vault_lp += Number(userInfo.amount);
+    }
+    if (attr.ichiVault.externalFarm !== '' && attr.ichiVault.externalFarm.length > 0 ) {
+      const generic_farming_V2 = new ethers.Contract(
+        attr.ichiVault.externalFarm,
+        GENERIC_FARMING_V2_ABI,
+        provider
+      );
+      const userInfo = await generic_farming_V2.userInfo(attr.ichiVault.farm, strategyAddress);
       strategy_balance_vault_lp += Number(userInfo.amount);
     }
     if (attr.ichiVault.address !== '') {
@@ -180,11 +193,19 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       const vault_total_lp = Number(await vault.totalSupply());
       const vault_total_amounts = await vault.getTotalAmounts();
       const vault_ratio = strategy_balance_vault_lp / vault_total_lp;
-      if (attr.ichiVault.ichi === 'token0') {
-        strategy_balance_ichi += Number(vault_total_amounts.total0) * vault_ratio;
+      if (attr.ichiVault.scarceToken === 'token0') {
+        if (attr.ichiVault.scarceTokenName === 'ichi') {
+          strategy_balance_ichi += Number(vault_total_amounts.total0) * vault_ratio;
+        } else {
+          strategy_balance_stimulus += Number(vault_total_amounts.total0) * vault_ratio;
+        }
         strategy_balance_onetoken += Number(vault_total_amounts.total1) * vault_ratio;
       } else {
-        strategy_balance_ichi += Number(vault_total_amounts.total1) * vault_ratio;
+        if (attr.ichiVault.scarceTokenName === 'ichi') {
+          strategy_balance_ichi += Number(vault_total_amounts.total1) * vault_ratio;
+        } else {
+          strategy_balance_stimulus += Number(vault_total_amounts.total1) * vault_ratio;
+        }
         strategy_balance_onetoken += Number(vault_total_amounts.total0) * vault_ratio;
       }
     }
