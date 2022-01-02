@@ -565,6 +565,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     let reserveRatio = 0;
     if (oneToken_treasury_backed > 0) {
       reserveRatio = oneToken_stimulus_usd / oneToken_treasury_backed;
+    } else {
+      reserveRatio = 100; // 10000%
     }
 
     let totalUSDC = (oneToken_USDC + strategy_balance_usdc + strategy_balance_riskharbor_usdc) / 10 ** 6 +
