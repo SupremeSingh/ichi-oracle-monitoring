@@ -185,7 +185,7 @@ export const updateFarm = async (tableName: string, poolId: number,
     isRetired = true;
 
   // these pools may have 0 APY, but they are not retired
-  if (poolId == 10001 || poolId == 20001)
+  if (poolId == 10001 || poolId == 20002)
     isRetired = false; 
 
   let futureAPY = 0;

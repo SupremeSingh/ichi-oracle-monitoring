@@ -313,7 +313,7 @@ const POOLS = {
   activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004],
   // activePools : [1017],
   depositPools : [1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018],
-  activeVaults: [1016, 20001],
+  activeVaults: [1016, 20001, 20002],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
@@ -511,6 +511,17 @@ LABELS[20001] = {
   farmRewardTokenDecimals: 18,
   farmRewardTokenAddress: '0x970B9bB2C0444F5E81e9d0eFb84C8ccdcdcAf84d',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0xbbce03b2e7f53cadca93251ca4c928af01db6404'
+}
+LABELS[20002] = {
+  name: 'oneWING Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  farmAddress: '0xa87c231A2311B9484bfC9BF90C51C3181161eCB0',
+  farmId: 0,
+  farmRewardTokenName: 'pWING',
+  farmRewardTokenDecimals: 9,
+  farmRewardTokenAddress: '0xDb0f18081b505A7DE20B18ac41856BCB4Ba86A1a',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x5047fc5C9D7c49Ab22e390d13646a6A3a2476eff',
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID, DEBUNK_PROTOCOLS };
