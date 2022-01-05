@@ -2,6 +2,7 @@ import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { ethers, utils } from 'ethers';
 import { ADDRESSES, TOKENS, CHAIN_ID, APIS, DEBUNK_PROTOCOLS } from './configMainnet';
+import { BSC_ADDRESSES, BSC_APIS } from './configBSC';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import GENERIC_FARMING_V2_ABI from './abis/GENERIC_FARMING_V2_ABI.json';
@@ -15,6 +16,7 @@ import ONEETH_ABI from './abis/oneETH_ABI.json';
 import UNISWAP_V3_POSITIONS from './abis/UNISWAP_V3_POSITIONS_ABI.json';
 import UNI_V3_POOL from './abis/UNI_V3_POOL_ABI.json';
 import RISKHARBOR_ABI from './abis/RISKHARBOR_ABI.json';
+import RARI_POOL_ABI from './abis/RARI_POOL_ABI.json';
 import { getPoolRecord } from './getPoolRecord';
 import axios from 'axios';
 
@@ -30,6 +32,8 @@ AWS.config.update({
 const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
 
 const RPC_HOST = `https://mainnet.infura.io/v3/${infuraId}`;
+
+const BSC_RPC_HOST = BSC_APIS.rpcHost;
 
 const getABI = async function(abiType) {
   if (abiType == 'ONELINK')
@@ -107,6 +111,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     FARMING_V1_ABI,
     provider
   );
+
   const farming_V2 = new ethers.Contract(
     ADDRESSES.farming_V2,
     FARMING_V2_ABI,
@@ -146,6 +151,11 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const oneToken_USDC = Number(await USDC.balanceOf(oneTokenAddress));
   const oneToken_stimulus = Number(await stimulusToken.balanceOf(oneTokenAddress));
   const oneToken_ichi = Number(await ICHI.balanceOf(oneTokenAddress));
+
+  const rari_OneUni = new ethers.Contract(ADDRESSES.rari_oneuni, RARI_POOL_ABI, provider);
+  const rari_OneUni_exchangeRate = Number(await rari_OneUni.exchangeRateStored());
+  const rari_USDC = new ethers.Contract(ADDRESSES.rari_usdc, RARI_POOL_ABI, provider);
+  const rari_USDC_exchangeRate = Number(await rari_USDC.exchangeRateStored());
   
   // =================================================================================
   // get balances from the strategy, if it exists
@@ -161,15 +171,28 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let uni_v3_positions = 0;
   let strategy_balance_st1inch = 0;
   if (strategyAddress !== "") {
+    const strategy_balance_rari_oneuni = Number(await rari_OneUni.balanceOf(strategyAddress));
+    const strategy_balance_rari_oneuni_usd = strategy_balance_rari_oneuni * (rari_OneUni_exchangeRate / 10 ** 18); 
+    const strategy_balance_rari_usdc = Number(await rari_USDC.balanceOf(strategyAddress));
+    const strategy_balance_rari_usdc_usd = strategy_balance_rari_usdc * (rari_USDC_exchangeRate / 10 ** 18);
+    
+    // console.log(strategy_balance_rari_oneuni_usd);
+    // console.log(strategy_balance_rari_usdc_usd);
+
     strategy_balance_usdc = Number(await USDC.balanceOf(strategyAddress));
+    strategy_balance_usdc += strategy_balance_rari_usdc_usd;
+
     if (auxStrategyAddress !== "") {
       let aux_strategy_balance_usdc = Number(await USDC.balanceOf(auxStrategyAddress));
-      strategy_balance_usdc = strategy_balance_usdc + aux_strategy_balance_usdc;
+      strategy_balance_usdc += aux_strategy_balance_usdc;
     }
     strategy_balance_stimulus = Number(await stimulusToken.balanceOf(strategyAddress));
     strategy_balance_onetoken = Number(await oneToken.balanceOf(strategyAddress));
     if (itemName !== 'oneUNI') {
       strategy_balance_one_uni = Number(await oneUNI.balanceOf(strategyAddress));
+      strategy_balance_one_uni += strategy_balance_rari_oneuni_usd;
+    } else {
+      strategy_balance_onetoken += strategy_balance_rari_oneuni_usd;
     }
     strategy_balance_ichi = Number(await ICHI.balanceOf(strategyAddress));
 
@@ -259,6 +282,37 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         }
       }
     }
+
+  }
+
+  if (itemName == 'oneDODO') {
+    // BCS positions for oneDODO
+
+    const bsc_provider = new ethers.providers.JsonRpcProvider(BSC_RPC_HOST);
+
+    const bscContract_USDC = new ethers.Contract(BSC_ADDRESSES.usdc, ERC20_ABI, bsc_provider);
+    const bscContract_oneDODO = new ethers.Contract(BSC_ADDRESSES.oneDodo, ERC20_ABI, bsc_provider);
+    const bscContract_DLP = new ethers.Contract(BSC_ADDRESSES.dlp, ERC20_ABI, bsc_provider);
+
+    let usdc_in_gnosis = Number(await bscContract_USDC.balanceOf(BSC_ADDRESSES.gnosis));
+    let oneDodo_in_gnosis = Number(await bscContract_oneDODO.balanceOf(BSC_ADDRESSES.gnosis));
+    const dlp_in_gnosis = Number(await bscContract_DLP.balanceOf(BSC_ADDRESSES.gnosis));
+
+    const usdc_in_dlp = Number(await bscContract_USDC.balanceOf(BSC_ADDRESSES.dlp));
+    const oneDODO_in_dlp = Number(await bscContract_oneDODO.balanceOf(BSC_ADDRESSES.dlp));
+
+    const dlp_total_supply = Number(await bscContract_DLP.totalSupply());
+
+    if (dlp_total_supply > 0) {
+      const pct_dlp_in_gnosis = dlp_in_gnosis / dlp_total_supply;
+      usdc_in_gnosis += pct_dlp_in_gnosis * usdc_in_dlp;
+      oneDodo_in_gnosis += pct_dlp_in_gnosis * oneDODO_in_dlp;    
+    }
+
+    usdc_in_gnosis = usdc_in_gnosis / 10 ** 12; // from 18 dec to 6 dec USDC
+
+    strategy_balance_usdc += usdc_in_gnosis;
+    strategy_balance_onetoken += oneDodo_in_gnosis;
 
   }
 
