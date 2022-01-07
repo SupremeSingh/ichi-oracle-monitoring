@@ -305,6 +305,14 @@ const TOKENS = {
     displayName: "oneWING",
     isOneToken: true,
     isV2: true,
+    ichiVault: { 
+      address: '0x2a8E09552782563f7A076ccec0Ff39473B91Cd8F',
+      farm: 0,
+      externalFarm: '0xa87c231A2311B9484bfC9BF90C51C3181161eCB0',
+      scarceToken: 'token1',
+      scarceTokenName: 'pwing',
+      scarceTokenDecimals: 9
+    },
     stimulusName: 'pwing',
     stimulusDisplayName: 'pWING',
     tradeUrl: 'https://app.sushi.com/swap?inputCurrency=ETH&outputCurrency=0xDb0f18081b505A7DE20B18ac41856BCB4Ba86A1a',
