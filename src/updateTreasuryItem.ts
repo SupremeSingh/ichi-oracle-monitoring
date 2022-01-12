@@ -266,6 +266,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
               } else {
                 strategy_balance_onetoken += Number(supply_token.amount) * 10 ** 18;
               }
+            } else if (supply_token.id.toLowerCase() === TOKENS['ichi']['address'].toLowerCase()){
+              strategy_balance_ichi += Number(supply_token.amount) * 10 ** TOKENS.ichi.decimals;
             }
             if (supply_token.id.toLowerCase() === TOKENS['usdc']['address'].toLowerCase()) {
               usdc_in_position += Number(supply_token.amount) * 10 ** 6;
