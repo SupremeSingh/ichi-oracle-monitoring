@@ -135,6 +135,9 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
       case 'pwing':
         price = await lookUpMemberTokenPrice(TOKENS['onewing']['address'], TOKENS['pwing']['address'], 9);
         break;
+      case 'boot':
+        price = await lookUpMemberTokenPrice(TOKENS['bootusd']['address'], TOKENS['boot']['address'], 9);
+        break;
       case 'weth':
         price = await lookupStimulusUSDPrice(TOKENS['oneeth']['address'], 9);
         break;

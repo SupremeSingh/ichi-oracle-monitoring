@@ -140,6 +140,13 @@ const TOKENS = {
     parentOneToken: "onefox",
     isOneToken: false
   },
+  boot: {
+    address: "0x0337fe811809A0aaf9B5D07945b39E473dE4c46E",
+    decimals: 18,
+    displayName: "BOOT",
+    parentOneToken: "bootusd",
+    isOneToken: false
+  },
 
   oneeth: { 
     address: "0xEc0d77a58528a218cBf41Fa6E1585c8D7A085868",
@@ -316,7 +323,19 @@ const TOKENS = {
     stimulusName: 'pwing',
     stimulusDisplayName: 'pWING',
     tradeUrl: 'https://app.sushi.com/swap?inputCurrency=ETH&outputCurrency=0xDb0f18081b505A7DE20B18ac41856BCB4Ba86A1a',
-  }
+  },
+  bootusd: { 
+    address: "0x78a3b2f1e7eec1073088ea4a193618743f81cef8",
+    strategy: "0x4ed128f3087DB2D9F6Ea0f1dca3b7FC716EC256C",
+    aux_strategy: "",
+    decimals: 18,
+    displayName: "BOOTusd",
+    isOneToken: true,
+    isV2: true,
+    stimulusName: 'boot',
+    stimulusDisplayName: 'BOOT',
+    tradeUrl: 'https://www.boot.finance',
+  },
 }
 
 const POOLS = {
