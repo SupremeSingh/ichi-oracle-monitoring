@@ -342,7 +342,7 @@ const POOLS = {
   activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004],
   // activePools : [1017],
   depositPools : [1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018],
-  activeVaults: [1016, 20001, 20002],
+  activeVaults: [1016, 20001, 20002, 20003],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
@@ -551,6 +551,17 @@ LABELS[20002] = {
   farmRewardTokenDecimals: 9,
   farmRewardTokenAddress: '0xDb0f18081b505A7DE20B18ac41856BCB4Ba86A1a',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x5047fc5C9D7c49Ab22e390d13646a6A3a2476eff',
+}
+LABELS[20003] = {
+  name: 'oneFOX Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  farmAddress: '0x81A19b061d6a726b3268FF13cB0f9eb1b6f2DDA5',
+  farmId: 0,
+  farmRewardTokenName: 'FOX',
+  farmRewardTokenDecimals: 18,
+  farmRewardTokenAddress: '0xc770EEfAd204B5180dF6a14Ee197D99d808ee52d',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x03352D267951E96c6F7235037C5DFD2AB1466232',
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID, DEBUNK_PROTOCOLS };
