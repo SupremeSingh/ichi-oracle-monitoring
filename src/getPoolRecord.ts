@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { ADDRESSES, POOLS, TOKENS, APIS, LABELS } from './configMainnet';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
@@ -11,7 +11,24 @@ import ICHI_BNT_ABI from './abis/ICHI_BNT_ABI.json';
 import VAULT_ABI from './abis/ICHI_VAULT_ABI.json';
 import DLP_ABI from './abis/DLP_ABI.json';
 import DODO_FARM_ABI from './abis/DODO_FARM_ABI.json';
+import RARI_POOL_LENS_ABI from './abis/RARI_POOL_LENS_ABI.json';
+import RARI_POOL_LENS_SECONDARY_ABI from './abis/RARI_POOL_LENS_SECONDARY_ABI.json';
 import axios from 'axios';
+
+export const toInt = (input: BigNumber) => {
+  if (!input) return 0
+  return parseInt(input.toString())
+}
+
+export const convertMantissaToAPY = (mantissa: any, dayRange: number = 35) => {
+  const parsedMantissa = toInt(mantissa)
+  return (Math.pow((parsedMantissa / 1e18) * 6500 + 1, dayRange) - 1) * 100;
+};
+
+export const convertMantissaToAPR = (mantissa: any) => {
+  const parsedMantissa = toInt(mantissa)
+  return (parsedMantissa * 2372500) / 1e16;
+};
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
@@ -769,6 +786,104 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
           decimals1: 6,
           token0: "oneDODO",
           token1: "USDC"
+        };
+  
+        return poolRecord;
+      }
+      if (poolID === 10005) {
+        const signer = provider.getSigner("0x28e338F752885d2aE60a43888e8149724f0Ae9ee");
+        //const contract = new ethers.Contract(contractDeployedAddress, Contract.abi, signer)
+
+        const lensContract = new ethers.Contract(
+          ADDRESSES.rari_pool_lens,
+          RARI_POOL_LENS_ABI,
+          provider
+        );
+
+        const lensContractSecondary = new ethers.Contract(
+          ADDRESSES.rari_pool_lens_secondary,
+          RARI_POOL_LENS_SECONDARY_ABI,
+          provider
+        );
+
+        // get rewardSpeed from the secondary lens contract
+        let secondaryData = await lensContractSecondary.callStatic.getRewardSpeedsByPool(
+          ADDRESSES.rari_comptroller
+        );
+
+        let rewardSpeed = 0
+        // make sure rewardSpeed matched the index of the oneUNI cToken address
+        // cToken addresses are in array 0, rewardSpeeds are in array 3
+        for (let i = 0; i < secondaryData[0].length; i++) {
+          if (secondaryData[0][i].toString().toLowerCase() == ADDRESSES.rari_oneuni_token.toLowerCase()) {
+            rewardSpeed = Number(secondaryData[3][i])
+            break
+          }
+        }
+        //console.log(secondaryData)
+        //console.log(secondaryData[3][3].toString())
+        //console.log(secondaryData[3][6].toString())
+
+        let data = await lensContract.callStatic.getPoolAssetsWithData(ADDRESSES.rari_comptroller);
+
+        let combinedAPR = 0;
+        let reserve0 = 0;
+        let poolLP = '';
+        for (let item of data) {
+          if (item['underlyingSymbol'] == 'oneUNI') {
+            //console.log(item['totalSupply'].toString());
+            //console.log(item['supplyRatePerBlock'].toString());
+            //console.log(item['underlyingPrice'].toString()); // in ETH
+
+            //const apy = convertMantissaToAPY(item['supplyRatePerBlock'], 365)
+            //console.log(apy.toString());
+            
+            const apr = convertMantissaToAPR(item['supplyRatePerBlock'])
+            //console.log(apr.toString());
+
+            reserve0 = Number(item['totalSupply']);
+            poolLP = item['totalSupply'].toString();
+
+            const newRewardUSDPerBlock = Number(tokenPrices["ichi"]) * (rewardSpeed / 10 ** 9);
+            const newUnderlyingTotalSupplyUSD = reserve0 / 10 ** 18;
+            const newMantissa = (newRewardUSDPerBlock * 1e18) / newUnderlyingTotalSupplyUSD;
+
+            const rewradsAPR = convertMantissaToAPR(newMantissa)
+            //console.log(rewradsAPR.toString());
+            combinedAPR = apr + rewradsAPR;
+          }
+        }
+        //console.log(combinedAPR.toString());
+
+        let reserve0Raw = reserve0 / 10 ** 18; //oneUNI
+        let reserve1Raw = 0;
+  
+        let TVL = reserve0Raw + reserve1Raw;
+
+        let farmTVL = TVL;
+
+        let yearlyAPY = combinedAPR;
+        let dailyAPY = yearlyAPY / 365;
+  
+        let poolRecord = {
+          pool: poolID,
+          lpAddress: TOKENS['oneuni']['address'],
+          dailyAPY: dailyAPY,
+          weeklyAPY: dailyAPY * 7,
+          monthlyAPY: dailyAPY * 30,
+          yearlyAPY: yearlyAPY,
+          totalPoolLP: poolLP,
+          totalFarmLP: poolLP,
+          tvl: TVL,
+          farmTVL: farmTVL,
+          reserve0Raw: reserve0Raw,
+          reserve1Raw: reserve1Raw,
+          address0: TOKENS['oneuni']['address'],
+          address1: '',
+          decimals0: 18,
+          decimals1: 0,
+          token0: "oneUNI",
+          token1: ''
         };
   
         return poolRecord;

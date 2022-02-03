@@ -14,6 +14,10 @@ const ADDRESSES = {
   bmi_staking: "0x6771Fd8968488Eb590Dff1730FE099c0eFA415bF",
   // risk_harbor: "0x39c9c00B3651767A7BFdCE3Fd3d714C937E07587"
   risk_harbor: "0x635F549a5502CCF73b97A6df2C3644ed804b250d",
+  rari_pool_lens: "0x6Dc585Ad66A10214Ef0502492B0CC02F0e836eec",
+  rari_pool_lens_secondary: "0xc76190E04012f26A364228Cfc41690429C44165d",
+  rari_oneuni_token: "0x342AC2C024f214a711356F48326614E1d8Dd0420",
+  rari_comptroller: "0xAbDFCdb1503d89D9a6fFE052a526d7A41f5b76D6",
   rari_oneuni: "0x342AC2C024f214a711356F48326614E1d8Dd0420",
   rari_usdc: "0xecE2c0aA6291e3f1222B6f056596dfE0E81039b9"
 };
@@ -339,9 +343,9 @@ const TOKENS = {
 }
 
 const POOLS = {
-  activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004],
-  // activePools : [1017],
-  depositPools : [1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018],
+  activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005],
+  // activePools : [10005],
+  depositPools : [1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018, 10005],
   activeVaults: [1016, 20001, 20002, 20003],
   upcomingPools : [],
   migratingPools : [],
@@ -425,6 +429,14 @@ LABELS[10004] = {
   externalAddress: '0xf9B8500b5012c059f30daA734d3A7131d668b1cd',
   externalUrl: 'https://app.dodoex.io/mining?network=mainnet&address=0xaa89cab926dcd65b3779aa98d9342fd9a21e5d1c',
   externalButton: 'DODO'
+}
+LABELS[10005] = {
+  name: 'oneUNI Deposit',
+  lpName: 'oneUNI',
+  shortLpName: 'oneUNI',
+  externalUrl: 'https://app.rari.capital/fuse/pool/136',
+  externalText: 'Earn $ICHI and $oneUNI',
+  externalButton: 'RARI'
 }
 LABELS[1001] = {
   name: '80/20 ICHI-ETH',
