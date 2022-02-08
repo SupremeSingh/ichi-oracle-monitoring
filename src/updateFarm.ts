@@ -202,7 +202,7 @@ export const updateFarm = async (tableName: string, poolId: number,
   
   let vaultAPR = 0
   let vaultIRR = 0
-  if (isVault) {
+  if (isVault && POOLS.activeAPR.includes(poolId)) {
     //handle inversion then pass to function
     let vaultName: string = LABELS[poolId].vaultName
     let vaultAddress: string = LABELS[poolId].vaultAddress

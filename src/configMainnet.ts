@@ -369,7 +369,8 @@ const POOLS = {
   uniPools : [1005],
   loopringPools : [10002],
   dodoPools : [10004],
-  specialPricing : [19]
+  specialPricing: [19],
+  activeAPR: [1016]
 }
 
 const LABELS = {};
