@@ -234,7 +234,8 @@ const TOKENS = {
       externalFarm: '0xBDf32c838e1b5d927B9ecb099b1f01F81d677A30',
       scarceToken: 'token0',
       scarceTokenName: 'fuse',
-      scarceTokenDecimals: 18
+      scarceTokenDecimals: 18,
+      graphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/fuse-vault'
     },
     stimulusName: 'fuse',
     stimulusDisplayName: 'FUSE',
@@ -278,7 +279,8 @@ const TOKENS = {
       externalFarm: '',
       scarceToken: 'token1',
       scarceTokenName: 'ichi',
-      scarceTokenDecimals: 9
+      scarceTokenDecimals: 9,
+      graphEnpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/ichi-vault'
     },
     stimulusName: 'uni',
     stimulusDisplayName: 'UNI',
@@ -304,6 +306,15 @@ const TOKENS = {
     displayName: "oneFOX",
     isOneToken: true,
     isV2: true,
+    ichiVault: { 
+      address: '0x779F9BAd1f4B1Ef5198AD9361DBf3791F9e0D596',
+      farm: 0,
+      externalFarm: '0x81A19b061d6a726b3268FF13cB0f9eb1b6f2DDA5',
+      scarceToken: 'token1',
+      scarceTokenName: 'fox',
+      scarceTokenDecimals: 18,
+      graphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/fox-vault'
+    },
     stimulusName: 'fox',
     stimulusDisplayName: 'FOX',
     tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xc770EEfAd204B5180dF6a14Ee197D99d808ee52d',
@@ -322,7 +333,8 @@ const TOKENS = {
       externalFarm: '0xa87c231A2311B9484bfC9BF90C51C3181161eCB0',
       scarceToken: 'token1',
       scarceTokenName: 'pwing',
-      scarceTokenDecimals: 9
+      scarceTokenDecimals: 9,
+      graphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/wing-vault'
     },
     stimulusName: 'pwing',
     stimulusDisplayName: 'pWING',
@@ -528,6 +540,10 @@ LABELS[1016] = {
   lpName: 'ICHI_VAULT_LP',
   shortLpName: 'VAULT_LP',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x8290d7a64f25e6b5002d98367e8367c1b532b534',
+  subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/ichi-vault',
+  isInverted: false,
+  vaultName: 'ichi',
+  vaultAddress: '0xfaeCcee632912c42a7c88c3544885A8D455408FA'
 }
 LABELS[1017] = {
   name: 'oneDODO Deposit',
@@ -551,7 +567,11 @@ LABELS[20001] = {
   farmRewardTokenName: 'FUSE',
   farmRewardTokenDecimals: 18,
   farmRewardTokenAddress: '0x970B9bB2C0444F5E81e9d0eFb84C8ccdcdcAf84d',
-  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0xbbce03b2e7f53cadca93251ca4c928af01db6404'
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0xbbce03b2e7f53cadca93251ca4c928af01db6404',
+  subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/fuse-vault',
+  isInverted: true,
+  vaultName: 'fuse',
+  vaultAddress: '0x3A4411a33CfeF8BC01f23ED7518208aA38cca824'
 }
 LABELS[20002] = {
   name: 'oneWING Vault',
@@ -563,6 +583,10 @@ LABELS[20002] = {
   farmRewardTokenDecimals: 9,
   farmRewardTokenAddress: '0xDb0f18081b505A7DE20B18ac41856BCB4Ba86A1a',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x5047fc5C9D7c49Ab22e390d13646a6A3a2476eff',
+  subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/wing-vault',
+  isInverted: false,
+  vaultName: 'wing',
+  vaultAddress: '0x2a8E09552782563f7A076ccec0Ff39473B91Cd8F'
 }
 LABELS[20003] = {
   name: 'oneFOX Vault',
@@ -574,6 +598,10 @@ LABELS[20003] = {
   farmRewardTokenDecimals: 18,
   farmRewardTokenAddress: '0xc770EEfAd204B5180dF6a14Ee197D99d808ee52d',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x03352D267951E96c6F7235037C5DFD2AB1466232',
+  subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/fox-vault',
+  isInverted: false,
+  vaultName: 'fox',
+  vaultAddress: '0x779F9BAd1f4B1Ef5198AD9361DBf3791F9e0D596'
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID, DEBUNK_PROTOCOLS };
