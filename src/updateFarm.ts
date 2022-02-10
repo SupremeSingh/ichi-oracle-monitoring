@@ -28,6 +28,8 @@ const getExchangeName = async function(poolId: number) {
     return "bancor";
   if (POOLS.dodoPools.includes(poolId))
     return "dodo";
+  if (POOLS.rariAssets.includes(poolId))
+    return "rari";
   if (POOLS.oneInchPools.includes(poolId))
     return "1inch";
   if (POOLS.uniPools.includes(poolId))

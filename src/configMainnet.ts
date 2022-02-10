@@ -17,6 +17,7 @@ const ADDRESSES = {
   rari_pool_lens: "0x6Dc585Ad66A10214Ef0502492B0CC02F0e836eec",
   rari_pool_lens_secondary: "0xc76190E04012f26A364228Cfc41690429C44165d",
   rari_oneuni_token: "0x342AC2C024f214a711356F48326614E1d8Dd0420",
+  rari_ichi_vault_lp_token: "0x78DcC36DC532b0dEF7b53a56A91610C44DD09444",
   rari_comptroller: "0xAbDFCdb1503d89D9a6fFE052a526d7A41f5b76D6",
   rari_oneuni: "0x342AC2C024f214a711356F48326614E1d8Dd0420",
   rari_usdc: "0xecE2c0aA6291e3f1222B6f056596dfE0E81039b9"
@@ -356,9 +357,10 @@ const TOKENS = {
 
 const POOLS = {
   activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005],
-  // activePools : [10005],
+  // activePools : [],
   depositPools : [1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018, 10005],
-  activeVaults: [1016, 20001, 20002, 20003],
+  activeVaults: [1016, 20001, 20002, 20003, 10006],
+  // activeVaults: [1016, 10006],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
@@ -369,8 +371,9 @@ const POOLS = {
   uniPools : [1005],
   loopringPools : [10002],
   dodoPools : [10004],
+  rariAssets : [10005, 10006],
   specialPricing: [19],
-  activeAPR: [1016]
+  activeAPR: [1016, 10006]
 }
 
 const LABELS = {};
@@ -449,6 +452,19 @@ LABELS[10005] = {
   shortLpName: 'oneUNI',
   externalUrl: 'https://app.rari.capital/fuse/pool/136',
   externalText: 'Earn $ICHI and $oneUNI',
+  externalButton: 'RARI'
+}
+LABELS[10006] = {
+  name: 'oneUNI Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x8290d7a64f25e6b5002d98367e8367c1b532b534',
+  subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/ichi-vault',
+  isInverted: false,
+  vaultName: 'ichi',
+  vaultAddress: '0xfaeCcee632912c42a7c88c3544885A8D455408FA',
+  externalUrl: 'https://app.rari.capital/fuse/pool/136',
+  externalText: 'Earn $ICHI',
   externalButton: 'RARI'
 }
 LABELS[1001] = {
