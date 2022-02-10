@@ -6,7 +6,7 @@ import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import { getPoolRecord } from './getPoolRecord';
 import * as pkg from '@apollo/client';
-import { subgraph_query, Vault, dataPacket } from './subgraph';
+import { subgraph_query, Vault, dataPacket, graphData } from './subgraph';
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
@@ -203,45 +203,17 @@ export const updateFarm = async (tableName: string, poolId: number,
   let vaultAPR = 0
   let vaultIRR = 0
   if (isVault && POOLS.activeAPR.includes(poolId)) {
-    //handle inversion then pass to function
+
     let vaultName: string = LABELS[poolId].vaultName
     let vaultAddress: string = LABELS[poolId].vaultAddress
     let vaultEndpoint: string = LABELS[poolId].subgraphEndpoint
     let dataPackets: dataPacket[] = []
     let isInverted: boolean = LABELS[poolId].isInverted
 
-    const depositTokensQuery = `
-      query($first: Int, $skip:Int) {
-        deposits (first: $first, skip: $skip, orderBy: createdAtTimestamp, orderDirection: desc) {
-          id
-          amount0
-          amount1
-          createdAtTimestamp
-          sqrtPrice
-          totalAmount0
-          totalAmount1
-        }
-      }
-      `
-
-    const withdrawalTokensQuery = `
-      query($first: Int, $skip:Int) {
-        withdraws (first: $first, skip: $skip, orderBy: createdAtTimestamp, orderDirection: desc) {
-          id
-          amount0
-          amount1
-          createdAtTimestamp
-          sqrtPrice
-          totalAmount0
-          totalAmount1
-        }
-      }
-      `
-
     let endOfDepositData = false
     let depositPage = 1;
     while (!endOfDepositData) {
-      let rawData = await subgraph_query(vaultEndpoint, depositPage, depositTokensQuery)
+      let rawData: graphData = await subgraph_query(vaultEndpoint, depositPage, true)
       if (rawData['data'] && rawData['data']['deposits']) {
         if (rawData.data['deposits'].length > 0) {
           dataPackets.push({ data: rawData, type: 'deposit' })
@@ -258,7 +230,7 @@ export const updateFarm = async (tableName: string, poolId: number,
     let endOfWithdrawalData = false
     let withdrawalPage = 1;
     while (!endOfWithdrawalData) {
-      let rawData = await subgraph_query(vaultEndpoint, withdrawalPage, withdrawalTokensQuery)
+      let rawData:graphData = await subgraph_query(vaultEndpoint, withdrawalPage, false)
       if (rawData['data'] && rawData['data']['withdraws']) {
         if (rawData['data']['withdraws'].length > 0) {
           dataPackets.push({ data: rawData, type: 'withdrawal' })
@@ -282,9 +254,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       vaultAPR = vault.APR
       vaultIRR = vault.IRR
     }
-    
-    //console.log(vaultAPR)
-    //console.log(vaultIRR)
+
   }
 
   // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03

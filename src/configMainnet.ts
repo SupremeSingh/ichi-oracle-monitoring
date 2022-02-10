@@ -235,7 +235,7 @@ const TOKENS = {
       scarceToken: 'token0',
       scarceTokenName: 'fuse',
       scarceTokenDecimals: 18,
-      graphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/fuse-vault'
+      //graphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/fuse-vault'
     },
     stimulusName: 'fuse',
     stimulusDisplayName: 'FUSE',
@@ -280,7 +280,7 @@ const TOKENS = {
       scarceToken: 'token1',
       scarceTokenName: 'ichi',
       scarceTokenDecimals: 9,
-      graphEnpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/ichi-vault'
+      //graphEnpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/ichi-vault'
     },
     stimulusName: 'uni',
     stimulusDisplayName: 'UNI',
@@ -313,7 +313,7 @@ const TOKENS = {
       scarceToken: 'token1',
       scarceTokenName: 'fox',
       scarceTokenDecimals: 18,
-      graphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/fox-vault'
+      //graphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/fox-vault'
     },
     stimulusName: 'fox',
     stimulusDisplayName: 'FOX',
@@ -334,7 +334,7 @@ const TOKENS = {
       scarceToken: 'token1',
       scarceTokenName: 'pwing',
       scarceTokenDecimals: 9,
-      graphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/wing-vault'
+      //graphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/wing-vault'
     },
     stimulusName: 'pwing',
     stimulusDisplayName: 'pWING',

@@ -8,8 +8,38 @@ import { BigNumber } from 'ethers';
 import vaultABI from './abis/ICHI_VAULT_ABI.json';
 import poolABI from './abis/UNI_V3_POOL_ABI.json'
 import xirr from 'xirr'
+import { GraphQLError } from 'graphql';
 
-async function subgraph_query(endpoint: string, page: number, tokensQuery) {
+const depositTokensQuery = `
+      query($first: Int, $skip:Int) {
+        deposits (first: $first, skip: $skip, orderBy: createdAtTimestamp, orderDirection: desc) {
+          id
+          amount0
+          amount1
+          createdAtTimestamp
+          sqrtPrice
+          totalAmount0
+          totalAmount1
+        }
+      }
+      `
+
+const withdrawalTokensQuery = `
+    query($first: Int, $skip:Int) {
+    withdraws (first: $first, skip: $skip, orderBy: createdAtTimestamp, orderDirection: desc) {
+        id
+        amount0
+        amount1
+        createdAtTimestamp
+        sqrtPrice
+        totalAmount0
+        totalAmount1
+    }
+    }
+    `
+
+async function subgraph_query(endpoint: string, page: number, isDeposit: boolean) {
+    let tokensQuery = isDeposit ? depositTokensQuery : withdrawalTokensQuery
     var client = new ApolloClient({
         uri: endpoint,
         cache: new InMemoryCache(),
@@ -23,9 +53,16 @@ async function subgraph_query(endpoint: string, page: number, tokensQuery) {
         },
     })
 }
-
+type graphData = {
+    data: any,
+    errors?: readonly GraphQLError[]
+    error?: pkg.ApolloError,
+    loading: boolean,
+    networkStatus: pkg.NetworkStatus,
+    partial?: boolean
+}
 type dataPacket = {
-    data: pkg.ApolloQueryResult<any>,
+    data: graphData,
     type: 'deposit' | 'withdrawal'
 }
 
@@ -122,6 +159,7 @@ type decimalsObject = {
   oneToken: number,
   scarceToken: number
 }
+
 
   
 function getVerboseTransactions(
@@ -271,5 +309,5 @@ async function getCurrentVaultValue(vaultName:string, vaultAddress: string, amou
     return currentVaultValue
 }
 
-export {subgraph_query, Vault, dataPacket, getVerboseTransactions, getDistilledTransactions}
+export {subgraph_query, Vault, dataPacket, getVerboseTransactions, getDistilledTransactions, graphData}
 
