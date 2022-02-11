@@ -147,6 +147,12 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
       case 'link':
         price = await lookupStimulusOraclePrice(TOKENS['onelink']['address'], 9);
         break;
+      case 'ichi_v2':
+        let ichiAddress = TOKENS['ichi']['address'];
+        let lookup_price1 = await lookUpTokenPrices([ichiAddress.toLowerCase()]);
+        price = lookup_price1.data[ichiAddress.toLowerCase()].usd;
+        priceChange = lookup_price1.data[ichiAddress.toLowerCase()].usd_24h_change;
+        break;
       default:
         let lookup_price = await lookUpTokenPrices([address.toLowerCase()]);
         price = lookup_price.data[address.toLowerCase()].usd;

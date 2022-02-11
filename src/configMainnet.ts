@@ -42,6 +42,12 @@ const TOKENS = {
     displayName: "ICHI",
     isOneToken: false
   },
+  ichi_v2: {
+    address: "0x111111517e4929D3dcbdfa7CCe55d30d4B6BC4d6",
+    decimals: 18,
+    displayName: "ICHI",
+    isOneToken: false
+  },
   xichi: {
     address: "0x70605a6457B0A8fBf1EEE896911895296eAB467E",
     decimals: 9,
