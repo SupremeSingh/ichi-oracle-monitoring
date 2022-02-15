@@ -179,7 +179,7 @@ export const updateFarm = async (tableName: string, poolId: number,
     if (LABELS[poolId]['farmAddress']) {
       farm['farmAddress'] = { S: LABELS[poolId]['farmAddress'] }
     }
-    if (LABELS[poolId]['farmId']) {
+    if (LABELS[poolId]['farmId'] != undefined) {
       farm['farmId'] = { N: Number(LABELS[poolId]['farmId']).toString() }
     }
     if (LABELS[poolId]['farmRewardTokenName']) {
