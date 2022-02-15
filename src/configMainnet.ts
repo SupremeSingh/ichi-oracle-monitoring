@@ -278,7 +278,7 @@ const TOKENS = {
     stimulusDisplayName: 'PERL',
     tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xeca82185adCE47f39c684352B0439f030f860318&use=V2',
   },
-  oneoja: { 
+  /*oneoja: { 
     address: "0xbB9E5DB6F357BB4dF35E8B90B37b8A3F33031D86",
     strategy: "0x2E76A8D053f839A04235341dF1f25235437fEDd6",
     aux_strategy: "",
@@ -289,7 +289,7 @@ const TOKENS = {
     stimulusName: 'oja',
     stimulusDisplayName: 'OJA',
     tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x0aA7eFE4945Db24d95cA6E117BBa65Ed326e291A&use=V2',
-  },
+  },*/
   oneuni: { 
     address: "0x8290d7a64f25e6b5002d98367e8367c1b532b534",
     strategy: "0x6287d56e246EEE33beAd2D7DD3a99Db693f4554C",
