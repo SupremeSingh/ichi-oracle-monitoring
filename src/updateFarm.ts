@@ -169,8 +169,17 @@ export const updateFarm = async (tableName: string, poolId: number,
 
   let farm = {};
   if (LABELS[poolId]) {
+    if (poolId >= 1000 && poolId < 5000) {
+      farm['farmAddress'] = { S: ADDRESSES.farming_V2 }
+      farm['farmId'] = { N: Number(poolId - 1000).toString() }
+      farm['farmRewardTokenName'] = { S: 'ichi' }
+      farm['farmRewardTokenDecimals'] = { N: '9' }
+      farm['farmRewardTokenAddress'] = { S: TOKENS.ichi.address }
+    }
     if (LABELS[poolId]['farmAddress']) {
       farm['farmAddress'] = { S: LABELS[poolId]['farmAddress'] }
+    }
+    if (LABELS[poolId]['farmId']) {
       farm['farmId'] = { N: Number(LABELS[poolId]['farmId']).toString() }
     }
     if (LABELS[poolId]['farmRewardTokenName']) {
