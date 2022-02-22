@@ -286,6 +286,15 @@ const TOKENS = {
     displayName: "oneOJA",
     isOneToken: true,
     isV2: true,
+    ichiVault: { 
+      address: '0x98bAd5Ce592DcfE706CC95a1B9dB7008B6D418F8',
+      farm: 0,
+      externalFarm: '0x4C8E041157f3DC06D6Cc5670EdE41aBA881D66e8',
+      scarceToken: 'token0',
+      scarceTokenName: 'oja',
+      scarceTokenDecimals: 18,
+      //graphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/oja-vault'
+    },
     stimulusName: 'oja',
     stimulusDisplayName: 'OJA',
     tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x0aA7eFE4945Db24d95cA6E117BBa65Ed326e291A&use=V2',
@@ -383,8 +392,8 @@ const POOLS = {
   activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005],
   // activePools : [],
   depositPools : [1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018, 10005],
-  activeVaults: [1016, 20001, 20002, 20003, 10006],
-  // activeVaults: [1016, 10006],
+  activeVaults: [1016, 20001, 20002, 20003, 20004, 10006],
+  // activeVaults: [20004],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
@@ -394,7 +403,7 @@ const POOLS = {
   bancorPools : [14, 1006, 10003],
   uniPools : [1005],
   loopringPools : [10002],
-  dodoPools : [10004],
+  dodoPools : [10004, 10007],
   rariAssets : [10005, 10006],
   specialPricing: [19],
   activeAPR: [1016, 10006]
@@ -492,6 +501,15 @@ LABELS[10006] = {
   externalUrl: 'https://app.rari.capital/fuse/pool/136',
   externalText: 'Earn $ICHI',
   externalButton: 'RARI'
+}
+LABELS[10007] = {
+  name: 'oneDODO-USDC',
+  lpName: 'DLP',
+  shortLpName: 'DLP',
+  farmAddress: '0x4be2d9251849DB6d3980cE3E13915980C1AE3065',
+  externalAddress: '0x4be2d9251849DB6d3980cE3E13915980C1AE3065',
+  externalUrl: 'https://app.dodoex.io/mining?network=bsc-mainnet&address=0x4be2d9251849DB6d3980cE3E13915980C1AE3065',
+  externalButton: 'DODO'
 }
 LABELS[1001] = {
   name: '80/20 ICHI-ETH',
@@ -645,6 +663,21 @@ LABELS[20003] = {
   isInverted: false,
   vaultName: 'fox',
   vaultAddress: '0x779F9BAd1f4B1Ef5198AD9361DBf3791F9e0D596'
+}
+LABELS[20004] = {
+  name: 'oneOJA Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  farmAddress: '0x4C8E041157f3DC06D6Cc5670EdE41aBA881D66e8',
+  farmId: 0,
+  farmRewardTokenName: 'OJA',
+  farmRewardTokenDecimals: 18,
+  farmRewardTokenAddress: '0x0aA7eFE4945Db24d95cA6E117BBa65Ed326e291A',
+  tradeUrl: 'https://app.ichi.org/mint?name=oneoja&collateral=USDC',
+  subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/oja-vault',
+  isInverted: true,
+  vaultName: 'oja',
+  vaultAddress: '0x98bAd5Ce592DcfE706CC95a1B9dB7008B6D418F8'
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID, DEBUNK_PROTOCOLS };

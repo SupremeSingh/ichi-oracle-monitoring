@@ -14,6 +14,7 @@ import DODO_FARM_ABI from './abis/DODO_FARM_ABI.json';
 import RARI_POOL_LENS_ABI from './abis/RARI_POOL_LENS_ABI.json';
 import RARI_POOL_LENS_SECONDARY_ABI from './abis/RARI_POOL_LENS_SECONDARY_ABI.json';
 import axios from 'axios';
+import { BSC_ADDRESSES, BSC_APIS } from './configBSC';
 
 export const toInt = (input: BigNumber) => {
   if (!input) return 0
@@ -37,8 +38,10 @@ if (!infuraId) {
 }
 
 const RPC_HOST = `https://mainnet.infura.io/v3/${infuraId}`;
+const BSC_RPC_HOST = BSC_APIS.rpcHost;
 
 const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
+const bsc_provider = new ethers.providers.JsonRpcProvider(BSC_RPC_HOST);
 
 const farming_V1 = new ethers.Contract(
     ADDRESSES.farming_V1,
@@ -60,11 +63,20 @@ async function getICHIBNTContract() {
   return poolContract;
 }
 
-async function getDLPContract(address) {
+async function getProvider(network) {
+  if (network == 'bsc') {
+    return bsc_provider;
+  }
+  // mainnet provider by default
+  return provider;
+}
+
+async function getDLPContract(address, network) {
+  const prv = await getProvider(network);
   const poolContract = new ethers.Contract(
     address,
     DLP_ABI,
-    provider
+    prv
   );
   return poolContract;
 }
@@ -563,7 +575,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
     );
   };
   
-  const getDodoPools = async function(address) {
+  const getDodoPools = async function(address, network) {
     let body =  { 
       query: `
         query Query($where: Mininginfo_filter) {
@@ -580,7 +592,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
       variables: { 
         "where": {
           "address": address,
-          "chain": "ethereum-mainnet"
+          "chain": network
         }
       }
     }
@@ -728,7 +740,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
         return poolRecord;
       }
       if (poolID === 10004) {
-        let dodoPool = await getDodoPools(LABELS[poolID]["externalAddress"]);
+        let dodoPool = await getDodoPools(LABELS[poolID]["externalAddress"],'ethereum-mainnet');
         let info = dodoPool.data["data"]["mining_info"];
         let lpAddress = info["lp_token"];
         let lpTotal = info["total_supply"];
@@ -741,7 +753,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
           return { pool: null }
         }
   
-        const poolContract = await getDLPContract(lpAddress);
+        const poolContract = await getDLPContract(lpAddress,'ethereum-mainnet');
   
         let reserve = await getPoolReserves(poolID, poolContract);
         let reserve0 = reserve._reserve0;
@@ -949,6 +961,71 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
         poolRecord.monthlyAPY = dailyAPY * 30;
         poolRecord.yearlyAPY = yearlyAPY;
         poolRecord.farmTVL = farmTVL;
+  
+        return poolRecord;
+      }
+      if (poolID === 10007) {
+        let dodoPool = await getDodoPools(LABELS[poolID]["externalAddress"],'bsc');
+        let info = dodoPool.data["data"]["mining_info"];
+        let lpAddress = info["lp_token"];
+        let lpTotal = info["total_supply"];
+        let lpFarm = info["balance"];
+        let blocks_year = Number(info["blocks_count_perYear"]);
+        let ichi_reward_usd = Number(info["mining_reward_usd"]);
+        //console.log(info);
+
+        if (!lpAddress) {
+          return { pool: null }
+        }
+  
+        const poolContract = await getDLPContract(lpAddress,'bsc');
+  
+        let reserve = await getPoolReserves(poolID, poolContract);
+        let reserve0 = reserve._reserve0;
+        let reserve1 = reserve._reserve1;
+        let reserve0Raw = reserve0 / 10 ** 18; //oneDODO
+        let reserve1Raw = reserve1 / 10 ** 18; //USDC
+  
+        let TVL = reserve0Raw + reserve1Raw;
+
+        let farmTVL = TVL / Number(lpTotal) * Number(lpFarm);
+
+        const prv = await getProvider('bsc')
+
+        const farmContract = new ethers.Contract(
+          LABELS[poolID]["externalAddress"],
+          DODO_FARM_ABI,
+          prv
+        );
+
+        let dodo_reward_info = await farmContract.rewardTokenInfos("0");
+        let dodo_reward_per_block = Number(dodo_reward_info["rewardPerBlock"]) / 10 ** 18; // in DODOs
+        let dodo_reward_usd = dodo_reward_per_block * blocks_year * tokenPrices['dodo'];
+        let total_reward_usd = dodo_reward_usd + ichi_reward_usd;
+
+        let yearlyAPY = total_reward_usd / farmTVL * 100;
+        let dailyAPY = yearlyAPY / 365;
+  
+        let poolRecord = {
+          pool: poolID,
+          lpAddress: lpAddress,
+          dailyAPY: dailyAPY,
+          weeklyAPY: dailyAPY * 7,
+          monthlyAPY: dailyAPY * 30,
+          yearlyAPY: yearlyAPY,
+          totalPoolLP: lpTotal,
+          totalFarmLP: lpFarm,
+          tvl: TVL,
+          farmTVL: farmTVL,
+          reserve0Raw: reserve0Raw,
+          reserve1Raw: reserve1Raw,
+          address0: BSC_ADDRESSES.oneDodo,
+          address1: BSC_ADDRESSES.usdc,
+          decimals0: 18,
+          decimals1: 18,
+          token0: "oneDODO",
+          token1: "USDC"
+        };
   
         return poolRecord;
       }
