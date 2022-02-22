@@ -43,6 +43,9 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
       case 'mum_usdc':
         price = 1;
         break;
+      case 'mum_ichi':
+        price = 17;
+        break;
       default:
         price = 1;
         break;

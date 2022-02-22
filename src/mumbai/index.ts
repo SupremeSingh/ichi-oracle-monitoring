@@ -1,9 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { updateTokens } from './updateTokens';
 import { updateTreasury } from './updateTreasury';
-//import { updateFarms } from './updateFarms';
+import { updateFarms } from './updateFarms';
 import AWS from 'aws-sdk';
-//import { updateFarm } from './updateFarm';
+import { updateFarm } from './updateFarm';
 
 const token_tableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
 const treasury_tableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
@@ -111,10 +111,10 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   //console.log(knownIchiPerBlock);
 
   if (poolId === -1) {
-    //await updateFarms(farms_tableName, tokenPrices, tokenNames, knownIchiPerBlock);
+    await updateFarms(farms_tableName, tokenPrices, tokenNames, knownIchiPerBlock);
     await updateTreasury(treasury_tableName, tokenPrices, tokenNames);
   } else {
-    //await updateFarm(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock);
+    await updateFarm(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock);
   }
 
   return {
