@@ -215,21 +215,23 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       strategy_balance_vault_lp += Number(await vault.balanceOf(strategyAddress));
       const vault_total_lp = Number(await vault.totalSupply());
       const vault_total_amounts = await vault.getTotalAmounts();
-      const vault_ratio = strategy_balance_vault_lp / vault_total_lp;
-      if (attr.ichiVault.scarceToken === 'token0') {
-        if (attr.ichiVault.scarceTokenName === 'ichi') {
-          strategy_balance_ichi += Number(vault_total_amounts.total0) * vault_ratio;
+      if (strategy_balance_vault_lp > 0) {
+        const vault_ratio = strategy_balance_vault_lp / vault_total_lp;
+        if (attr.ichiVault.scarceToken === 'token0') {
+          if (attr.ichiVault.scarceTokenName === 'ichi') {
+            strategy_balance_ichi += Number(vault_total_amounts.total0) * vault_ratio;
+          } else {
+            strategy_balance_stimulus += Number(vault_total_amounts.total0) * vault_ratio;
+          }
+          strategy_balance_onetoken += Number(vault_total_amounts.total1) * vault_ratio;
         } else {
-          strategy_balance_stimulus += Number(vault_total_amounts.total0) * vault_ratio;
+          if (attr.ichiVault.scarceTokenName === 'ichi') {
+            strategy_balance_ichi += Number(vault_total_amounts.total1) * vault_ratio;
+          } else {
+            strategy_balance_stimulus += Number(vault_total_amounts.total1) * vault_ratio;
+          }
+          strategy_balance_onetoken += Number(vault_total_amounts.total0) * vault_ratio;
         }
-        strategy_balance_onetoken += Number(vault_total_amounts.total1) * vault_ratio;
-      } else {
-        if (attr.ichiVault.scarceTokenName === 'ichi') {
-          strategy_balance_ichi += Number(vault_total_amounts.total1) * vault_ratio;
-        } else {
-          strategy_balance_stimulus += Number(vault_total_amounts.total1) * vault_ratio;
-        }
-        strategy_balance_onetoken += Number(vault_total_amounts.total0) * vault_ratio;
       }
     }
 
