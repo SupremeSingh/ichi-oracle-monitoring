@@ -389,9 +389,9 @@ const TOKENS = {
 }
 
 const POOLS = {
-  activePools : [1001, 1004, 1005, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005],
+  activePools : [1001, 1004, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005],
   // activePools : [],
-  depositPools : [1009, 1010, 1011, 1012, 1013, 1014, 1015, 1017, 1018, 10005],
+  depositPools : [1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10005],
   activeVaults: [1016, 20001, 20002, 20003, 20004, 10006],
   // activeVaults: [20004],
   upcomingPools : [],
@@ -565,12 +565,12 @@ LABELS[1010] = {
   shortLpName: 'one1INCH',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x853Bb55c1f469902F088A629db8C8803A9BE3857'
 }
-LABELS[1011] = {
+/*LABELS[1011] = {
   name: 'oneFUSE Deposit',
   lpName: 'oneFUSE',
   shortLpName: 'oneFUSE',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0xbbce03b2e7f53cadca93251ca4c928af01db6404'
-}
+}*/
 LABELS[1012] = {
   name: 'oneMPH Deposit',
   lpName: 'oneMPH',
