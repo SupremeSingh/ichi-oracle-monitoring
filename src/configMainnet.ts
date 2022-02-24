@@ -67,6 +67,12 @@ const TOKENS = {
     displayName: "BNT",
     isOneToken: false
   },
+  gno: {
+    address: "0x6810e776880C02933D47DB1b9fc05908e5386b96",
+    decimals: 18,
+    displayName: "GNO",
+    isOneToken: false
+  },
   '1inch': {
     address: "0x111111111117dC0aa78b770fA6A738034120C302",
     decimals: 18,
@@ -392,8 +398,8 @@ const POOLS = {
   activePools : [1001, 1004, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005],
   // activePools : [],
   depositPools : [1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10005],
-  activeVaults: [1016, 20001, 20002, 20003, 20004, 10006],
-  // activeVaults: [20004],
+  activeVaults: [1016, 1019, 20001, 20002, 20003, 20004, 10006],
+  // activeVaults: [1019],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
@@ -619,6 +625,16 @@ LABELS[1018] = {
   shortLpName: 'oneWING',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x5047fc5C9D7c49Ab22e390d13646a6A3a2476eff',
 }
+LABELS[1019] = {
+  name: 'GNO Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x6810e776880C02933D47DB1b9fc05908e5386b96&chain=mainnet',
+  subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/gno-vault',
+  isInverted: true,
+  vaultName: 'gno',
+  vaultAddress: '0xA380EA6BE1C084851aE7846a8F39def17eCf6ED8'
+}
 LABELS[20001] = {
   name: 'oneFUSE Vault',
   lpName: 'ICHI_VAULT_LP',
@@ -673,7 +689,7 @@ LABELS[20004] = {
   farmRewardTokenName: 'OJA',
   farmRewardTokenDecimals: 18,
   farmRewardTokenAddress: '0x0aA7eFE4945Db24d95cA6E117BBa65Ed326e291A',
-  tradeUrl: 'https://app.ichi.org/mint?name=oneoja&collateral=USDC',
+  tradeUrl: '/mint?name=oneoja&collateral=USDC',
   subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/oja-vault',
   isInverted: true,
   vaultName: 'oja',
