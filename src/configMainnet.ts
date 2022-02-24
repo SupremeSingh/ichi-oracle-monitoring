@@ -631,7 +631,7 @@ LABELS[1019] = {
   shortLpName: 'VAULT_LP',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x6810e776880C02933D47DB1b9fc05908e5386b96&chain=mainnet',
   subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/gno-vault',
-  isInverted: true,
+  isInverted: false,
   vaultName: 'gno',
   vaultAddress: '0xA380EA6BE1C084851aE7846a8F39def17eCf6ED8'
 }
