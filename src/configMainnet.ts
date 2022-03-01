@@ -35,6 +35,27 @@ const APIS = {
   _1inchPoolAPI: "https://governance.1inch.exchange/v1.1/farming/pools",
 };
 
+const POOLS = {
+  activePools : [1001, 1004, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005],
+  // activePools : [],
+  depositPools : [1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10005],
+  activeVaults: [1016, 20001, 20002, 20003, 20004, 10006],
+  // activeVaults: [1019],
+  upcomingPools : [],
+  migratingPools : [],
+  retiredPools : [],
+  oneInchPools : [15, 16, 10001],
+  balancerPools : [18, 1001, 1002, 1008],
+  balancerSmartPools : [1003, 1007],
+  bancorPools : [14, 1006, 10003],
+  uniPools : [1005],
+  loopringPools : [10002],
+  dodoPools : [10004, 10007],
+  rariAssets : [10005, 10006],
+  specialPricing: [19],
+  activeAPR: [1016, 10006]
+}
+
 const TOKENS = {
   ichi: {
     address: "0x903bEF1736CDdf2A537176cf3C64579C3867A881",
@@ -392,27 +413,6 @@ const TOKENS = {
     stimulusDisplayName: 'BOOT',
     tradeUrl: 'https://www.boot.finance',
   },
-}
-
-const POOLS = {
-  activePools : [1001, 1004, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005],
-  // activePools : [],
-  depositPools : [1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10005],
-  activeVaults: [1016, 1019, 20001, 20002, 20003, 20004, 10006],
-  // activeVaults: [1019],
-  upcomingPools : [],
-  migratingPools : [],
-  retiredPools : [],
-  oneInchPools : [15, 16, 10001],
-  balancerPools : [18, 1001, 1002, 1008],
-  balancerSmartPools : [1003, 1007],
-  bancorPools : [14, 1006, 10003],
-  uniPools : [1005],
-  loopringPools : [10002],
-  dodoPools : [10004, 10007],
-  rariAssets : [10005, 10006],
-  specialPricing: [19],
-  activeAPR: [1016, 10006]
 }
 
 const LABELS = {};
