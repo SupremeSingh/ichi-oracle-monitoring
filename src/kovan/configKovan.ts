@@ -62,6 +62,12 @@ const TOKENS = {
     stimulusDisplayName: 'renFIL',
     tradeUrl: ''
   },
+  ichi: { 
+    address: "0x883Cc74d965edB77311A3f9a93649e92E2aa14ba",
+    decimals: 9,
+    displayName: "ICHI",
+    isOneToken: false
+  },
   test_ichi: { 
     address: "0x883Cc74d965edB77311A3f9a93649e92E2aa14ba",
     decimals: 9,

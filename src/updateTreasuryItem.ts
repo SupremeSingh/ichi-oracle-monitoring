@@ -412,7 +412,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     );
     let oneLINK_67_33_LP = oneLINK_67_33_Farming_Position.amount;
 
-    let oneLINK_67_33_PoolRecord = await getPoolRecord(1008, tokenPrices, null);
+    let oneLINK_67_33_PoolRecord = await getPoolRecord(1008, tokenPrices, null, false);
     
     let totalOneLINKLP = oneLINK_67_33_PoolRecord['totalPoolLP'];
     let percentOwnership = Number(oneLINK_67_33_LP) / Number(totalOneLINKLP);

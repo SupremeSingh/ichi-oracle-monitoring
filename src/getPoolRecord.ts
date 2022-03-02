@@ -16,6 +16,7 @@ import RARI_POOL_LENS_SECONDARY_ABI from './abis/RARI_POOL_LENS_SECONDARY_ABI.js
 import axios from 'axios';
 import { BSC_ADDRESSES, BSC_APIS } from './configBSC';
 
+import { GraphFarm } from './subgraph';
 export const toInt = (input: BigNumber) => {
   if (!input) return 0
   return parseInt(input.toString())
@@ -325,8 +326,8 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
       return tLP.toString();
     }
   }
-  
-  export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
+  //v2 farms are aroumd 1000
+  export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock, graph_farm: false | GraphFarm) {
     if (poolID >= 10000 && poolID < 20000)
       return getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock);
 
@@ -351,7 +352,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
       poolToken = await farm.lpToken(adjusterPoolId);
     } else {
       adjusterPoolId = adjusterPoolId - 1000;
-      poolToken = await farm.lpToken(adjusterPoolId);
+      poolToken = graph_farm ? graph_farm.LPToken : await farm.lpToken(adjusterPoolId);
     }
   
       // getting data for an active pool (or inactive pool not cached yet)
@@ -372,17 +373,23 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
           rewardTokenDecimals = LABELS[poolID]['farmRewardTokenDecimals'];
           rewardTokenName = LABELS[poolID]['farmRewardTokenName'].toLowerCase();
         } else {
-          let ichiPerBlock_V2 = await farm.ichiPerBlock();
+          let ichiPerBlock_V2 = graph_farm ? graph_farm.ichiPerBlock : await farm.ichiPerBlock();
           rewardsPerBlock = Number(ichiPerBlock_V2);
         }
 
-        let totalAllocPoint = await farm.totalAllocPoint();
-        let poolInfo = await farm.poolInfo(adjusterPoolId);
-        let poolAllocPoint = poolInfo.allocPoint;
+        let totalAllocPoint = graph_farm ? graph_farm.totalAllocPoints : await farm.totalAllocPoint();
+        
+        let poolAllocPoint = 0;
+        if (graph_farm) {
+          poolAllocPoint = graph_farm.allocPoint;
+        } else {
+          let poolInfo = await farm.poolInfo(adjusterPoolId);
+          poolAllocPoint = poolInfo.allocPoint;
+        }
   
         reward = Number(totalAllocPoint) === 0 ? 0 : rewardsPerBlock * poolAllocPoint / Number(totalAllocPoint);
-        inTheFarmLP = await farm.getLPSupply(adjusterPoolId);
-      }
+        inTheFarmLP = graph_farm ? graph_farm.totalLPSupply :await farm.getLPSupply(adjusterPoolId);
+      } //LP Balance staked
   
       const poolContract = await getPoolContract(poolID, false, farm, adjusterPoolId);
   
@@ -392,7 +399,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
       reward = Number(reward) / 10 ** rewardTokenDecimals;
       reward = reward * bonusToRealRatio;
   
-      let totalPoolLP = await getTotalSupply(poolID, poolContract, poolToken);
+      let totalPoolLP = graph_farm ? graph_farm.totalLPSupply : await getTotalSupply(poolID, poolContract, poolToken);
       
       let farmRatio = 0;
       if (Number(totalPoolLP) !== 0) {
@@ -899,7 +906,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
       }
       if (poolID === 10006) {
 
-        let poolRecord = await getPoolRecord(1016, tokenPrices, knownIchiPerBlock);
+        let poolRecord = await getPoolRecord(1016, tokenPrices, knownIchiPerBlock, false);
         let lpPrice = poolRecord.tvl / Number(poolRecord.totalPoolLP)
 
         const lensContract = new ethers.Contract(

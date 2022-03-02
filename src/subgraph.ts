@@ -1,4 +1,4 @@
-import { ADDRESSES, POOLS, LABELS, CHAIN_ID, TOKENS } from './configMainnet';
+import { APIS, TOKENS } from './configMainnet';
 import univ3prices from '@thanpolas/univ3prices';
 import * as pkg from '@apollo/client';
 import 'cross-fetch/dist/node-polyfill.js';
@@ -11,34 +11,106 @@ import xirr from 'xirr'
 import { GraphQLError } from 'graphql';
 
 const depositTokensQuery = `
-      query($first: Int, $skip:Int) {
+    query($first: Int, $skip:Int) {
         deposits (first: $first, skip: $skip, orderBy: createdAtTimestamp, orderDirection: desc) {
-          id
-          amount0
-          amount1
-          createdAtTimestamp
-          sqrtPrice
-          totalAmount0
-          totalAmount1
+            id
+            amount0
+            amount1
+            createdAtTimestamp
+            sqrtPrice
+            totalAmount0
+            totalAmount1
         }
-      }
-      `
+    }
+`
 
 const withdrawalTokensQuery = `
     query($first: Int, $skip:Int) {
-    withdraws (first: $first, skip: $skip, orderBy: createdAtTimestamp, orderDirection: desc) {
-        id
-        amount0
-        amount1
-        createdAtTimestamp
-        sqrtPrice
-        totalAmount0
-        totalAmount1
+        withdraws (first: $first, skip: $skip, orderBy: createdAtTimestamp, orderDirection: desc) {
+            id
+            amount0
+            amount1
+            createdAtTimestamp
+            sqrtPrice
+            totalAmount0
+            totalAmount1
+        }
     }
-    }
-    `
+`
 
-async function subgraph_query(endpoint: string, page: number, isDeposit: boolean) {
+const farmv2Query = `
+    query {
+        farms{
+          id
+          lpToken
+          rewardTokensPerBlock
+          totalAllocPoints
+          totalLPSupply
+          accIchiPerShare
+          lastRewardBlock
+          allocPoint
+          poolIchiReward
+          ichiPerBlock
+          lpTokenSymbol
+        }
+    }
+`
+
+async function farm_v2_graph_query() {
+    let tokensQuery = farmv2Query;
+    var client = new ApolloClient({
+        uri: APIS.subgraph_farming_v2,
+        cache: new InMemoryCache(),
+    })
+    return await client
+        .query({
+            query: gql(tokensQuery),
+        }) as graphData
+}
+
+type GraphFarm = {
+    id: string,
+    LPToken: string,
+    rewardTokensPerBlock: number,
+    totalAllocPoints: number,
+    totalLPSupply: number,
+    accIchiPerShare: number,
+    lastRewardBlock: number,
+    allocPoint: number,
+    poolIchiReward: number,
+    ichiPerBlock: number,
+    lpTokenSymbol: string
+}
+
+async function getSubgraphPoolRecords(): Promise<false | Map<number,GraphFarm>> {
+    let data = await farm_v2_graph_query();
+    let farm_map = new Map();
+    if(data.data && data.data.farms && data.data.farms.length > 0) {
+        for (let farm of data.data.farms) {
+            let temp: GraphFarm = {
+                id: farm.id,
+                LPToken: farm.lpToken,
+                rewardTokensPerBlock: farm.rewardTokensPerBlock,
+                totalAllocPoints: farm.totalAllocPoints,
+                totalLPSupply: farm.totalLPSupply,
+                accIchiPerShare: farm.accIchiPerShare,
+                lastRewardBlock: farm.lastRewardBlock,
+                allocPoint: farm.allocPoint,
+                poolIchiReward: farm.poolIchiReward,
+                ichiPerBlock: farm.ichiPerBlock,
+                lpTokenSymbol: farm.lpTokenSymbol
+            }
+            farm_map.set(temp.id, temp);
+        }
+    }
+    else {
+        return false;
+    }
+
+    return farm_map;
+}
+
+async function vault_graph_query(endpoint: string, page: number, isDeposit: boolean) {
     let tokensQuery = isDeposit ? depositTokensQuery : withdrawalTokensQuery
     var client = new ApolloClient({
         uri: endpoint,
@@ -53,6 +125,7 @@ async function subgraph_query(endpoint: string, page: number, isDeposit: boolean
         },
     })
 }
+
 type graphData = {
     data: any,
     errors?: readonly GraphQLError[]
@@ -61,6 +134,7 @@ type graphData = {
     networkStatus: pkg.NetworkStatus,
     partial?: boolean
 }
+
 type dataPacket = {
     data: graphData,
     type: 'deposit' | 'withdrawal'
@@ -70,6 +144,7 @@ let decimalTracker={
   "ichi": {oneToken:18, scarceToken:9},
   "fuse": {oneToken:18, scarceToken:18},
   "wing": {oneToken:18, scarceToken:9},
+  "oja": {oneToken:18, scarceToken:18},
   "fox": {oneToken:18, scarceToken:18}
 }
 
@@ -93,8 +168,7 @@ class Vault {
         this.amountsInverted = isInverted
         this.decimals = decimalTracker[vaultName] 
         this.dataPackets = data
-        this.verboseTransactions = getVerboseTransactions(this.vaultName, 
-        this.dataPackets, this.amountsInverted, this.decimals.scarceToken)
+        this.verboseTransactions = getVerboseTransactions(this.vaultName, this.dataPackets, this.amountsInverted, this.decimals.scarceToken)
         this.distilledTransactions = getDistilledTransactions(this.verboseTransactions)
         this.calcCurrentValue()
     }
@@ -309,5 +383,4 @@ async function getCurrentVaultValue(vaultName:string, vaultAddress: string, amou
     return currentVaultValue
 }
 
-export {subgraph_query, Vault, dataPacket, getVerboseTransactions, getDistilledTransactions, graphData}
-
+export {vault_graph_query, Vault, dataPacket, getVerboseTransactions, getDistilledTransactions, graphData, getSubgraphPoolRecords, GraphFarm}

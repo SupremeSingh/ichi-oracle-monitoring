@@ -65,6 +65,7 @@ export const updateFarm = async (tableName: string, poolId: number,
   if (pool['token0'] == '') {
     searchName = farmName.toLowerCase()+'-multi-'+farmPoolId;
   } else {
+
     let token0 = {
       name: { S: pool['token0'].toLowerCase() },
       displayName: { S: tokenNames[pool['token0'].toLowerCase()] },

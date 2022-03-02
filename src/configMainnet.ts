@@ -33,6 +33,7 @@ const APIS = {
   loopringAPI: "https://api3.loopring.io/api/v3/poolsStats",
   debunk_openapi: "https://openapi.debank.com/v1/user/protocol",
   _1inchPoolAPI: "https://governance.1inch.exchange/v1.1/farming/pools",
+  subgraph_farming_v2: "https://api.thegraph.com/subgraphs/name/ichi-org/farmv2",
 };
 
 const POOLS = {
@@ -275,7 +276,6 @@ const TOKENS = {
       scarceToken: 'token0',
       scarceTokenName: 'fuse',
       scarceTokenDecimals: 18,
-      //graphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/fuse-vault'
     },
     stimulusName: 'fuse',
     stimulusDisplayName: 'FUSE',
@@ -320,7 +320,6 @@ const TOKENS = {
       scarceToken: 'token0',
       scarceTokenName: 'oja',
       scarceTokenDecimals: 18,
-      //graphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/oja-vault'
     },
     stimulusName: 'oja',
     stimulusDisplayName: 'OJA',
@@ -341,7 +340,6 @@ const TOKENS = {
       scarceToken: 'token1',
       scarceTokenName: 'ichi',
       scarceTokenDecimals: 9,
-      //graphEnpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/ichi-vault'
     },
     stimulusName: 'uni',
     stimulusDisplayName: 'UNI',
@@ -374,7 +372,6 @@ const TOKENS = {
       scarceToken: 'token1',
       scarceTokenName: 'fox',
       scarceTokenDecimals: 18,
-      //graphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/fox-vault'
     },
     stimulusName: 'fox',
     stimulusDisplayName: 'FOX',
@@ -395,7 +392,6 @@ const TOKENS = {
       scarceToken: 'token1',
       scarceTokenName: 'pwing',
       scarceTokenDecimals: 9,
-      //graphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/wing-vault'
     },
     stimulusName: 'pwing',
     stimulusDisplayName: 'pWING',

@@ -126,7 +126,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
       await updateFarmMumbai(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock);
     } else {
       // Mainnet farms
-      await updateFarm(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock);
+      await updateFarm(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, false);
     }
   }
 

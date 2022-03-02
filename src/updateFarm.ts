@@ -6,7 +6,7 @@ import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import { getPoolRecord } from './getPoolRecord';
 import * as pkg from '@apollo/client';
-import { subgraph_query, Vault, dataPacket, graphData } from './subgraph';
+import { vault_graph_query, Vault, dataPacket, graphData, GraphFarm } from './subgraph';
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
@@ -54,7 +54,8 @@ const getTradeUrl = function(poolId: number) {
 export const updateFarm = async (tableName: string, poolId: number, 
     tokenPrices: {[name: string]: number}, 
     tokenNames: {[name: string]: string},
-    knownIchiPerBlock: {[poolId: string]: string}): Promise<APIGatewayProxyResult> => {
+    knownIchiPerBlock: { [poolId: string]: string },
+    farm_subgraph:GraphFarm | false ): Promise<APIGatewayProxyResult> => {
   const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
 
   const farming_V1 = new ethers.Contract(
@@ -68,7 +69,7 @@ export const updateFarm = async (tableName: string, poolId: number,
     provider
   );
 
-  let pool = await getPoolRecord(poolId, tokenPrices, knownIchiPerBlock);
+  let pool = await getPoolRecord(poolId, tokenPrices, knownIchiPerBlock, farm_subgraph);
   if (pool['pool'] == null) {
     // failed to get pool's data, not updating
     console.log("Can't get pool's data: "+poolId);
@@ -228,7 +229,7 @@ export const updateFarm = async (tableName: string, poolId: number,
     let endOfDepositData = false
     let depositPage = 1;
     while (!endOfDepositData) {
-      let rawData: graphData = await subgraph_query(vaultEndpoint, depositPage, true)
+      let rawData: graphData = await vault_graph_query(vaultEndpoint, depositPage, true)
       if (rawData['data'] && rawData['data']['deposits']) {
         if (rawData.data['deposits'].length > 0) {
           dataPackets.push({ data: rawData, type: 'deposit' })
@@ -245,7 +246,7 @@ export const updateFarm = async (tableName: string, poolId: number,
     let endOfWithdrawalData = false
     let withdrawalPage = 1;
     while (!endOfWithdrawalData) {
-      let rawData:graphData = await subgraph_query(vaultEndpoint, withdrawalPage, false)
+      let rawData:graphData = await vault_graph_query(vaultEndpoint, withdrawalPage, false)
       if (rawData['data'] && rawData['data']['withdraws']) {
         if (rawData['data']['withdraws'].length > 0) {
           dataPackets.push({ data: rawData, type: 'withdrawal' })
