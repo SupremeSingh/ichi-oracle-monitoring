@@ -68,6 +68,8 @@ export const updateFarm = async (tableName: string, poolId: number,
     let token0 = {
       name: { S: pool['token0'].toLowerCase() },
       displayName: { S: tokenNames[pool['token0'].toLowerCase()] },
+      price: { N: tokenPrices[pool['token0'].toLowerCase()].toString() },
+      isOneToken: { BOOL: TOKENS[pool['token0'].toLowerCase()]['isOneToken'] },
       address: { S: pool['address0'] },
       reserve: { N: (Number(pool['reserve0Raw'])).toString() },
       decimals: { N: (Number(pool['decimals0'])).toString() }
@@ -82,6 +84,8 @@ export const updateFarm = async (tableName: string, poolId: number,
       let token1 = {
         name: { S: pool['token1'].toLowerCase() },
         displayName: { S: tokenNames[pool['token1'].toLowerCase()] },
+        price: { N: tokenPrices[pool['token1'].toLowerCase()].toString() },
+        isOneToken: { BOOL: TOKENS[pool['token1'].toLowerCase()]['isOneToken'] },
         address: { S: pool['address1'] },
         reserve: { N: (Number(pool['reserve1Raw'])).toString() },
         decimals: { N: (Number(pool['decimals1'])).toString() }
