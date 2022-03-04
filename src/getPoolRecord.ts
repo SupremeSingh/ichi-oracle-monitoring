@@ -388,8 +388,9 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
         }
   
         reward = Number(totalAllocPoint) === 0 ? 0 : rewardsPerBlock * poolAllocPoint / Number(totalAllocPoint);
-        inTheFarmLP = graph_farm ? graph_farm.totalLPSupply :await farm.getLPSupply(adjusterPoolId);
-      } //LP Balance staked
+        //inTheFarmLP = graph_farm ? graph_farm.farmLPSupply :await farm.getLPSupply(adjusterPoolId);
+        inTheFarmLP = await farm.getLPSupply(adjusterPoolId);
+      } //LP Balance stacked
   
       const poolContract = await getPoolContract(poolID, false, farm, adjusterPoolId);
   
@@ -399,7 +400,8 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
       reward = Number(reward) / 10 ** rewardTokenDecimals;
       reward = reward * bonusToRealRatio;
   
-      let totalPoolLP = graph_farm ? graph_farm.totalLPSupply : await getTotalSupply(poolID, poolContract, poolToken);
+      // let totalPoolLP = graph_farm ? graph_farm.totalLPSupply : await getTotalSupply(poolID, poolContract, poolToken);      
+      let totalPoolLP = await getTotalSupply(poolID, poolContract, poolToken);
       
       let farmRatio = 0;
       if (Number(totalPoolLP) !== 0) {
