@@ -165,6 +165,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let strategy_balance_stimulus = 0;
   let strategy_balance_onetoken = 0;
   let strategy_balance_one_uni = 0;
+  let strategy_balance_one_oja = 0;
+  let strategy_balance_oja = 0;
   let strategy_balance_ichi = 0;
   let strategy_balance_bmi_usdt = 0;
   let strategy_balance_riskharbor_usdc = 0;
@@ -288,6 +290,35 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     }
 
   }
+
+  // special case of oneUNI investing into OJA vault
+  if (itemName == 'oneUNI') {
+    const OJA = new ethers.Contract(TOKENS['oja']['address'], ERC20_ABI, provider);
+    const oneOJA = new ethers.Contract(TOKENS['oneoja']['address'], oneTokenABI, provider);
+    const ojaFarm = new ethers.Contract(TOKENS['oneoja']['ichiVault']['externalFarm'], GENERIC_FARMING_V2_ABI, provider);
+    const ojaVault = new ethers.Contract(TOKENS['oneoja']['ichiVault']['address'], VAULT_ABI, provider);
+
+    strategy_balance_one_oja = Number(await oneOJA.balanceOf(strategyAddress));
+    strategy_balance_oja = Number(await OJA.balanceOf(strategyAddress));
+    
+    // console.log(strategy_balance_one_oja);
+    // console.log(strategy_balance_oja);
+
+    const userInfo = await ojaFarm.userInfo(TOKENS['oneoja']['ichiVault']['farm'], strategyAddress);
+    let strategy_balance_vault_lp_in_farm = Number(userInfo.amount);
+    let strategy_balance_vault_lp = Number(await ojaVault.balanceOf(strategyAddress));
+    strategy_balance_vault_lp += strategy_balance_vault_lp_in_farm;
+
+    const vault_total_lp = Number(await ojaVault.totalSupply());
+    const vault_total_amounts = await ojaVault.getTotalAmounts();
+    if (strategy_balance_vault_lp > 0) {
+      const vault_ratio = strategy_balance_vault_lp / vault_total_lp;
+      strategy_balance_oja += Number(vault_total_amounts.total0) * vault_ratio;
+      strategy_balance_one_oja += Number(vault_total_amounts.total1) * vault_ratio;
+    }
+  }
+  // console.log(strategy_balance_one_oja);
+  // console.log(strategy_balance_oja);
 
   if (itemName == 'oneDODO') {
     // BCS positions for oneDODO
@@ -488,6 +519,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
   let ichi_price = tokenPrices['ichi'];
   let usdc_price = tokenPrices['usdc'];
+  let oja_price = tokenPrices['oja'];
   let usdt_price = 1;
 
   stimulusPositionsUSDValue = stimulusPositionsUSDValue +
@@ -497,6 +529,10 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
   if (itemName == "one1INCH") {
     stimulusPositionsUSDValue += Number(oneToken_stimulus_price) * (strategy_balance_st1inch / 10 ** stimulusDecimals);
+  }
+
+  if (itemName == "oneUNI") {
+    stimulusPositionsUSDValue += oja_price * (strategy_balance_oja / 10 ** 18);
   }
 
   let oneToken_stimulus_usd =
@@ -510,6 +546,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   collateralPositionsUSDValue = collateralPositionsUSDValue +
     strategy_balance_onetoken / 10 ** 18 +
     strategy_balance_one_uni / 10 ** 18 +
+    strategy_balance_one_oja / 10 ** 18 +
     usdc_price * (strategy_balance_usdc / 10 ** 6) +
     usdc_price * (strategy_balance_riskharbor_usdc / 10 ** 6) +
     usdt_price * (strategy_balance_bmi_usdt / 10 ** 18);
@@ -531,6 +568,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     if (strategy_balance_usdc > 0 
       || strategy_balance_onetoken > 0
       || strategy_balance_one_uni > 0
+      || strategy_balance_one_oja > 0
       || strategy_balance_riskharbor_usdc > 0
       || strategy_balance_bmi_usdt > 0) {
           const assets = [];
@@ -551,6 +589,12 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         assets.push({ M: { 
           name: { S: "oneUNI" }, 
           balance: { N: (Number(strategy_balance_one_uni / 10 ** 18)).toString() } 
+        }});
+      }
+      if (strategy_balance_one_oja > 0) {
+        assets.push({ M: { 
+          name: { S: "oneOJA" }, 
+          balance: { N: (Number(strategy_balance_one_oja / 10 ** 18)).toString() } 
         }});
       }
       if (strategy_balance_bmi_usdt > 0) {
@@ -585,6 +629,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   
     if (strategy_balance_stimulus > 0 || 
         strategy_balance_ichi > 0 || 
+        strategy_balance_oja > 0 || 
         strategy_balance_usdc_treasury > 0 ||
         strategy_balance_st1inch > 0) {
       const assets = [];
@@ -604,6 +649,12 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         assets.push({ M: { 
           name: { S: "USDC" }, 
           balance: { N: Number(strategy_balance_usdc_treasury / 10 ** 6).toString() } 
+        }});
+      }
+      if (strategy_balance_oja > 0) {
+        assets.push({ M: { 
+          name: { S: "OJA" }, 
+          balance: { N: Number(strategy_balance_oja / 10 ** 18).toString() } 
         }});
       }
       if (itemName === "one1INCH" && Number(strategy_balance_st1inch) > 0) {
