@@ -12,7 +12,7 @@ const POOLS = {
 //  activePools : [5001,5002,5003],
   activePools : [5000,5001,5002,5003],
   depositPools : [5002,5003],
-  activeVaults: [5004,5005,20000],
+  activeVaults: [5004,5005,20000,5006],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : []
@@ -153,6 +153,12 @@ LABELS[5004] = {
 }
 LABELS[5005] = {
   name: 'oneUNI Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x8290d7a64f25e6b5002d98367e8367c1b532b534',
+}
+LABELS[5006] = {
+  name: 'Weenus Vault',
   lpName: 'ICHI_VAULT_LP',
   shortLpName: 'VAULT_LP',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x8290d7a64f25e6b5002d98367e8367c1b532b534',
