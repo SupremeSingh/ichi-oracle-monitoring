@@ -100,7 +100,7 @@ async function getSubgraphPoolRecords(): Promise<false | Map<number,GraphFarm>> 
                 ichiPerBlock: farm.ichiPerBlock,
                 lpTokenSymbol: farm.lpTokenSymbol
             }
-            farm_map.set(temp.id, temp);
+            farm_map.set(Number(temp.id), temp);
         }
     }
     else {

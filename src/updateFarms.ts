@@ -1,5 +1,6 @@
 import { updateFarm } from './updateFarm';
 import { POOLS } from './configMainnet';
+import { adjustedPid, isFarmV2 } from './utils/pids';
 import {getSubgraphPoolRecords, GraphFarm} from './subgraph'
 export const updateFarms = async (tableName: string, 
     tokenPrices: {[name: string]: number}, 
@@ -8,8 +9,8 @@ export const updateFarms = async (tableName: string,
   let graph_farm = (await getSubgraphPoolRecords());
   let specific_graph_farm: GraphFarm | false;
   for (let i = 0; i < POOLS.activePools.length; i++) {
-    if (graph_farm) {
-      specific_graph_farm = graph_farm.get(i);
+    if (graph_farm && isFarmV2(POOLS.activePools[i])) {
+      specific_graph_farm = graph_farm.get(adjustedPid(POOLS.activePools[i]));
     } else {
       specific_graph_farm = false;
     }
@@ -19,8 +20,8 @@ export const updateFarms = async (tableName: string,
     console.log(res);
   }
   for (let i = 0; i < POOLS.activeVaults.length; i++) {
-    if (graph_farm) {
-      specific_graph_farm = graph_farm.get(i);
+    if (graph_farm && isFarmV2(POOLS.activePools[i])) {
+      specific_graph_farm = graph_farm.get(adjustedPid(POOLS.activePools[i]));
     } else {
       specific_graph_farm = false;
     }
