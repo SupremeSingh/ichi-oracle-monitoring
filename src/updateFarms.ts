@@ -20,8 +20,8 @@ export const updateFarms = async (tableName: string,
     console.log(res);
   }
   for (let i = 0; i < POOLS.activeVaults.length; i++) {
-    if (graph_farm && isFarmV2(POOLS.activePools[i])) {
-      specific_graph_farm = graph_farm.get(adjustedPid(POOLS.activePools[i]));
+    if (graph_farm && isFarmV2(POOLS.activeVaults[i])) {
+      specific_graph_farm = graph_farm.get(adjustedPid(POOLS.activeVaults[i]));
     } else {
       specific_graph_farm = false;
     }
