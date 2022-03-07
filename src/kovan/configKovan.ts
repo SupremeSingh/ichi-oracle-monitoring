@@ -10,12 +10,13 @@ const APIS = {
 
 const POOLS = {
 //  activePools : [5001,5002,5003],
-  activePools : [5000,5001,5002,5003],
-  depositPools : [5002,5003],
-  activeVaults: [5004,5005,20000,5006],
+  activePools : [5000, 5001, 5002, 5003],
+  depositPools : [5002, 5003],
+  activeVaults: [5004, 5005, 20000, 5006],
   upcomingPools : [],
   migratingPools : [],
-  retiredPools : []
+  retiredPools : [],
+  unretiredPools : [5003, 5004, 5005, 5006, 20000]
 }
 
 const TOKENS = {

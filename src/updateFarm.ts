@@ -7,6 +7,7 @@ import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import { getPoolRecord } from './getPoolRecord';
 import * as pkg from '@apollo/client';
 import { vault_graph_query, Vault, dataPacket, graphData, GraphFarm } from './subgraph';
+import { adjustedPid, adjustedPidString, isFarmExternal, isFarmGeneric, isFarmV1, isFarmV2, isUnretired } from './utils/pids';
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
@@ -81,18 +82,16 @@ export const updateFarm = async (tableName: string, poolId: number,
   let farmName = '';
   let searchName = '';
 
-  if (poolId >= 10000) {
+  if (isFarmExternal(poolId)) {
     farmName = 'external';
-    farmPoolId = poolId - 10000;
   }
-  if (poolId >= 1000 && poolId < 10000) {
+  if (isFarmV2(poolId)) {
     farmName = 'V2'
-    farmPoolId = poolId - 1000;
   }
-  if (poolId < 1000) {
+  if (isFarmV1(poolId)) {
     farmName = 'V1'
-    farmPoolId = poolId;
   }
+  farmPoolId = adjustedPid(poolId);
 
   let tokens = [];
 
@@ -128,8 +127,8 @@ export const updateFarm = async (tableName: string, poolId: number,
     }
   }
 
-  let isExternal = poolId >= 10000 && poolId < 20000;
-  let isGeneric = poolId >= 20000;
+  let isExternal = isFarmExternal(poolId);
+  let isGeneric = isFarmGeneric(poolId);
   let isIchiPool = pool['token0'].toLowerCase() == 'ichi' || pool['token1'].toLowerCase() == 'ichi';
   isIchiPool = isIchiPool || poolId == 10004; // oneDODO-USDC to include into ICHI farms for now
   let isUpcoming = POOLS.upcomingPools.includes(poolId);
@@ -174,9 +173,9 @@ export const updateFarm = async (tableName: string, poolId: number,
 
   let farm = {};
   if (LABELS[poolId]) {
-    if (poolId >= 1000 && poolId < 5000) {
+    if (isFarmV2(poolId)) {
       farm['farmAddress'] = { S: ADDRESSES.farming_V2 }
-      farm['farmId'] = { N: Number(poolId - 1000).toString() }
+      farm['farmId'] = { N: adjustedPidString(poolId) }
       farm['farmRewardTokenName'] = { S: 'ichi' }
       farm['farmRewardTokenDecimals'] = { N: '9' }
       farm['farmRewardTokenAddress'] = { S: TOKENS.ichi.address }
@@ -203,7 +202,7 @@ export const updateFarm = async (tableName: string, poolId: number,
     isRetired = true;
 
   // these pools may have 0 APY, but they are not retired
-  if (poolId == 10001 || poolId == 20004 || poolId == 1001 || poolId == 1005 || poolId == 1019)
+  if (isUnretired(poolId))
     isRetired = false; 
 
   let futureAPY = 0;

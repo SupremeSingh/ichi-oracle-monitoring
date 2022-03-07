@@ -6,8 +6,7 @@ export const updateFarms = async (tableName: string,
     tokenPrices: {[name: string]: number}, 
     tokenNames: {[name: string]: string},
   knownIchiPerBlock: { [poolId: string]: string }) => {
-  // let graph_farm = (await getSubgraphPoolRecords());
-  let graph_farm = undefined;
+  let graph_farm = (await getSubgraphPoolRecords());
   let specific_graph_farm: GraphFarm | false;
   for (let i = 0; i < POOLS.activePools.length; i++) {
     if (graph_farm && isFarmV2(POOLS.activePools[i])) {

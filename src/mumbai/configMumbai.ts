@@ -14,7 +14,8 @@ const POOLS = {
   activeVaults: [6000],
   upcomingPools : [],
   migratingPools : [],
-  retiredPools : []
+  retiredPools : [],
+  unretiredPools : [6000]
 }
 
 const TOKENS = {

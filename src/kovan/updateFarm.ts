@@ -1,6 +1,7 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { ethers } from 'ethers';
+import { isFarmExternal, isFarmGeneric, isUnretired } from '../utils/pids';
 import { POOLS, LABELS, CHAIN_ID, TOKENS } from './configKovan';
 import { getPoolRecord } from './getPoolRecord';
 
@@ -95,8 +96,8 @@ export const updateFarm = async (tableName: string, poolId: number,
     }
   }
 
-  let isExternal = poolId >= 10000 && poolId < 20000;
-  let isGeneric = poolId >= 20000;
+  let isExternal = isFarmExternal(poolId);
+  let isGeneric = isFarmGeneric(poolId);
   let isIchiPool = pool['token0'].toLowerCase() == 'ichi' || 
                     pool['token1'].toLowerCase() == 'ichi' ||
                     pool['token0'].toLowerCase() == 'weenus'; // treat WEENUS-ETH as ichi pool
@@ -157,8 +158,7 @@ export const updateFarm = async (tableName: string, poolId: number,
   if (pool['yearlyAPY'] == 0)
     isRetired = true;
 
-  // oneFIL pool is not retired
-  if (poolId == 5003 || poolId == 5004 || poolId == 5005 || poolId == 5006 || poolId == 20000)
+  if (isUnretired(poolId))
     isRetired = false;
 
     // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03

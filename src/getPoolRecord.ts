@@ -15,8 +15,9 @@ import RARI_POOL_LENS_ABI from './abis/RARI_POOL_LENS_ABI.json';
 import RARI_POOL_LENS_SECONDARY_ABI from './abis/RARI_POOL_LENS_SECONDARY_ABI.json';
 import axios from 'axios';
 import { BSC_ADDRESSES, BSC_APIS } from './configBSC';
-
 import { GraphFarm } from './subgraph';
+import { adjustedPid, isFarmExternal, isFarmGeneric, isFarmV1 } from './utils/pids';
+
 export const toInt = (input: BigNumber) => {
   if (!input) return 0
   return parseInt(input.toString())
@@ -92,7 +93,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
     let isVault = POOLS.activeVaults.includes(poolID);
   
     let poolToken = '';
-    if (poolID < 1000) {
+    if (isFarmV1(poolID)) {
       // farm V1
       poolToken = await farm.getPoolToken(adjusterPoolId);
     } else {
@@ -328,7 +329,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
   }
   //v2 farms are aroumd 1000
   export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock, graph_farm: false | GraphFarm) {
-    if (poolID >= 10000 && poolID < 20000)
+    if (isFarmExternal(poolID))
       return getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock);
 
     let isSpecialPricing = POOLS.specialPricing.includes(poolID);
@@ -339,10 +340,10 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
     let farm = farming_V2;
     let poolToken = '';
     let adjusterPoolId = poolID;
-    if (poolID < 1000) {
+    if (isFarmV1(poolID)) {
       farm = farming_V1;
       poolToken = await farm.getPoolToken(adjusterPoolId);
-    } else if (poolID >= 20000) {
+    } else if (isFarmGeneric(poolID)) {
       farm = new ethers.Contract(
         LABELS[poolID]['farmAddress'],
         GENERIC_FARMING_V2_ABI,
@@ -351,7 +352,8 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
       adjusterPoolId = LABELS[poolID]['farmId'];
       poolToken = await farm.lpToken(adjusterPoolId);
     } else {
-      adjusterPoolId = adjusterPoolId - 1000;
+      // getting here means it's V2 farm
+      adjusterPoolId = adjustedPid(poolID);
       poolToken = graph_farm ? graph_farm.LPToken : await farm.lpToken(adjusterPoolId);
     }
   
@@ -362,12 +364,12 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
       let rewardTokenDecimals = 9;
       let rewardTokenName = 'ichi';
       
-      if (poolID < 1000) {
+      if (isFarmV1(poolID)) {
         reward = await farm.ichiReward(adjusterPoolId);
         inTheFarmLP = await farm.getLPSupply(adjusterPoolId);
       } else {
         let rewardsPerBlock = 0;
-        if (poolID >= 20000) {
+        if (isFarmGeneric(poolID)) {
           let res = await farm.rewardTokensPerBlock();
           rewardsPerBlock = Number(res);
           rewardTokenDecimals = LABELS[poolID]['farmRewardTokenDecimals'];

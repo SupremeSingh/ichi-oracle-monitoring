@@ -6,6 +6,7 @@ import AWS from 'aws-sdk';
 import { updateFarm } from './updateFarm';
 import { updateFarmKovan } from './kovan/updateFarm';
 import { updateFarmMumbai } from './mumbai/updateFarm';
+import { isFarmV2Kovan, isFarmV2Mumbai } from './utils/pids';
 
 const token_tableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
 const treasury_tableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
@@ -118,10 +119,10 @@ export const handler = async (event: APIGatewayProxyEvent) => {
     await updateFarms(farms_tableName, tokenPrices, tokenNames, knownIchiPerBlock);
     await updateTreasury(treasury_tableName, tokenPrices, tokenNames);
   } else {
-    if (poolId >= 5000 && poolId < 6000) {
+    if (isFarmV2Kovan(poolId)) {
       // Kovan farms
       await updateFarmKovan(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock);
-    } else if (poolId >= 6000 && poolId < 7000) {
+    } else if (isFarmV2Mumbai(poolId)) {
       // Mumbai farms
       await updateFarmMumbai(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock);
     } else {

@@ -5,6 +5,7 @@ import GENERIC_FARMING_V2_ABI from './../abis/GENERIC_FARMING_V2_ABI.json';
 import ERC20_ABI from './../abis/ERC20_ABI.json';
 import PAIR_ABI from './../abis/PAIR_ABI.json';
 import VAULT_ABI from './../abis/ICHI_VAULT_ABI.json';
+import { adjustedPid, isFarmGeneric } from '../utils/pids';
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
@@ -112,10 +113,10 @@ async function getTotalSupply(poolContract) {
 }
   
 export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
-  let adjusterPoolId = poolID - 5000;
+  let adjusterPoolId = adjustedPid(poolID);
 
   let farm = farming_V2;
-  if (poolID >= 20000) {
+  if (isFarmGeneric(poolID)) {
     farm = new ethers.Contract(
       LABELS[poolID]['farmAddress'],
       GENERIC_FARMING_V2_ABI,
@@ -134,7 +135,7 @@ export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
   let rewardTokenName = 'test_ichi';
   
   let rewardsPerBlock = 0;
-  if (poolID >= 20000) {
+  if (isFarmGeneric(poolID)) {
     let res = await farm.rewardTokensPerBlock();
     rewardsPerBlock = Number(res);
     rewardTokenDecimals = LABELS[poolID]['farmRewardTokenDecimals'];
