@@ -27,9 +27,9 @@ export function isFarmExternal(pid: number): boolean {
 };
 
 export function isUnretired(pid: number): boolean {
-    return (pid in MAINNET_POOLS.unretiredPools) ||
-    (pid in MUMBAI_POOLS.unretiredPools) ||
-    (pid in KOVAN_POOLS.unretiredPools);
+    return (MAINNET_POOLS.unretiredPools.includes(pid)) ||
+    (MUMBAI_POOLS.unretiredPools.includes(pid)) ||
+    (KOVAN_POOLS.unretiredPools.includes(pid));
 };
 
 export function adjustedPid(pid: number): number {
