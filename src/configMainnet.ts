@@ -34,18 +34,19 @@ const APIS = {
   debunk_openapi: "https://openapi.debank.com/v1/user/protocol",
   _1inchPoolAPI: "https://governance.1inch.exchange/v1.1/farming/pools",
   subgraph_farming_v2: "https://api.thegraph.com/subgraphs/name/ichi-org/farmv2",
+  subgraph_risk_harbor: "https://thegraph.com/hosted-service/subgraph/risk-harbor/v2-mainnet"
 };
 
 const POOLS = {
   activePools : [1001, 1004, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005],
   // activePools : [],
   depositPools : [1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10005],
-  activeVaults: [1016, 1019, 20001, 20002, 20003, 20004, 10006],
-  // activeVaults: [1019],
+  activeVaults: [1016, 1019, 1020, 20001, 20002, 20003, 20004, 10006],
+  // activeVaults: [1020],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
-  unretiredPools : [10001, 20004, 1001, 1005, 1019],
+  unretiredPools : [10001, 20004, 1001, 1005, 1019, 1020],
   oneInchPools : [15, 16, 10001],
   balancerPools : [18, 1001, 1002, 1008],
   balancerSmartPools : [1003, 1007],
@@ -88,6 +89,12 @@ const TOKENS = {
     address: "0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C",
     decimals: 18,
     displayName: "BNT",
+    isOneToken: false
+  },
+  cel: {
+    address: "0xaaAEBE6Fe48E54f431b0C390CfaF0b017d09D42d",
+    decimals: 4,
+    displayName: "CEL",
     isOneToken: false
   },
   gno: {
@@ -631,6 +638,16 @@ LABELS[1019] = {
   isInverted: false,
   vaultName: 'gno',
   vaultAddress: '0xA380EA6BE1C084851aE7846a8F39def17eCf6ED8'
+}
+LABELS[1020] = {
+  name: 'CEL Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0xaaAEBE6Fe48E54f431b0C390CfaF0b017d09D42d&chain=mainnet',
+  subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/cel-vault',
+  isInverted: true,
+  vaultName: 'cel',
+  vaultAddress: '0x82FF3E2eC3bDCa84CF0637402907e26C51d1d676'
 }
 LABELS[20001] = {
   name: 'oneFUSE Vault',
