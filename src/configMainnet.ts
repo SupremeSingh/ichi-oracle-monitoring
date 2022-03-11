@@ -487,7 +487,7 @@ LABELS[10004] = {
   shortLpName: 'DLP',
   farmAddress: '0xf9B8500b5012c059f30daA734d3A7131d668b1cd',
   externalAddress: '0xf9B8500b5012c059f30daA734d3A7131d668b1cd',
-  externalUrl: 'https://app.dodoex.io/mining?network=mainnet&address=0xaa89cab926dcd65b3779aa98d9342fd9a21e5d1c',
+  externalUrl: 'https://app.dodoex.io/earn/add-liquidity?network=mainnet&poolAddress=0x138c825d993d5ffb7f028408e870ebf50a019543',
   externalButton: 'DODO'
 }
 LABELS[10005] = {
