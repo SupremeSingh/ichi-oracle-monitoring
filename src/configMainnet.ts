@@ -506,6 +506,7 @@ LABELS[10006] = {
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x8290d7a64f25e6b5002d98367e8367c1b532b534',
   subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/ichi-vault',
   isInverted: false,
+  isHodl: false,
   vaultName: 'ichi',
   vaultAddress: '0xfaeCcee632912c42a7c88c3544885A8D455408FA',
   externalUrl: 'https://app.rari.capital/fuse/pool/136',
@@ -613,6 +614,7 @@ LABELS[1016] = {
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x8290d7a64f25e6b5002d98367e8367c1b532b534',
   subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/ichi-vault',
   isInverted: false,
+  isHodl: false,
   vaultName: 'ichi',
   vaultAddress: '0xfaeCcee632912c42a7c88c3544885A8D455408FA'
 }
@@ -636,6 +638,7 @@ LABELS[1019] = {
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x6810e776880C02933D47DB1b9fc05908e5386b96&chain=mainnet',
   subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/gno-vault',
   isInverted: false,
+  isHodl: true,
   vaultName: 'gno',
   vaultAddress: '0xA380EA6BE1C084851aE7846a8F39def17eCf6ED8'
 }
@@ -646,6 +649,7 @@ LABELS[1020] = {
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0xaaAEBE6Fe48E54f431b0C390CfaF0b017d09D42d&chain=mainnet',
   subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/cel-vault',
   isInverted: true,
+  isHodl: true,
   vaultName: 'cel',
   vaultAddress: '0x82FF3E2eC3bDCa84CF0637402907e26C51d1d676'
 }
@@ -661,6 +665,7 @@ LABELS[20001] = {
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0xbbce03b2e7f53cadca93251ca4c928af01db6404',
   subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/fuse-vault',
   isInverted: true,
+  isHodl: false,
   vaultName: 'fuse',
   vaultAddress: '0x3A4411a33CfeF8BC01f23ED7518208aA38cca824'
 }
@@ -676,6 +681,7 @@ LABELS[20002] = {
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x5047fc5C9D7c49Ab22e390d13646a6A3a2476eff',
   subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/wing-vault',
   isInverted: false,
+  isHodl: false,
   vaultName: 'wing',
   vaultAddress: '0x2a8E09552782563f7A076ccec0Ff39473B91Cd8F'
 }
@@ -691,6 +697,7 @@ LABELS[20003] = {
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x03352D267951E96c6F7235037C5DFD2AB1466232',
   subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/fox-vault',
   isInverted: false,
+  isHodl: false,
   vaultName: 'fox',
   vaultAddress: '0x779F9BAd1f4B1Ef5198AD9361DBf3791F9e0D596'
 }
@@ -706,6 +713,7 @@ LABELS[20004] = {
   tradeUrl: '/mint?name=oneoja&collateral=USDC',
   subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/oja-vault',
   isInverted: true,
+  isHodl: false,
   vaultName: 'oja',
   vaultAddress: '0x98bAd5Ce592DcfE706CC95a1B9dB7008B6D418F8'
 }

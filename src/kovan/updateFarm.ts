@@ -40,13 +40,6 @@ const getTradeUrl = function(poolId: number) {
   return '';
 }
 
-export const updateFarmKovan = async (tableName: string, poolId: number, 
-  tokenPrices: {[name: string]: number}, 
-  tokenNames: {[name: string]: string},
-  knownIchiPerBlock: {[poolId: string]: string}): Promise<APIGatewayProxyResult> => {
-    return updateFarm(tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock);
-}
-
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
 export const updateFarm = async (tableName: string, poolId: number, 
@@ -161,7 +154,9 @@ export const updateFarm = async (tableName: string, poolId: number,
   if (isUnretired(poolId))
     isRetired = false;
 
-    // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
+  let baseTokenTVL = Number(pool['tvl']);
+
+  // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
   console.log(`Attempting to update table: ${tableName}, token: ${poolId}`);
   const params: AWS.DynamoDB.UpdateItemInput = {
     TableName: tableName,
@@ -183,6 +178,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       'tokens = :tokens, ' + 
       'exchange = :exchange, ' + 
       'tvl = :tvl, ' + 
+      'baseTokenTVL = :baseTokenTVL, ' + 
       'farmTVL = :farmTVL, ' + 
       'totalPoolLP = :totalPoolLP, ' + 
       'totalFarmLP = :totalFarmLP, ' + 
@@ -213,6 +209,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       ':tokens': { L: tokens },
       ':exchange': { S: exchange },
       ':tvl': { N: Number(pool['tvl']).toString() },
+      ':baseTokenTVL': { N: Number(baseTokenTVL).toString() },
       ':farmTVL': { N: Number(pool['farmTVL']).toString() },
       ':totalPoolLP': { S: pool['totalPoolLP'] },
       ':totalFarmLP': { S: pool['totalFarmLP'] },

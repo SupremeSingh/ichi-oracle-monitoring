@@ -1,5 +1,4 @@
 import { APIS, TOKENS } from './configMainnet';
-import univ3prices from '@thanpolas/univ3prices';
 import * as pkg from '@apollo/client';
 import 'cross-fetch/dist/node-polyfill.js';
 const { ApolloClient, InMemoryCache, gql } = pkg;
@@ -9,6 +8,8 @@ import vaultABI from './abis/ICHI_VAULT_ABI.json';
 import poolABI from './abis/UNI_V3_POOL_ABI.json'
 import xirr from 'xirr'
 import { GraphQLError } from 'graphql';
+import { getPrice, VAULT_DECIMAL_TRACKER } from './utils/vaults';
+import { BNtoNumberWithoutDecimals } from './utils/numbers';
 
 const depositTokensQuery = `
     query($first: Int, $skip:Int) {
@@ -140,14 +141,6 @@ type dataPacket = {
     type: 'deposit' | 'withdrawal'
 }
 
-let decimalTracker={
-  "ichi": {oneToken:18, scarceToken:9},
-  "fuse": {oneToken:18, scarceToken:18},
-  "wing": {oneToken:18, scarceToken:9},
-  "oja": {oneToken:18, scarceToken:18},
-  "fox": {oneToken:18, scarceToken:18}
-}
-
 class Vault {
     vaultName: string
     vaultEndpoint: string
@@ -166,19 +159,18 @@ class Vault {
         this.vaultEndpoint = vaultEndpoint
         this.vaultAddress = vaultAddress
         this.amountsInverted = isInverted
-        this.decimals = decimalTracker[vaultName] 
+        this.decimals = VAULT_DECIMAL_TRACKER[vaultName] 
         this.dataPackets = data
-        this.verboseTransactions = getVerboseTransactions(this.vaultName, this.dataPackets, this.amountsInverted, this.decimals.scarceToken)
+        this.verboseTransactions = getVerboseTransactions(this.dataPackets, this.amountsInverted, this.decimals.baseToken, this.decimals.scarceToken)
         this.distilledTransactions = getDistilledTransactions(this.verboseTransactions)
         this.calcCurrentValue()
     }
 
     public async calcCurrentValue() {
       let value = await getCurrentVaultValue(
-        this.vaultName, 
         this.vaultAddress, 
         this.amountsInverted, 
-        this.decimals.oneToken, 
+        this.decimals.baseToken, 
         this.decimals.scarceToken);
 
       //console.log(value)  
@@ -230,17 +222,15 @@ type distilledTransactionObject = {
 }
 
 type decimalsObject = {
-  oneToken: number,
+  baseToken: number,
   scarceToken: number
 }
 
-
-  
 function getVerboseTransactions(
-    name: string, 
     dataPackets: dataPacket[], 
     amountsInverted: boolean,
-    decimals: number): verboseTransactionObject[] {
+    baseTokenDecimals: number,
+    scarceTokenDecimals: number): verboseTransactionObject[] {
 
     let transactionsType: string;
     let isDeposit: boolean;
@@ -258,17 +248,25 @@ function getVerboseTransactions(
 
             const date = new Date(transaction.createdAtTimestamp * 1000)
             const oneTokenAmount = 
-                (amountsInverted ? BNtoNumberWithoutDecimals(transaction["amount1"], 18) : BNtoNumberWithoutDecimals(transaction["amount0"], 18))
+                (amountsInverted ? 
+                    BNtoNumberWithoutDecimals(transaction["amount1"], baseTokenDecimals) : 
+                    BNtoNumberWithoutDecimals(transaction["amount0"], baseTokenDecimals))
             const scarceTokenAmount = 
-                (amountsInverted ? BNtoNumberWithoutDecimals(transaction["amount0"], decimals) : BNtoNumberWithoutDecimals(transaction["amount1"], decimals))
+                (amountsInverted ? 
+                    BNtoNumberWithoutDecimals(transaction["amount0"], scarceTokenDecimals) : 
+                    BNtoNumberWithoutDecimals(transaction["amount1"], scarceTokenDecimals))
             
-            const price = isDeposit ? -1*parseFloat(getPrice(name, amountsInverted, BigNumber.from(transaction["sqrtPrice"]), decimals)) :
-                parseFloat(getPrice(name, amountsInverted, BigNumber.from(transaction["sqrtPrice"]), decimals))
+            let price = getPrice(amountsInverted, BigNumber.from(transaction["sqrtPrice"]), baseTokenDecimals, scarceTokenDecimals); 
+            price = isDeposit ? -price : price;
             
             const oneTokenTotalAmount = 
-                (amountsInverted ? BNtoNumberWithoutDecimals(transaction["totalAmount1"], 18) : BNtoNumberWithoutDecimals(transaction["totalAmount0"], 18))
+                (amountsInverted ? 
+                    BNtoNumberWithoutDecimals(transaction["totalAmount1"], baseTokenDecimals) : 
+                    BNtoNumberWithoutDecimals(transaction["totalAmount0"], baseTokenDecimals))
             const scarceTokenTotalAmount = 
-                (amountsInverted ? BNtoNumberWithoutDecimals(transaction["totalAmount0"], decimals) : BNtoNumberWithoutDecimals(transaction["totalAmount1"], decimals))
+                (amountsInverted ? 
+                    BNtoNumberWithoutDecimals(transaction["totalAmount0"], scarceTokenDecimals) : 
+                    BNtoNumberWithoutDecimals(transaction["totalAmount1"], scarceTokenDecimals))
             const type = packet.type
 
             let holder: verboseTransactionObject = {
@@ -303,16 +301,6 @@ function getDistilledTransactions(verboseTransactions: verboseTransactionObject[
     return distilledTransactions
 }
 
-function getPrice(name: string, isInverted: boolean, sqrtPrice: BigNumber, decimals: number) {
-    let decimalArray = [18,decimals]
-    let price = univ3prices(decimalArray, sqrtPrice).toSignificant({
-        reverse: isInverted,
-        decimalPlaces: 3
-    });
-
-    return price;
-}
- 
 function getDollarAmount(transaction: verboseTransactionObject): number {
     const oneTokenAmount = transaction.oneTokenAmount
     const scarceTokenAmount = transaction.scarceTokenAmount
@@ -331,44 +319,19 @@ function compare(a,b){
     }
 }
 
-function BNtoNumberWithoutDecimals(val: string, decimals: number): number {
-    if (val != null) {
-        const digits = val.length
-        let tempVal = ''
-        if (digits <= decimals) {
-            tempVal = '0.'
-            for (let i = 0; i < decimals - digits; i++) {
-                tempVal = `${tempVal}0`
-            }
-            tempVal = `${tempVal}${val}`
-        } else {
-            for (let i = 0; i < digits - decimals; i++) {
-                tempVal = `${tempVal}${val[i]}`
-            }
-            tempVal = `${tempVal}.`
-            for (let i = digits - decimals; i < digits; i++) {
-                tempVal = `${tempVal}${val[i]}`
-            }
-        }
-        return Number(tempVal)
-    }
-    return 0
-}
-
-async function getCurrentVaultValue(vaultName:string, vaultAddress: string, amountsInverted: boolean, oneTokenDecimals:number, scarceTokenDecimals:number): Promise<number>{
+async function getCurrentVaultValue(vaultAddress: string, amountsInverted: boolean, baseTokenDecimals:number, scarceTokenDecimals:number): Promise<number>{
     
     //get Current Balance
     const infuraId = process.env.INFURA_ID;
     const RPC_HOST = `https://mainnet.infura.io/v3/${infuraId}`;
     const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
-    //console.log(vaultAddress)
     const vaultContract = new ethers.Contract(vaultAddress, vaultABI, provider)
     const totalAmountArray = await vaultContract.getTotalAmounts()
 
-    const unformattedTotalOneTokenAmount = amountsInverted ? totalAmountArray[1] : totalAmountArray[0]
+    const unformattedTotalBaseTokenAmount = amountsInverted ? totalAmountArray[1] : totalAmountArray[0]
     const unformattedTotalScarceTokenAmount = amountsInverted? totalAmountArray[0] : totalAmountArray[1]
-    const totalOneTokenAmount = parseInt(ethers.utils.formatUnits(unformattedTotalOneTokenAmount,oneTokenDecimals)) 
-    const totalScarceTokenAmount = parseInt(ethers.utils.formatUnits(unformattedTotalScarceTokenAmount, scarceTokenDecimals))
+    const totalBaseTokenAmount = BNtoNumberWithoutDecimals(unformattedTotalBaseTokenAmount.toString(), baseTokenDecimals)
+    const totalScarceTokenAmount = BNtoNumberWithoutDecimals(unformattedTotalScarceTokenAmount.toString(), scarceTokenDecimals)
 
     //get Current Price
     const poolAddress: string = await vaultContract.pool()
@@ -376,11 +339,10 @@ async function getCurrentVaultValue(vaultName:string, vaultAddress: string, amou
     const slot0 = await poolContract.slot0()
     
     const sqrtPrice = slot0[0]
-    //console.log(sqrtPrice.toString())
-    const price = getPrice(vaultName, amountsInverted, sqrtPrice, scarceTokenDecimals)
+    const price = getPrice(amountsInverted, sqrtPrice, baseTokenDecimals, scarceTokenDecimals)
     
-    let currentVaultValue = totalOneTokenAmount + price * totalScarceTokenAmount
+    let currentVaultValue = totalBaseTokenAmount + price * totalScarceTokenAmount
     return currentVaultValue
 }
 
-export {vault_graph_query, Vault, dataPacket, getVerboseTransactions, getDistilledTransactions, graphData, getSubgraphPoolRecords, GraphFarm}
+export {vault_graph_query, getCurrentVaultValue, Vault, dataPacket, getVerboseTransactions, getDistilledTransactions, graphData, getSubgraphPoolRecords, GraphFarm}

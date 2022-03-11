@@ -40,7 +40,7 @@ const getOneTokenAttributes = async function(tokenName) {
     stimulus_display_name: TOKENS[tokenName]['stimulusDisplayName'],
     stimulus_decimals: 18,
     abi_type: 'ONETOKEN',
-    collateral_name: 'test_usdc',
+    collateral_name: 'mum_usdc',
     base_name: tokenName.toLowerCase(),
     display_name: tokenName,
     isV2: TOKENS[tokenName]['isV2'],
@@ -53,7 +53,6 @@ const getOneTokenAttributes = async function(tokenName) {
 
   if (tokenName == 'mum_onebtc') {
     template.display_name = 'oneBTC'
-    template.collateral_name = 'mum_token6'
   }
 
   template.stimulus_address = TOKENS[template.stimulus_name]['address'];
@@ -185,7 +184,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
   let oneToken_collateral_list = [];
   oneToken_collateral_list.push({ M: { 
-    name: { S: usdcName }, 
+    name: { S: 'USDC' }, 
     balance: { N: oneToken_collateral_USDC_only.toString() } 
   }});
 
@@ -193,7 +192,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     const assets = [];
     if (strategy_balance_usdc > 0) {
       assets.push({ M: { 
-        name: { S: usdcName }, 
+        name: { S: 'USDC' }, 
         balance: { N: Number(strategy_balance_usdc / 10 ** 6).toString() } 
       }});
     }

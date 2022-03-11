@@ -1,18 +1,14 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { ethers } from 'ethers';
-import { ADDRESSES, POOLS, LABELS, CHAIN_ID, TOKENS } from './configMainnet';
-import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
-import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
+import { ADDRESSES, POOLS, LABELS, TOKENS, CHAIN_ID } from './configPolygon';
 import { getPoolRecord } from './getPoolRecord';
-import * as pkg from '@apollo/client';
-import { vault_graph_query, Vault, dataPacket, graphData, GraphFarm, getCurrentVaultValue } from './subgraph';
-import { adjustedPid, adjustedPidString, isFarmExternal, isFarmGeneric, isFarmV1, isFarmV2, isUnretired } from './utils/pids';
-import { VAULT_DECIMAL_TRACKER } from './utils/vaults';
+import { vault_graph_query, Vault, dataPacket, graphData, GraphFarm, getCurrentVaultValue } from '../subgraph';
+import { adjustedPid, adjustedPidString, isFarmExternal, isFarmGeneric, isFarmV2, isFarmV2Polygon, isUnretired } from '../utils/pids';
+import { VAULT_DECIMAL_TRACKER } from '../utils/vaults';
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
-  console.error('Please export INFURA_ID=*** which is used for https://mainnet.infura.io/v3/***');
+  console.error('Please export INFURA_ID=*** which is used for https://polygon-mainnet.infura.io/v3/***');
   process.exit();
 }
 
@@ -21,27 +17,13 @@ AWS.config.update({
 });
 const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
 
-const RPC_HOST = `https://mainnet.infura.io/v3/${infuraId}`;
+const RPC_HOST = `https://polygon-mainnet.infura.io/v3/${infuraId}`;
 
 const getExchangeName = async function(poolId: number) {
   if (POOLS.depositPools.includes(poolId))
     return "";
-  if (POOLS.bancorPools.includes(poolId))
-    return "bancor";
-  if (POOLS.dodoPools.includes(poolId))
-    return "dodo";
-  if (POOLS.rariAssets.includes(poolId))
-    return "rari";
-  if (POOLS.oneInchPools.includes(poolId))
-    return "1inch";
-  if (POOLS.uniPools.includes(poolId))
-    return "uni v2";
   if (POOLS.activeVaults.includes(poolId))
     return "uni v3";
-  if (POOLS.loopringPools.includes(poolId))
-    return "loopring";
-  if (POOLS.balancerPools.includes(poolId) || POOLS.balancerSmartPools.includes(poolId))
-    return "balancer v1";
   return "sushi";
 };
 
@@ -58,18 +40,6 @@ export const updateFarm = async (tableName: string, poolId: number,
     tokenNames: {[name: string]: string},
     knownIchiPerBlock: { [poolId: string]: string },
     farm_subgraph:GraphFarm | false ): Promise<APIGatewayProxyResult> => {
-  const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
-
-  const farming_V1 = new ethers.Contract(
-    ADDRESSES.farming_V1,
-    FARMING_V1_ABI,
-    provider
-  );
-  const farming_V2 = new ethers.Contract(
-    ADDRESSES.farming_V2,
-    FARMING_V2_ABI,
-    provider
-  );
 
   let pool = await getPoolRecord(poolId, tokenPrices, knownIchiPerBlock, farm_subgraph);
   if (pool['pool'] == null) {
@@ -92,49 +62,41 @@ export const updateFarm = async (tableName: string, poolId: number,
   if (isFarmV2(poolId)) {
     farmName = 'V2'
   }
-  if (isFarmV1(poolId)) {
-    farmName = 'V1'
-  }
   farmPoolId = adjustedPid(poolId);
 
   let tokens = [];
 
-  if (pool['token0'] == '') {
-    searchName = farmName.toLowerCase()+'-multi-'+farmPoolId;
+  let token0 = {
+    name: { S: pool['token0'].toLowerCase() },
+    displayName: { S: tokenNames[pool['token0'].toLowerCase()] },
+    isOneToken: { BOOL: TOKENS[pool['token0'].toLowerCase()]['isOneToken'] },
+    price: { N: tokenPrices[pool['token0'].toLowerCase()].toString() },
+    address: { S: pool['address0'] },
+    reserve: { N: (Number(pool['reserve0Raw'])).toString() },
+    decimals: { N: (Number(pool['decimals0'])).toString() }
+  };
+  tokens.push({ M: token0 });
+
+  if (pool['token1'] == '') {
+    searchName = farmName.toLowerCase()+'-'+pool['token0'].toLowerCase()+farmPoolId;
   } else {
-    let token0 = {
-      name: { S: pool['token0'].toLowerCase() },
-      displayName: { S: tokenNames[pool['token0'].toLowerCase()] },
-      isOneToken: { BOOL: TOKENS[pool['token0'].toLowerCase()]['isOneToken'] },
-      price: { N: tokenPrices[pool['token0'].toLowerCase()].toString() },
-      address: { S: pool['address0'] },
-      reserve: { N: (Number(pool['reserve0Raw'])).toString() },
-      decimals: { N: (Number(pool['decimals0'])).toString() }
+    searchName = farmName.toLowerCase()+'-'+pool['token0'].toLowerCase()+'-'+pool['token1'].toLowerCase()+'-'+farmPoolId;
+
+    let token1 = {
+      name: { S: pool['token1'].toLowerCase() },
+      displayName: { S: tokenNames[pool['token1'].toLowerCase()] },
+      isOneToken: { BOOL: TOKENS[pool['token1'].toLowerCase()]['isOneToken'] },
+      price: { N: tokenPrices[pool['token1'].toLowerCase()].toString() },
+      address: { S: pool['address1'] },
+      reserve: { N: (Number(pool['reserve1Raw'])).toString() },
+      decimals: { N: (Number(pool['decimals1'])).toString() }
     };
-    tokens.push({ M: token0 });
-
-    if (pool['token1'] == '') {
-      searchName = farmName.toLowerCase()+'-'+pool['token0'].toLowerCase()+farmPoolId;
-    } else {
-      searchName = farmName.toLowerCase()+'-'+pool['token0'].toLowerCase()+'-'+pool['token1'].toLowerCase()+'-'+farmPoolId;
-
-      let token1 = {
-        name: { S: pool['token1'].toLowerCase() },
-        displayName: { S: tokenNames[pool['token1'].toLowerCase()] },
-        isOneToken: { BOOL: TOKENS[pool['token1'].toLowerCase()]['isOneToken'] },
-        price: { N: tokenPrices[pool['token1'].toLowerCase()].toString() },
-        address: { S: pool['address1'] },
-        reserve: { N: (Number(pool['reserve1Raw'])).toString() },
-        decimals: { N: (Number(pool['decimals1'])).toString() }
-      };
-      tokens.push({ M: token1 });
-    }
+    tokens.push({ M: token1 });
   }
 
   let isExternal = isFarmExternal(poolId);
   let isGeneric = isFarmGeneric(poolId);
-  let isIchiPool = pool['token0'].toLowerCase() == 'ichi' || pool['token1'].toLowerCase() == 'ichi';
-  isIchiPool = isIchiPool || poolId == 10004; // oneDODO-USDC to include into ICHI farms for now
+  let isIchiPool = pool['token0'].toLowerCase() == 'pol_ichi' || pool['token1'].toLowerCase() == 'pol_ichi';
   let isUpcoming = POOLS.upcomingPools.includes(poolId);
   let isMigrating = POOLS.migratingPools.includes(poolId);
   let isRetired = POOLS.retiredPools.includes(poolId);
@@ -177,12 +139,12 @@ export const updateFarm = async (tableName: string, poolId: number,
 
   let farm = {};
   if (LABELS[poolId]) {
-    if (isFarmV2(poolId)) {
+    if (isFarmV2Polygon(poolId)) {
       farm['farmAddress'] = { S: ADDRESSES.farming_V2 }
       farm['farmId'] = { N: adjustedPidString(poolId) }
-      farm['farmRewardTokenName'] = { S: 'ichi' }
-      farm['farmRewardTokenDecimals'] = { N: '9' }
-      farm['farmRewardTokenAddress'] = { S: TOKENS.ichi.address }
+      farm['farmRewardTokenName'] = { S: 'pol_ichi' }
+      farm['farmRewardTokenDecimals'] = { N: '18' }
+      farm['farmRewardTokenAddress'] = { S: TOKENS.pol_ichi.address }
     }
     if (LABELS[poolId]['farmAddress']) {
       farm['farmAddress'] = { S: LABELS[poolId]['farmAddress'] }

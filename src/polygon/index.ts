@@ -1,21 +1,13 @@
-import { APIGatewayProxyEvent } from 'aws-lambda';
-import { updateTokens } from './updateTokens';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { updateTreasury } from './updateTreasury';
 import { updateFarms } from './updateFarms';
-import { updateTokens as updateTokensPolygon} from './polygon/updateTokens';
-import { updateTreasury as updateTreasuryPolygon } from './polygon/updateTreasury';
-import { updateFarms as updateFarmsPolygon} from './polygon/updateFarms';
+import { updateTokens } from './updateTokens';
 import AWS from 'aws-sdk';
 import { updateFarm } from './updateFarm';
-import { updateFarm as updateFarmKovan } from './kovan/updateFarm';
-import { updateFarm as updateFarmMumbai } from './mumbai/updateFarm';
-import { updateFarm as updateFarmPolygon } from './polygon/updateFarm';
-import { isFarmV2Kovan, isFarmV2Mumbai, isFarmV2Polygon } from './utils/pids';
 
 const token_tableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
 const treasury_tableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
 const farms_tableName = process.env.FARMS_TABLE_NAME || 'farms-dev';
-const ichiPerBlock_tableName = process.env.ICHI_PER_BLOCK_TABLE_NAME || 'ichi-per-block';
 
 AWS.config.update({
   region: process.env.AWS_REGION || 'us-east-1',
@@ -53,7 +45,6 @@ export const handler = async (event: APIGatewayProxyEvent) => {
 
   if (poolId === -1) {
     await updateTokens(token_tableName);
-    // await updateTokensPolygon(token_tableName);
   }
 
   const tokenPrices = {};
@@ -100,45 +91,15 @@ export const handler = async (event: APIGatewayProxyEvent) => {
     throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
   }
 
-  const knownIchiPerBlock = {};
-
-  let params_ipb = {
-    TableName: ichiPerBlock_tableName
-  };
-  try {
-    const result = await getAllData(params_ipb);
-    for (let i = 0; i < result.length; i++) {
-      let item = result[i];
-      let poolId = item['poolId']['N'];
-      knownIchiPerBlock[poolId] = item['ichiPerBlock']['N']
-    }
-  } catch (error) {
-    throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
-  }
-
   //console.log(tokenPrices);
   //console.log(tokenNames);
-  //console.log(knownIchiPerBlock);
 
   if (poolId === -1) {
-    // await updateFarmsPolygon(farms_tableName, tokenPrices, tokenNames, knownIchiPerBlock);
-    // await updateTreasuryPolygon(treasury_tableName, tokenPrices, tokenNames);
-    await updateFarms(farms_tableName, tokenPrices, tokenNames, knownIchiPerBlock);
+    await updateFarms(farms_tableName, tokenPrices, tokenNames, {});
     await updateTreasury(treasury_tableName, tokenPrices, tokenNames);
   } else {
-    if (isFarmV2Kovan(poolId)) {
-      // Kovan farms
-      await updateFarmKovan(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock);
-    } else if (isFarmV2Polygon(poolId)) {
-      // Polygon farms
-      await updateFarmPolygon(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, false);
-    } else if (isFarmV2Mumbai(poolId)) {
-      // Mumbai farms
-      await updateFarmMumbai(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock);
-    } else {
-      // Mainnet farms
-      await updateFarm(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, false);
-    }
+    // Mainnet farms
+    await updateFarm(farms_tableName, poolId, tokenPrices, tokenNames, {}, false);
   }
 
   return {
