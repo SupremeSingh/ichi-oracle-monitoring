@@ -57,16 +57,65 @@ const farmv2Query = `
     }
 `
 
+const riskHarborQuery = `
+    query($user_id: String!) {
+        underwriterPositions (where: {user_in: [$user_id]}) {
+            id
+            shares
+            vault {
+              totalPremiumsPaid
+              totalCapacity
+              totalSharesIssued
+            }
+        }
+    }
+`
+
 async function farm_v2_graph_query() {
     let tokensQuery = farmv2Query;
     var client = new ApolloClient({
         uri: APIS.subgraph_farming_v2,
         cache: new InMemoryCache(),
     })
-    return await client
-        .query({
+    try {
+        return await client.query({
             query: gql(tokensQuery),
         }) as graphData
+    } catch (error) {
+        console.log("error: farmV2 subgraph is not available");
+        return false
+    }
+}
+
+type RiskHarborVault = {
+    id: string,
+    totalPremiumsPaid: string,
+    totalCapacity: string,
+    totalSharesIssued: string
+}
+
+type RiskHarborPosition = {
+    id: string,
+    shares: string,
+    vault: RiskHarborVault
+}
+
+async function risk_harbor_graph_query(endpoint: string, user_id: string) {
+    var client = new ApolloClient({
+        uri: endpoint,
+        cache: new InMemoryCache(),
+    })
+    try {
+        return await client.query({
+            query: gql(riskHarborQuery),
+            variables: {
+                user_id: user_id,
+            }
+        }) as graphData
+    } catch (error) {
+        console.log("error: risk harbor subgraph is not available");
+        return false
+    }
 }
 
 type GraphFarm = {
@@ -84,9 +133,9 @@ type GraphFarm = {
 }
 
 async function getSubgraphPoolRecords(): Promise<false | Map<number,GraphFarm>> {
-    let data = await farm_v2_graph_query();
+    let data: boolean | graphData = await farm_v2_graph_query();
     let farm_map = new Map();
-    if(data.data && data.data.farms && data.data.farms.length > 0) {
+    if(data && data.data && data.data.farms && data.data.farms.length > 0) {
         for (let farm of data.data.farms) {
             let temp: GraphFarm = {
                 id: farm.id,
@@ -117,14 +166,18 @@ async function vault_graph_query(endpoint: string, page: number, isDeposit: bool
         uri: endpoint,
         cache: new InMemoryCache(),
     })
-    return await client
-        .query({
-        query: gql(tokensQuery),
-        variables: {
-            first: 10,
-            skip: (page-1)*10,
-        },
-    })
+    try {
+        return await client.query({
+            query: gql(tokensQuery),
+            variables: {
+                first: 10,
+                skip: (page-1)*10,
+            },
+        })
+    } catch (error) {
+        console.log("error: vault subgraph is not available");
+        return false
+    }
 }
 
 type graphData = {
@@ -370,4 +423,12 @@ async function getCurrentVaultValue(vaultAddress: string, amountsInverted: boole
     return currentVaultValue
 }
 
-export {vault_graph_query, getCurrentVaultValue, Vault, dataPacket, getVerboseTransactions, getDistilledTransactions, graphData, getSubgraphPoolRecords, GraphFarm}
+export {vault_graph_query, 
+    risk_harbor_graph_query, 
+    getCurrentVaultValue, 
+    Vault, dataPacket,
+    RiskHarborPosition, RiskHarborVault, 
+    getVerboseTransactions, 
+    getDistilledTransactions, 
+    graphData, 
+    getSubgraphPoolRecords, GraphFarm}

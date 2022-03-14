@@ -15,10 +15,10 @@ import ONELINK_ABI from './abis/oneLINK_ABI.json';
 import ONEETH_ABI from './abis/oneETH_ABI.json';
 import UNISWAP_V3_POSITIONS from './abis/UNISWAP_V3_POSITIONS_ABI.json';
 import UNI_V3_POOL from './abis/UNI_V3_POOL_ABI.json';
-import RISKHARBOR_ABI from './abis/RISKHARBOR_ABI.json';
 import RARI_POOL_ABI from './abis/RARI_POOL_ABI.json';
 import { getPoolRecord } from './getPoolRecord';
 import axios from 'axios';
+import { risk_harbor_graph_query, RiskHarborPosition, graphData } from './subgraph';
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
@@ -146,7 +146,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const BMI_STAKING = new ethers.Contract(ADDRESSES.bmi_staking, BMI_STAKING_ABI, provider);
   const _1INCH_STAKING = new ethers.Contract(ADDRESSES._1inch_staking, _1INCH_STAKING_ABI, provider);
   const st1INCH = new ethers.Contract(ADDRESSES.st1inch, ERC20_ABI, provider);
-  const riskHarbor = new ethers.Contract(ADDRESSES.risk_harbor, RISKHARBOR_ABI, provider);
+  // const riskHarbor = new ethers.Contract(ADDRESSES.risk_harbor, RISKHARBOR_ABI, provider);
 
   const oneToken_USDC = Number(await USDC.balanceOf(oneTokenAddress));
   const oneToken_stimulus = Number(await stimulusToken.balanceOf(oneTokenAddress));
@@ -245,10 +245,33 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     }
   }
   if (auxStrategyAddress !== "") {
-    const rhBPS = 10;
-    let strategy_balance_riskharbor_shares = Number(await riskHarbor.balanceOf(auxStrategyAddress, rhBPS));
-    strategy_balance_riskharbor_usdc = Number(await riskHarbor.getSharesPrice(rhBPS, strategy_balance_riskharbor_shares));
+    // const rhBPS = 10;
+    // let strategy_balance_riskharbor_shares = Number(await riskHarbor.balanceOf(auxStrategyAddress, rhBPS));
+    // strategy_balance_riskharbor_usdc = Number(await riskHarbor.getSharesPrice(rhBPS, strategy_balance_riskharbor_shares));
+
+    let rh_total_shares = 0;
+    let rh_strategy_shares = 0;
+    let rh_total_capacity = 0;
+    let rh_total_premiums = 0;
+    let rawData: boolean | graphData = await risk_harbor_graph_query(APIS.subgraph_risk_harbor, auxStrategyAddress);
+    if (rawData && rawData['data']) {
+      let rhData = rawData['data']['underwriterPositions'] as RiskHarborPosition[]
+      for (let i = 0; i < rhData.length; i++) {
+        let rh_position = rhData[i];
+        rh_strategy_shares += Number(rh_position.shares);
+        rh_total_shares = Number(rh_position.vault.totalSharesIssued);
+        rh_total_capacity = Number(rh_position.vault.totalCapacity);
+        rh_total_premiums = Number(rh_position.vault.totalPremiumsPaid);
+      }
+      if (rh_total_shares > 0) {
+        let rh_price = (rh_total_capacity + rh_total_premiums) / rh_total_shares;
+        strategy_balance_riskharbor_usdc = rh_strategy_shares * rh_price;
+      }
+    } else {
+      console.log('no risk harbor data')
+    }
   }
+  // console.log(strategy_balance_riskharbor_usdc);
 
   if (uni_v3_positions > 0) {
     let all_v3_positions = await callDebunkOpenAPI(strategyAddress, DEBUNK_PROTOCOLS.UNI_V3);

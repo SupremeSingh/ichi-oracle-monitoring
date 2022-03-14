@@ -245,8 +245,8 @@ export const updateFarm = async (tableName: string, poolId: number,
       let endOfDepositData = false
       let depositPage = 1;
       while (!endOfDepositData) {
-        let rawData: graphData = await vault_graph_query(vaultEndpoint, depositPage, true)
-        if (rawData['data'] && rawData['data']['deposits']) {
+        let rawData: boolean | graphData = await vault_graph_query(vaultEndpoint, depositPage, true)
+        if (rawData && rawData['data'] && rawData['data']['deposits']) {
           if (rawData.data['deposits'].length > 0) {
             dataPackets.push({ data: rawData, type: 'deposit' })
             depositPage++
@@ -262,8 +262,8 @@ export const updateFarm = async (tableName: string, poolId: number,
       let endOfWithdrawalData = false
       let withdrawalPage = 1;
       while (!endOfWithdrawalData) {
-        let rawData:graphData = await vault_graph_query(vaultEndpoint, withdrawalPage, false)
-        if (rawData['data'] && rawData['data']['withdraws']) {
+        let rawData: boolean | graphData = await vault_graph_query(vaultEndpoint, withdrawalPage, false)
+        if (rawData && rawData['data'] && rawData['data']['withdraws']) {
           if (rawData['data']['withdraws'].length > 0) {
             dataPackets.push({ data: rawData, type: 'withdrawal' })
             withdrawalPage++

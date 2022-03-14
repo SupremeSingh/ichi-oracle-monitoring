@@ -12,8 +12,7 @@ const ADDRESSES = {
   _1inch_staking: "0x0F85A912448279111694F4Ba4F85dC641c54b594",
   st1inch: "0xA0446D8804611944F1B527eCD37d7dcbE442caba",
   bmi_staking: "0x6771Fd8968488Eb590Dff1730FE099c0eFA415bF",
-  risk_harbor: "0x635F549a5502CCF73b97A6df2C3644ed804b250d",
-  // risk_harbor: "0x8529687adD661120C9E23E366Cc7F545f1A03ADf",
+  // risk_harbor: "0x635F549a5502CCF73b97A6df2C3644ed804b250d",
   rari_pool_lens: "0x6Dc585Ad66A10214Ef0502492B0CC02F0e836eec",
   rari_pool_lens_secondary: "0xc76190E04012f26A364228Cfc41690429C44165d",
   rari_oneuni_token: "0x342AC2C024f214a711356F48326614E1d8Dd0420",
@@ -34,7 +33,7 @@ const APIS = {
   debunk_openapi: "https://openapi.debank.com/v1/user/protocol",
   _1inchPoolAPI: "https://governance.1inch.exchange/v1.1/farming/pools",
   subgraph_farming_v2: "https://api.thegraph.com/subgraphs/name/ichi-org/farmv2",
-  subgraph_risk_harbor: "https://thegraph.com/hosted-service/subgraph/risk-harbor/v2-mainnet"
+  subgraph_risk_harbor: "https://api.thegraph.com/subgraphs/name/risk-harbor/v2-mainnet"
 };
 
 const POOLS = {
