@@ -198,7 +198,32 @@ class Vault {
   
     public async getIRR() {
         let xirrObjArray = this.distilledTransactions
-        xirrObjArray.push({amount:this.currentVaultValue, when: new Date(Date.now())})
+    
+        // exception for GNO vault: 
+        // Transactions earlier than 2022-03-10T14:25:23.000Z are removed. 
+        // First big transaction amount is changed to 17916. 
+        // amounts are multiplied by 100 because of GNO price.
+        const firstTxDate = new Date('2022-03-10T14:25:23.000Z');
+        if (this.vaultName === 'gno') {
+          xirrObjArray = xirrObjArray.filter((tx) => { 
+            const currTxDate = new Date(tx.when);
+            return currTxDate >= firstTxDate});
+          // replace first tx amount
+          xirrObjArray = xirrObjArray.map((tx) => {
+            const currTxDate = new Date(tx.when);
+            if (currTxDate.getTime() === firstTxDate.getTime()){
+              return {amount: -17916, when: tx.when};
+            } else {
+              return {amount: tx.amount, when: tx.when};
+            }
+          });
+          xirrObjArray = xirrObjArray.map((i) => ({amount: i.amount*100, when: i.when}));
+          xirrObjArray.push({ amount: this.currentVaultValue*100, when: new Date(Date.now()) });
+          // console.log(`========xirrObjArray for ${this.vaultName} - 2=========== ${JSON.stringify(xirrObjArray)}`)
+        } else {
+          xirrObjArray.push({ amount: this.currentVaultValue, when: new Date(Date.now()) });
+        }        
+
         let irr = xirr(xirrObjArray, { guess: -0.9975 })
         this.IRR = irr * 100
         // console.log(`The IRR of the ${this.vaultName} vault is: `,irr)
