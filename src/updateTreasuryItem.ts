@@ -795,6 +795,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       // https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_UpdateItem.html#API_UpdateItem_Examples
       const result = await dbClient.updateItem(params).promise();
       console.log(`Successfully updated table: ${tableName}`);
+      console.log(JSON.stringify(result));
       return {
         statusCode: 200,
         body: JSON.stringify(result)
