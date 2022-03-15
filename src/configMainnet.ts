@@ -38,14 +38,14 @@ const APIS = {
 
 const POOLS = {
   activePools : [1001, 1004, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005],
-  // activePools : [],
+  //activePools : [],
   depositPools : [1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10005],
   activeVaults: [1016, 1019, 1020, 20001, 20002, 20003, 20004, 10006],
-  // activeVaults: [1020],
+  //activeVaults: [1021],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
-  unretiredPools : [10001, 20004, 1001, 1005, 1019, 1020],
+  unretiredPools : [10001, 20004, 1001, 1005, 1019, 1020, 1021],
   oneInchPools : [15, 16, 10001],
   balancerPools : [18, 1001, 1002, 1008],
   balancerSmartPools : [1003, 1007],
@@ -131,6 +131,12 @@ const TOKENS = {
     address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     decimals: 18,
     displayName: "wETH",
+    isOneToken: false
+  },
+  wnxm: {
+    address: "0x0d438F3b5175Bebc262bF23753C1E53d03432bDE",
+    decimals: 18,
+    displayName: "wNXM",
     isOneToken: false
   },
   vbtc: {
@@ -651,6 +657,17 @@ LABELS[1020] = {
   isHodl: true,
   vaultName: 'cel',
   vaultAddress: '0x82FF3E2eC3bDCa84CF0637402907e26C51d1d676'
+}
+LABELS[1021] = {
+  name: 'wNXM Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0x0d438f3b5175bebc262bf23753c1e53d03432bde&outputCurrency=ETH&chain=mainnet',
+  subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/wnxm-vault',
+  isInverted: false,
+  isHodl: true,
+  vaultName: 'wnxm',
+  vaultAddress: '0xd3FeD75d934Ab824Ff7FEcd0f8A70f204e61769b'
 }
 LABELS[20001] = {
   name: 'oneFUSE Vault',
