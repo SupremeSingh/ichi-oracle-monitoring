@@ -15,7 +15,7 @@ import RARI_POOL_LENS_ABI from './abis/RARI_POOL_LENS_ABI.json';
 import RARI_POOL_LENS_SECONDARY_ABI from './abis/RARI_POOL_LENS_SECONDARY_ABI.json';
 import axios from 'axios';
 import { BSC_ADDRESSES, BSC_APIS } from './configBSC';
-import { GraphFarm } from './subgraph';
+import { GraphFarm } from './subgraph/farm_v2';
 import { adjustedPid, isFarmExternal, isFarmGeneric, isFarmV1 } from './utils/pids';
 
 export const toInt = (input: BigNumber) => {
@@ -327,7 +327,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
       return tLP.toString();
     }
   }
-  //v2 farms are aroumd 1000
+
   export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock, graph_farm: false | GraphFarm) {
     if (isFarmExternal(poolID))
       return getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock);

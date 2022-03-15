@@ -5,8 +5,9 @@ import { ADDRESSES, POOLS, LABELS, CHAIN_ID, TOKENS } from './configMainnet';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import { getPoolRecord } from './getPoolRecord';
-import * as pkg from '@apollo/client';
-import { vault_graph_query, Vault, dataPacket, graphData, GraphFarm, getCurrentVaultValue } from './subgraph';
+import { GraphData } from './subgraph/model';
+import { GraphFarm } from './subgraph/farm_v2';
+import { vault_graph_query, Vault, DataPacket, getCurrentVaultValue } from './subgraph/ichi_vaults';
 import { adjustedPid, adjustedPidString, isFarmExternal, isFarmGeneric, isFarmV1, isFarmV2, isUnretired } from './utils/pids';
 import { VAULT_DECIMAL_TRACKER } from './utils/vaults';
 
@@ -227,7 +228,7 @@ export const updateFarm = async (tableName: string, poolId: number,
     let vaultName: string = LABELS[poolId].vaultName
     let vaultAddress: string = LABELS[poolId].vaultAddress
     let vaultEndpoint: string = LABELS[poolId].subgraphEndpoint
-    let dataPackets: dataPacket[] = []
+    let dataPackets: DataPacket[] = []
     let isInverted: boolean = LABELS[poolId].isInverted
     const decimals = VAULT_DECIMAL_TRACKER[vaultName]
 
@@ -245,7 +246,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       let endOfDepositData = false
       let depositPage = 1;
       while (!endOfDepositData) {
-        let rawData: boolean | graphData = await vault_graph_query(vaultEndpoint, depositPage, true)
+        let rawData: boolean | GraphData = await vault_graph_query(vaultEndpoint, depositPage, true)
         if (rawData && rawData['data'] && rawData['data']['deposits']) {
           if (rawData.data['deposits'].length > 0) {
             dataPackets.push({ data: rawData, type: 'deposit' })
@@ -262,7 +263,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       let endOfWithdrawalData = false
       let withdrawalPage = 1;
       while (!endOfWithdrawalData) {
-        let rawData: boolean | graphData = await vault_graph_query(vaultEndpoint, withdrawalPage, false)
+        let rawData: boolean | GraphData = await vault_graph_query(vaultEndpoint, withdrawalPage, false)
         if (rawData && rawData['data'] && rawData['data']['withdraws']) {
           if (rawData['data']['withdraws'].length > 0) {
             dataPackets.push({ data: rawData, type: 'withdrawal' })

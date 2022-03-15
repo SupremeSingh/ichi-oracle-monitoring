@@ -18,7 +18,8 @@ import UNI_V3_POOL from './abis/UNI_V3_POOL_ABI.json';
 import RARI_POOL_ABI from './abis/RARI_POOL_ABI.json';
 import { getPoolRecord } from './getPoolRecord';
 import axios from 'axios';
-import { risk_harbor_graph_query, RiskHarborPosition, graphData } from './subgraph';
+import { GraphData } from './subgraph/model';
+import { risk_harbor_graph_query, RiskHarborPosition } from './subgraph/risk_harbor';
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
@@ -253,7 +254,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     let rh_strategy_shares = 0;
     let rh_total_capacity = 0;
     let rh_total_premiums = 0;
-    let rawData: boolean | graphData = await risk_harbor_graph_query(APIS.subgraph_risk_harbor, auxStrategyAddress);
+    let rawData: boolean | GraphData = await risk_harbor_graph_query(APIS.subgraph_risk_harbor, auxStrategyAddress);
     if (rawData && rawData['data']) {
       let rhData = rawData['data']['underwriterPositions'] as RiskHarborPosition[]
       for (let i = 0; i < rhData.length; i++) {

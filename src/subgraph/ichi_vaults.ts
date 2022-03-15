@@ -1,15 +1,15 @@
-import { APIS, TOKENS } from './configMainnet';
 import * as pkg from '@apollo/client';
 import 'cross-fetch/dist/node-polyfill.js';
-const { ApolloClient, InMemoryCache, gql } = pkg;
 import * as ethers from 'ethers'
 import { BigNumber } from 'ethers';
-import vaultABI from './abis/ICHI_VAULT_ABI.json';
-import poolABI from './abis/UNI_V3_POOL_ABI.json'
+import vaultABI from '../abis/ICHI_VAULT_ABI.json';
+import poolABI from '../abis/UNI_V3_POOL_ABI.json'
 import xirr from 'xirr'
-import { GraphQLError } from 'graphql';
-import { getPrice, VAULT_DECIMAL_TRACKER } from './utils/vaults';
-import { BNtoNumberWithoutDecimals } from './utils/numbers';
+import { getPrice, VAULT_DECIMAL_TRACKER } from '../utils/vaults';
+import { BNtoNumberWithoutDecimals } from '../utils/numbers';
+import { GraphData } from './model';
+
+const { ApolloClient, InMemoryCache, gql } = pkg;
 
 const depositTokensQuery = `
     query($first: Int, $skip:Int) {
@@ -39,128 +39,7 @@ const withdrawalTokensQuery = `
     }
 `
 
-const farmv2Query = `
-    query {
-        farms{
-          id
-          lpToken
-          rewardTokensPerBlock
-          totalAllocPoints
-          totalLPSupply
-          accIchiPerShare
-          lastRewardBlock
-          allocPoint
-          poolIchiReward
-          ichiPerBlock
-          lpTokenSymbol
-        }
-    }
-`
-
-const riskHarborQuery = `
-    query($user_id: String!) {
-        underwriterPositions (where: {user_in: [$user_id]}) {
-            id
-            shares
-            vault {
-              totalPremiumsPaid
-              totalCapacity
-              totalSharesIssued
-            }
-        }
-    }
-`
-
-async function farm_v2_graph_query() {
-    let tokensQuery = farmv2Query;
-    var client = new ApolloClient({
-        uri: APIS.subgraph_farming_v2,
-        cache: new InMemoryCache(),
-    })
-    try {
-        return await client.query({
-            query: gql(tokensQuery),
-        }) as graphData
-    } catch (error) {
-        console.log("error: farmV2 subgraph is not available");
-        return false
-    }
-}
-
-type RiskHarborVault = {
-    id: string,
-    totalPremiumsPaid: string,
-    totalCapacity: string,
-    totalSharesIssued: string
-}
-
-type RiskHarborPosition = {
-    id: string,
-    shares: string,
-    vault: RiskHarborVault
-}
-
-async function risk_harbor_graph_query(endpoint: string, user_id: string) {
-    var client = new ApolloClient({
-        uri: endpoint,
-        cache: new InMemoryCache(),
-    })
-    try {
-        return await client.query({
-            query: gql(riskHarborQuery),
-            variables: {
-                user_id: user_id,
-            }
-        }) as graphData
-    } catch (error) {
-        console.log("error: risk harbor subgraph is not available");
-        return false
-    }
-}
-
-type GraphFarm = {
-    id: string,
-    LPToken: string,
-    rewardTokensPerBlock: number,
-    totalAllocPoints: number,
-    totalLPSupply: number,
-    accIchiPerShare: number,
-    lastRewardBlock: number,
-    allocPoint: number,
-    poolIchiReward: number,
-    ichiPerBlock: number,
-    lpTokenSymbol: string
-}
-
-async function getSubgraphPoolRecords(): Promise<false | Map<number,GraphFarm>> {
-    let data: boolean | graphData = await farm_v2_graph_query();
-    let farm_map = new Map();
-    if(data && data.data && data.data.farms && data.data.farms.length > 0) {
-        for (let farm of data.data.farms) {
-            let temp: GraphFarm = {
-                id: farm.id,
-                LPToken: farm.lpToken,
-                rewardTokensPerBlock: farm.rewardTokensPerBlock,
-                totalAllocPoints: farm.totalAllocPoints,
-                totalLPSupply: farm.totalLPSupply,
-                accIchiPerShare: farm.accIchiPerShare,
-                lastRewardBlock: farm.lastRewardBlock,
-                allocPoint: farm.allocPoint,
-                poolIchiReward: farm.poolIchiReward,
-                ichiPerBlock: farm.ichiPerBlock,
-                lpTokenSymbol: farm.lpTokenSymbol
-            }
-            farm_map.set(Number(temp.id), temp);
-        }
-    }
-    else {
-        return false;
-    }
-
-    return farm_map;
-}
-
-async function vault_graph_query(endpoint: string, page: number, isDeposit: boolean) {
+export async function vault_graph_query(endpoint: string, page: number, isDeposit: boolean) {
     let tokensQuery = isDeposit ? depositTokensQuery : withdrawalTokensQuery
     var client = new ApolloClient({
         uri: endpoint,
@@ -180,34 +59,45 @@ async function vault_graph_query(endpoint: string, page: number, isDeposit: bool
     }
 }
 
-type graphData = {
-    data: any,
-    errors?: readonly GraphQLError[]
-    error?: pkg.ApolloError,
-    loading: boolean,
-    networkStatus: pkg.NetworkStatus,
-    partial?: boolean
-}
-
-type dataPacket = {
-    data: graphData,
+export type DataPacket = {
+    data: GraphData,
     type: 'deposit' | 'withdrawal'
 }
 
-class Vault {
+type VerboseTransaction = {
+    'date': Date,
+    'oneTokenAmount': number,
+    'scarceTokenAmount': number,
+    'price': number,
+    'oneTokenTotalAmount': number,
+    'scarceTokenTotalAmount': number,
+    'type': 'deposit' | 'withdrawal'
+}
+
+type DistilledTransaction = {
+    amount: number,
+    when: Date
+}
+
+type DecimalsObject = {
+    baseToken: number,
+    scarceToken: number
+}
+  
+export class Vault {
     vaultName: string
     vaultEndpoint: string
     vaultAddress: string
     amountsInverted: boolean
-    decimals: decimalsObject
-    dataPackets: dataPacket[]
-    verboseTransactions: verboseTransactionObject[] = []
-    distilledTransactions: distilledTransactionObject[] = []
+    decimals: DecimalsObject
+    dataPackets: DataPacket[]
+    verboseTransactions: VerboseTransaction[] = []
+    distilledTransactions: DistilledTransaction[] = []
     currentVaultValue: number
     APR: number
     IRR: number
 
-    constructor(vaultName: string, vaultAddress: string, vaultEndpoint: string, data: dataPacket[], isInverted: boolean) {
+    constructor(vaultName: string, vaultAddress: string, vaultEndpoint: string, data: DataPacket[], isInverted: boolean) {
         this.vaultName = vaultName
         this.vaultEndpoint = vaultEndpoint
         this.vaultAddress = vaultAddress
@@ -284,35 +174,14 @@ class Vault {
 
 }
 
-type verboseTransactionObject = {
-  'date': Date,
-  'oneTokenAmount': number,
-  'scarceTokenAmount': number,
-  'price': number,
-  'oneTokenTotalAmount': number,
-  'scarceTokenTotalAmount': number,
-  'type': 'deposit' | 'withdrawal'
-}
-
-type distilledTransactionObject = {
-  amount: number,
-  when: Date
-}
-
-type decimalsObject = {
-  baseToken: number,
-  scarceToken: number
-}
-
 function getVerboseTransactions(
-    dataPackets: dataPacket[], 
+    dataPackets: DataPacket[], 
     amountsInverted: boolean,
     baseTokenDecimals: number,
-    scarceTokenDecimals: number): verboseTransactionObject[] {
+    scarceTokenDecimals: number): VerboseTransaction[] {
 
-    let transactionsType: string;
     let isDeposit: boolean;
-    let verboseTransactions: verboseTransactionObject[] = []
+    let verboseTransactions: VerboseTransaction[] = []
     let packetData: any[];
     for (let packet of dataPackets) {
         if (packet.type == 'deposit') {
@@ -347,7 +216,7 @@ function getVerboseTransactions(
                     BNtoNumberWithoutDecimals(transaction["totalAmount1"], scarceTokenDecimals))
             const type = packet.type
 
-            let holder: verboseTransactionObject = {
+            let holder: VerboseTransaction = {
                 'date': date,
                 "oneTokenAmount": oneTokenAmount,
                 "scarceTokenAmount": scarceTokenAmount,
@@ -366,20 +235,20 @@ function getVerboseTransactions(
     return verboseTransactions
 }
 
-function getDistilledTransactions(verboseTransactions: verboseTransactionObject[]): distilledTransactionObject[] {
-    let distilledTransactions: distilledTransactionObject[] = []
+function getDistilledTransactions(verboseTransactions: VerboseTransaction[]): DistilledTransaction[] {
+    let distilledTransactions: DistilledTransaction[] = []
     for (const transaction of verboseTransactions) {
         let dollarAmount = getDollarAmount(transaction);
         if (transaction.type == 'deposit') {
             dollarAmount = -dollarAmount;
         }
-        const holder:distilledTransactionObject = {'amount':dollarAmount, 'when':transaction.date}
+        const holder:DistilledTransaction = {'amount':dollarAmount, 'when':transaction.date}
         distilledTransactions.push(holder)
     }
     return distilledTransactions
 }
 
-function getDollarAmount(transaction: verboseTransactionObject): number {
+function getDollarAmount(transaction: VerboseTransaction): number {
     const oneTokenAmount = transaction.oneTokenAmount
     const scarceTokenAmount = transaction.scarceTokenAmount
     const price = transaction.price
@@ -397,7 +266,7 @@ function compare(a,b){
     }
 }
 
-async function getCurrentVaultValue(vaultAddress: string, amountsInverted: boolean, baseTokenDecimals:number, scarceTokenDecimals:number): Promise<number>{
+export async function getCurrentVaultValue(vaultAddress: string, amountsInverted: boolean, baseTokenDecimals:number, scarceTokenDecimals:number): Promise<number>{
     
     //get Current Balance
     const infuraId = process.env.INFURA_ID;
@@ -422,13 +291,3 @@ async function getCurrentVaultValue(vaultAddress: string, amountsInverted: boole
     let currentVaultValue = totalBaseTokenAmount + price * totalScarceTokenAmount
     return currentVaultValue
 }
-
-export {vault_graph_query, 
-    risk_harbor_graph_query, 
-    getCurrentVaultValue, 
-    Vault, dataPacket,
-    RiskHarborPosition, RiskHarborVault, 
-    getVerboseTransactions, 
-    getDistilledTransactions, 
-    graphData, 
-    getSubgraphPoolRecords, GraphFarm}

@@ -1,7 +1,7 @@
 import { updateFarm } from './updateFarm';
 import { POOLS } from './configMainnet';
 import { adjustedPid, isFarmV2 } from './utils/pids';
-import {getSubgraphPoolRecords, GraphFarm} from './subgraph'
+import {getSubgraphPoolRecords, GraphFarm} from './subgraph/farm_v2'
 import { APIGatewayProxyResult } from 'aws-lambda';
 
 export const updateFarms = async (tableName: string, 

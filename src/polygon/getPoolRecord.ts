@@ -4,8 +4,7 @@ import FARMING_V2_ABI from '../abis/FARMING_V2_ABI.json';
 import ERC20_ABI from '../abis/ERC20_ABI.json';
 import PAIR_ABI from '../abis/PAIR_ABI.json';
 import VAULT_ABI from '../abis/ICHI_VAULT_ABI.json';
-import axios from 'axios';
-import { GraphFarm } from '../subgraph';
+import { GraphFarm } from '../subgraph/farm_v2';
 import { adjustedPid, isFarmExternal, isFarmGeneric } from '../utils/pids';
 
 export const toInt = (input: BigNumber) => {
