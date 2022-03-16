@@ -57,6 +57,7 @@ const POOLS = {
   rariAssets : [10005, 10006],
   specialPricing: [19],
   activeAPR: [1016, 1019, 10006]
+  //activeAPR: []
 }
 
 const TOKENS = {
@@ -515,6 +516,7 @@ LABELS[10006] = {
   isHodl: false,
   vaultName: 'ichi',
   vaultAddress: '0xfaeCcee632912c42a7c88c3544885A8D455408FA',
+  irrStartDate: new Date(0),
   externalUrl: 'https://app.rari.capital/fuse/pool/136',
   externalText: 'Earn $ICHI',
   externalButton: 'RARI'
@@ -622,7 +624,8 @@ LABELS[1016] = {
   isInverted: false,
   isHodl: false,
   vaultName: 'ichi',
-  vaultAddress: '0xfaeCcee632912c42a7c88c3544885A8D455408FA'
+  vaultAddress: '0xfaeCcee632912c42a7c88c3544885A8D455408FA',
+  irrStartDate: new Date(0),
 }
 LABELS[1017] = {
   name: 'oneDODO Deposit',
@@ -646,7 +649,8 @@ LABELS[1019] = {
   isInverted: false,
   isHodl: true,
   vaultName: 'gno',
-  vaultAddress: '0xA380EA6BE1C084851aE7846a8F39def17eCf6ED8'
+  vaultAddress: '0xA380EA6BE1C084851aE7846a8F39def17eCf6ED8',
+  irrStartDate: new Date(0),
 }
 LABELS[1020] = {
   name: 'CEL Vault',
@@ -657,7 +661,8 @@ LABELS[1020] = {
   isInverted: true,
   isHodl: true,
   vaultName: 'cel',
-  vaultAddress: '0x82FF3E2eC3bDCa84CF0637402907e26C51d1d676'
+  vaultAddress: '0x82FF3E2eC3bDCa84CF0637402907e26C51d1d676',
+  irrStartDate: new Date(0),
 }
 LABELS[1021] = {
   name: 'wNXM Vault',
@@ -668,7 +673,8 @@ LABELS[1021] = {
   isInverted: false,
   isHodl: true,
   vaultName: 'wnxm',
-  vaultAddress: '0xd3FeD75d934Ab824Ff7FEcd0f8A70f204e61769b'
+  vaultAddress: '0xd3FeD75d934Ab824Ff7FEcd0f8A70f204e61769b',
+  irrStartDate: new Date(0),
 }
 LABELS[20001] = {
   name: 'oneFUSE Vault',
@@ -684,7 +690,8 @@ LABELS[20001] = {
   isInverted: true,
   isHodl: false,
   vaultName: 'fuse',
-  vaultAddress: '0x3A4411a33CfeF8BC01f23ED7518208aA38cca824'
+  vaultAddress: '0x3A4411a33CfeF8BC01f23ED7518208aA38cca824',
+  irrStartDate: new Date(0),
 }
 LABELS[20002] = {
   name: 'oneWING Vault',
@@ -700,7 +707,8 @@ LABELS[20002] = {
   isInverted: false,
   isHodl: false,
   vaultName: 'wing',
-  vaultAddress: '0x2a8E09552782563f7A076ccec0Ff39473B91Cd8F'
+  vaultAddress: '0x2a8E09552782563f7A076ccec0Ff39473B91Cd8F',
+  irrStartDate: new Date(0),
 }
 LABELS[20003] = {
   name: 'oneFOX Vault',
@@ -716,7 +724,8 @@ LABELS[20003] = {
   isInverted: false,
   isHodl: false,
   vaultName: 'fox',
-  vaultAddress: '0x779F9BAd1f4B1Ef5198AD9361DBf3791F9e0D596'
+  vaultAddress: '0x779F9BAd1f4B1Ef5198AD9361DBf3791F9e0D596',
+  irrStartDate: new Date('2022-03-09T02:00:00'),
 }
 LABELS[20004] = {
   name: 'oneOJA Vault',
@@ -732,7 +741,8 @@ LABELS[20004] = {
   isInverted: true,
   isHodl: false,
   vaultName: 'oja',
-  vaultAddress: '0x98bAd5Ce592DcfE706CC95a1B9dB7008B6D418F8'
+  vaultAddress: '0x98bAd5Ce592DcfE706CC95a1B9dB7008B6D418F8',
+  irrStartDate: new Date(0),
 }
 
 export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID, DEBUNK_PROTOCOLS };

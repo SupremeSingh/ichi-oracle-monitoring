@@ -11,36 +11,43 @@ import { GraphData } from './model';
 
 const { ApolloClient, InMemoryCache, gql } = pkg;
 
-const depositTokensQuery = `
-    query($first: Int, $skip:Int) {
-        deposits (first: $first, skip: $skip, orderBy: createdAtTimestamp, orderDirection: desc) {
-            id
-            amount0
-            amount1
-            createdAtTimestamp
-            sqrtPrice
-            totalAmount0
-            totalAmount1
-        }
-    }
-`
+const rangedDepositTokensQuery = `
+query($first: Int, $skip:Int, $ts: Int){
+  deposits(first: $first, skip: $skip, orderBy: createdAtTimestamp, where:{createdAtTimestamp_gt: $ts}){
+    id
+    createdAtTimestamp
+    sqrtPrice
+    amount0
+    amount1
+    totalAmount0
+    totalAmount1
+    totalAmount0BeforeEvent
+    totalAmount1BeforeEvent
+  }
+}`;
 
-const withdrawalTokensQuery = `
-    query($first: Int, $skip:Int) {
-        withdraws (first: $first, skip: $skip, orderBy: createdAtTimestamp, orderDirection: desc) {
-            id
-            amount0
-            amount1
-            createdAtTimestamp
-            sqrtPrice
-            totalAmount0
-            totalAmount1
-        }
-    }
-`
+const rangedWithdrawalTokens = `
+query($first: Int, $skip:Int, $ts: Int){
+  withdraws(first: $first, skip: $skip, orderBy: createdAtTimestamp, where:{createdAtTimestamp_gt: $ts}){
+    id
+    createdAtTimestamp
+    sqrtPrice
+    amount0
+    amount1
+    totalAmount0
+    totalAmount1
+    totalAmount0BeforeEvent
+    totalAmount1BeforeEvent
+  }
+}
+`;
 
-export async function vault_graph_query(endpoint: string, page: number, isDeposit: boolean) {
-    let tokensQuery = isDeposit ? depositTokensQuery : withdrawalTokensQuery
+export async function vault_graph_query(
+    endpoint: string, 
+    page: number, 
+    isDeposit: boolean,
+    irrStartDate: Date) {
+    let tokensQuery = isDeposit ? rangedDepositTokensQuery : rangedWithdrawalTokens;
     var client = new ApolloClient({
         uri: endpoint,
         cache: new InMemoryCache(),
@@ -51,96 +58,115 @@ export async function vault_graph_query(endpoint: string, page: number, isDeposi
             variables: {
                 first: 10,
                 skip: (page-1)*10,
+                ts: Math.ceil(irrStartDate.getTime() / 1000)
             },
-        })
+        });
     } catch (error) {
         console.log("error: vault subgraph is not available");
-        return false
+        return false;
     }
-}
+};
 
 export type DataPacket = {
-    data: GraphData,
-    type: 'deposit' | 'withdrawal'
-}
+    data: GraphData;
+    type: 'deposit' | 'withdrawal';
+};
 
 type VerboseTransaction = {
-    'date': Date,
-    'oneTokenAmount': number,
-    'scarceTokenAmount': number,
-    'price': number,
-    'oneTokenTotalAmount': number,
-    'scarceTokenTotalAmount': number,
-    'type': 'deposit' | 'withdrawal'
-}
+    date: Date;
+    oneTokenAmount: number;
+    scarceTokenAmount: number;
+    price: number;
+    oneTokenTotalAmount: number;
+    scarceTokenTotalAmount: number;
+    oneTokenTotalAmountBeforeEvent: number;
+    scarceTokenTotalAmountBeforeEvent: number;
+    type: 'deposit' | 'withdrawal';
+};
 
 type DistilledTransaction = {
-    amount: number,
-    when: Date
-}
+    amount: number;
+    when: Date;
+};
 
 type DecimalsObject = {
-    baseToken: number,
-    scarceToken: number
-}
+    baseToken: number;
+    scarceToken: number;
+};
   
 export class Vault {
-    vaultName: string
-    vaultEndpoint: string
-    vaultAddress: string
-    amountsInverted: boolean
-    decimals: DecimalsObject
-    dataPackets: DataPacket[]
-    verboseTransactions: VerboseTransaction[] = []
-    distilledTransactions: DistilledTransaction[] = []
-    currentVaultValue: number
-    APR: number
-    IRR: number
+    vaultName: string;
+    vaultEndpoint: string;
+    vaultAddress: string;
+    amountsInverted: boolean;
+    decimals: DecimalsObject;
+    dataPackets: DataPacket[];
+    verboseTransactions: VerboseTransaction[] = [];
+    distilledTransactions: DistilledTransaction[] = [];
+    currentVaultValue: number;
+    cutOffDate: Date;
+    APR: number;
+    IRR: number;
 
-    constructor(vaultName: string, vaultAddress: string, vaultEndpoint: string, data: DataPacket[], isInverted: boolean) {
-        this.vaultName = vaultName
-        this.vaultEndpoint = vaultEndpoint
-        this.vaultAddress = vaultAddress
-        this.amountsInverted = isInverted
-        this.decimals = VAULT_DECIMAL_TRACKER[vaultName] 
-        this.dataPackets = data
-        this.verboseTransactions = getVerboseTransactions(this.dataPackets, this.amountsInverted, this.decimals.baseToken, this.decimals.scarceToken)
-        this.distilledTransactions = getDistilledTransactions(this.verboseTransactions)
-        this.calcCurrentValue()
+    constructor(
+        vaultName: string, 
+        vaultAddress: string, 
+        vaultEndpoint: string, 
+        data: DataPacket[], 
+        isInverted: boolean,
+        cutOffDate: Date) {
+        this.vaultName = vaultName;
+        this.vaultEndpoint = vaultEndpoint;
+        this.vaultAddress = vaultAddress;
+        this.amountsInverted = isInverted;
+        this.decimals = VAULT_DECIMAL_TRACKER[vaultName]; 
+        this.dataPackets = data;
+        this.cutOffDate = cutOffDate;
+        this.verboseTransactions = getVerboseTransactions(
+            this.dataPackets, 
+            this.amountsInverted, 
+            this.decimals.baseToken, 
+            this.decimals.scarceToken
+        );
+        this.distilledTransactions = getDistilledTransactions(
+            this.verboseTransactions,
+            this.cutOffDate
+        );
+        this.calcCurrentValue();
     }
 
     public async calcCurrentValue() {
-      let value = await getCurrentVaultValue(
-        this.vaultAddress, 
-        this.amountsInverted, 
-        this.decimals.baseToken, 
-        this.decimals.scarceToken);
-
-      //console.log(value)  
+        let value = await getCurrentVaultValue(
+            this.vaultAddress, 
+            this.amountsInverted, 
+            this.decimals.baseToken, 
+            this.decimals.scarceToken
+        );
+        
         this.currentVaultValue = value;
     }
     
     public async getAPR() {
         let deposits = 0;
-        let withdrawals = 0
-        const transactions = this.distilledTransactions
+        let withdrawals = 0;
+        const transactions = this.distilledTransactions;
         const currentVaultValue = this.currentVaultValue;
-        const numTransactions = transactions.length
+        const numTransactions = transactions.length;
         const millisecondsToYears = 1000 * 60 * 60 * 24 * 365;
-        const vaultTimeYears = ((transactions[numTransactions - 1]).when.getTime() - transactions[0].when.getTime()) / millisecondsToYears
+        const vaultTimeYears = 
+            ((transactions[numTransactions - 1]).when.getTime() - transactions[0].when.getTime()) / millisecondsToYears;
 
         for (let transaction of transactions) {
-            
-            let amount = transaction.amount
-            amount < 0 ? deposits += amount : withdrawals += amount
+            let amount = transaction.amount;
+            amount < 0 ? deposits += amount : withdrawals += amount;
         }
     
-        this.APR = ((withdrawals + currentVaultValue) / (-deposits) * 100 - 100) / vaultTimeYears
+        this.APR = ((withdrawals + currentVaultValue) / (-deposits) * 100 - 100) / vaultTimeYears;
         // console.log(`The APR of the ${this.vaultName} vault is: ${this.APR}`)
     }
   
     public async getIRR() {
-        let xirrObjArray = this.distilledTransactions
+        let xirrObjArray = this.distilledTransactions;
     
         // exception for GNO vault: 
         // Transactions earlier than 2022-03-10T14:25:23.000Z are removed. 
@@ -167,11 +193,27 @@ export class Vault {
           xirrObjArray.push({ amount: this.currentVaultValue, when: new Date(Date.now()) });
         }        
 
-        let irr = xirr(xirrObjArray, { guess: -0.9975 })
-        this.IRR = irr * 100
+        //console.log(xirrObjArray);
+
+        let irr = xirr(xirrObjArray, { guess: -0.9975 });
+        this.IRR = irr * 100;
         // console.log(`The IRR of the ${this.vaultName} vault is: `,irr)
     }
 
+    public async getDateRangeDistilled(milliseconds: number): Promise<DistilledTransaction[]> {
+        let cutoff = Date.now() - milliseconds; 
+        if (cutoff <= this.distilledTransactions[0].when.getTime()) {
+          return this.distilledTransactions;
+        } else {
+            let rangedDistilledTransactions: DistilledTransaction[] = [];
+            for (let distilledTransactionObjectInstance of this.distilledTransactions) {
+            if (cutoff <= distilledTransactionObjectInstance.when.getTime()) {
+                rangedDistilledTransactions.push(distilledTransactionObjectInstance)
+            } 
+        }
+        return rangedDistilledTransactions
+        }
+    }
 }
 
 function getVerboseTransactions(
@@ -181,27 +223,27 @@ function getVerboseTransactions(
     scarceTokenDecimals: number): VerboseTransaction[] {
 
     let isDeposit: boolean;
-    let verboseTransactions: VerboseTransaction[] = []
+    let verboseTransactions: VerboseTransaction[] = [];
     let packetData: any[];
     for (let packet of dataPackets) {
         if (packet.type == 'deposit') {
             isDeposit = true;
-            packetData = packet.data.data['deposits']
+            packetData = packet.data.data['deposits'];
         } else {
-            isDeposit = false
-            packetData = packet.data.data['withdraws']
+            isDeposit = false;
+            packetData = packet.data.data['withdraws'];
         }
         for (const transaction of packetData) {
 
-            const date = new Date(transaction.createdAtTimestamp * 1000)
+            const date = new Date(transaction.createdAtTimestamp * 1000);
             const oneTokenAmount = 
                 (amountsInverted ? 
                     BNtoNumberWithoutDecimals(transaction["amount1"], baseTokenDecimals) : 
-                    BNtoNumberWithoutDecimals(transaction["amount0"], baseTokenDecimals))
+                    BNtoNumberWithoutDecimals(transaction["amount0"], baseTokenDecimals));
             const scarceTokenAmount = 
                 (amountsInverted ? 
                     BNtoNumberWithoutDecimals(transaction["amount0"], scarceTokenDecimals) : 
-                    BNtoNumberWithoutDecimals(transaction["amount1"], scarceTokenDecimals))
+                    BNtoNumberWithoutDecimals(transaction["amount1"], scarceTokenDecimals));
             
             let price = getPrice(amountsInverted, BigNumber.from(transaction["sqrtPrice"]), baseTokenDecimals, scarceTokenDecimals); 
             price = isDeposit ? -price : price;
@@ -209,54 +251,84 @@ function getVerboseTransactions(
             const oneTokenTotalAmount = 
                 (amountsInverted ? 
                     BNtoNumberWithoutDecimals(transaction["totalAmount1"], baseTokenDecimals) : 
-                    BNtoNumberWithoutDecimals(transaction["totalAmount0"], baseTokenDecimals))
+                    BNtoNumberWithoutDecimals(transaction["totalAmount0"], baseTokenDecimals));
             const scarceTokenTotalAmount = 
                 (amountsInverted ? 
                     BNtoNumberWithoutDecimals(transaction["totalAmount0"], scarceTokenDecimals) : 
-                    BNtoNumberWithoutDecimals(transaction["totalAmount1"], scarceTokenDecimals))
-            const type = packet.type
+                    BNtoNumberWithoutDecimals(transaction["totalAmount1"], scarceTokenDecimals));
+
+            const oneTokenTotalAmountBeforeEvent = 
+                (amountsInverted
+                    ? BNtoNumberWithoutDecimals(transaction["totalAmount1BeforeEvent"], baseTokenDecimals)
+                    : BNtoNumberWithoutDecimals(transaction["totalAmount0BeforeEvent"], baseTokenDecimals));
+            const scarceTokenTotalAmountBeforeEvent = 
+                (amountsInverted
+                    ? BNtoNumberWithoutDecimals(transaction["totalAmount0BeforeEvent"], scarceTokenDecimals)
+                    : BNtoNumberWithoutDecimals(transaction["totalAmount1BeforeEvent"], scarceTokenDecimals));
+
+            const type = packet.type;
 
             let holder: VerboseTransaction = {
-                'date': date,
-                "oneTokenAmount": oneTokenAmount,
-                "scarceTokenAmount": scarceTokenAmount,
-                "price": price,
-                "oneTokenTotalAmount": oneTokenTotalAmount,
-                "scarceTokenTotalAmount": scarceTokenTotalAmount,
-                'type':type
-            }
+                date: date,
+                oneTokenAmount: oneTokenAmount,
+                scarceTokenAmount: scarceTokenAmount,
+                price: price,
+                oneTokenTotalAmount: oneTokenTotalAmount,
+                scarceTokenTotalAmount: scarceTokenTotalAmount,
+                oneTokenTotalAmountBeforeEvent: oneTokenTotalAmountBeforeEvent,
+                scarceTokenTotalAmountBeforeEvent: scarceTokenTotalAmountBeforeEvent,
+                type: type,
+            };
 
-            verboseTransactions.push(holder)
+            verboseTransactions.push(holder);
         }
-        isDeposit = false
+        isDeposit = false;
     }
 
-    verboseTransactions.sort(compare)
-    return verboseTransactions
+    verboseTransactions.sort(compare);
+    return verboseTransactions;
 }
 
-function getDistilledTransactions(verboseTransactions: VerboseTransaction[]): DistilledTransaction[] {
-    let distilledTransactions: DistilledTransaction[] = []
+function getDistilledTransactions(
+    verboseTransactions: VerboseTransaction[],
+    cutOffDate: Date
+  ): DistilledTransaction[] {
+    let distilledTransactions: DistilledTransaction[] = [];
+  
+    //aggregates the transactions before the IRR start date
+    let aggregateOneToken = verboseTransactions[0].oneTokenTotalAmountBeforeEvent;
+    let aggregateScarceToken = verboseTransactions[0].scarceTokenTotalAmountBeforeEvent;
+    let aggregateAmount = aggregateOneToken + aggregateScarceToken * verboseTransactions[0].price
+    let aggregateHolder: DistilledTransaction = {
+      amount: -aggregateAmount,
+      when: cutOffDate
+    }
+    distilledTransactions.push(aggregateHolder)
+  
     for (const transaction of verboseTransactions) {
-        let dollarAmount = getDollarAmount(transaction);
-        if (transaction.type == 'deposit') {
-            dollarAmount = -dollarAmount;
-        }
-        const holder:DistilledTransaction = {'amount':dollarAmount, 'when':transaction.date}
-        distilledTransactions.push(holder)
+      let dollarAmount = getDollarAmount(transaction);
+      if (transaction.type == "deposit") {
+        dollarAmount = -dollarAmount;
+      }
+      const holder: DistilledTransaction = {
+        amount: dollarAmount,
+        when: transaction.date,
+      };
+      distilledTransactions.push(holder);
     }
-    return distilledTransactions
-}
+    
+    return distilledTransactions;
+  }
 
 function getDollarAmount(transaction: VerboseTransaction): number {
-    const oneTokenAmount = transaction.oneTokenAmount
-    const scarceTokenAmount = transaction.scarceTokenAmount
-    const price = transaction.price
+    const oneTokenAmount = transaction.oneTokenAmount;
+    const scarceTokenAmount = transaction.scarceTokenAmount;
+    const price = transaction.price;
 
-    return (oneTokenAmount+price*scarceTokenAmount)
+    return (oneTokenAmount + price * scarceTokenAmount);
 }
 
-function compare(a,b){
+function compare(a, b){
     if(a['date'] > b['date']){
         return 1;
     } else if (b['date'] > a['date']){
@@ -267,27 +339,26 @@ function compare(a,b){
 }
 
 export async function getCurrentVaultValue(vaultAddress: string, amountsInverted: boolean, baseTokenDecimals:number, scarceTokenDecimals:number): Promise<number>{
-    
     //get Current Balance
     const infuraId = process.env.INFURA_ID;
     const RPC_HOST = `https://mainnet.infura.io/v3/${infuraId}`;
     const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
     const vaultContract = new ethers.Contract(vaultAddress, vaultABI, provider)
-    const totalAmountArray = await vaultContract.getTotalAmounts()
+    const totalAmountArray = await vaultContract.getTotalAmounts();
 
-    const unformattedTotalBaseTokenAmount = amountsInverted ? totalAmountArray[1] : totalAmountArray[0]
-    const unformattedTotalScarceTokenAmount = amountsInverted? totalAmountArray[0] : totalAmountArray[1]
-    const totalBaseTokenAmount = BNtoNumberWithoutDecimals(unformattedTotalBaseTokenAmount.toString(), baseTokenDecimals)
-    const totalScarceTokenAmount = BNtoNumberWithoutDecimals(unformattedTotalScarceTokenAmount.toString(), scarceTokenDecimals)
+    const unformattedTotalBaseTokenAmount = amountsInverted ? totalAmountArray[1] : totalAmountArray[0];
+    const unformattedTotalScarceTokenAmount = amountsInverted? totalAmountArray[0] : totalAmountArray[1];
+    const totalBaseTokenAmount = BNtoNumberWithoutDecimals(unformattedTotalBaseTokenAmount.toString(), baseTokenDecimals);
+    const totalScarceTokenAmount = BNtoNumberWithoutDecimals(unformattedTotalScarceTokenAmount.toString(), scarceTokenDecimals);
 
     //get Current Price
-    const poolAddress: string = await vaultContract.pool()
-    const poolContract = new ethers.Contract(poolAddress, poolABI, provider)
-    const slot0 = await poolContract.slot0()
+    const poolAddress: string = await vaultContract.pool();
+    const poolContract = new ethers.Contract(poolAddress, poolABI, provider);
+    const slot0 = await poolContract.slot0();
     
-    const sqrtPrice = slot0[0]
-    const price = getPrice(amountsInverted, sqrtPrice, baseTokenDecimals, scarceTokenDecimals)
+    const sqrtPrice = slot0[0];
+    const price = getPrice(amountsInverted, sqrtPrice, baseTokenDecimals, scarceTokenDecimals);
     
-    let currentVaultValue = totalBaseTokenAmount + price * totalScarceTokenAmount
-    return currentVaultValue
+    let currentVaultValue = totalBaseTokenAmount + price * totalScarceTokenAmount;
+    return currentVaultValue;
 }

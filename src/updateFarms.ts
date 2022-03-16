@@ -22,12 +22,15 @@ export const updateFarms = async (tableName: string,
     promises.push(updateFarm(tableName, POOLS.activePools[i], tokenPrices, tokenNames, knownIchiPerBlock, specific_graph_farm, false));
   }
 
-  if (graph_farm) 
-    specific_graph_farm = graph_farm.get(adjustedPid(1016));
-  else
-    specific_graph_farm = false;
-  const oneUni_vault = await updateFarm(tableName, 1016, tokenPrices, tokenNames, knownIchiPerBlock, specific_graph_farm, false);
-  const oneUni_vault_obj = JSON.parse(oneUni_vault.body);
+  let oneUni_vault_obj = false;
+  if (POOLS.activeVaults.includes(1016)) {
+    if (graph_farm) 
+      specific_graph_farm = graph_farm.get(adjustedPid(1016));
+    else
+      specific_graph_farm = false;
+    const oneUni_vault = await updateFarm(tableName, 1016, tokenPrices, tokenNames, knownIchiPerBlock, specific_graph_farm, false);
+    oneUni_vault_obj = JSON.parse(oneUni_vault.body);
+  }
   
   for (let i = 0; i < POOLS.activeVaults.length; i++) {
     if (POOLS.activeVaults[i] == 1016) continue;

@@ -184,16 +184,17 @@ export const updateFarm = async (tableName: string, poolId: number,
   }
   
   let baseTokenTVL = Number(pool['tvl']);
-  let vaultAPR = 0
-  let vaultIRR = 0
+  let vaultAPR = 0;
+  let vaultIRR = 0;
   if (isVault) {
-    let isHodl: boolean = LABELS[poolId].isHodl
-    let vaultName: string = LABELS[poolId].vaultName
-    let vaultAddress: string = LABELS[poolId].vaultAddress
-    let vaultEndpoint: string = LABELS[poolId].subgraphEndpoint
-    let dataPackets: DataPacket[] = []
-    let isInverted: boolean = LABELS[poolId].isInverted
-    const decimals = VAULT_DECIMAL_TRACKER[vaultName]
+    let isHodl: boolean = LABELS[poolId].isHodl;
+    let vaultName: string = LABELS[poolId].vaultName;
+    let vaultAddress: string = LABELS[poolId].vaultAddress;
+    let vaultEndpoint: string = LABELS[poolId].subgraphEndpoint;
+    let dataPackets: DataPacket[] = [];
+    let isInverted: boolean = LABELS[poolId].isInverted;
+    let irrStartDate: Date = LABELS[poolId].irrStartDate;
+    const decimals = VAULT_DECIMAL_TRACKER[vaultName];
 
     if (isHodl) {
       baseTokenTVL = Number(await getCurrentVaultValue(
@@ -201,54 +202,54 @@ export const updateFarm = async (tableName: string, poolId: number,
         isInverted,
         decimals.baseToken,
         decimals.scarceToken
-      ))
+      ));
     }
 
     if (POOLS.activeAPR.includes(poolId)) {
 
-      let endOfDepositData = false
+      let endOfDepositData = false;
       let depositPage = 1;
       while (!endOfDepositData) {
-        let rawData: boolean | GraphData = await vault_graph_query(vaultEndpoint, depositPage, true)
+        let rawData: boolean | GraphData = await vault_graph_query(vaultEndpoint, depositPage, true, irrStartDate)
         if (rawData && rawData['data'] && rawData['data']['deposits']) {
           if (rawData.data['deposits'].length > 0) {
-            dataPackets.push({ data: rawData, type: 'deposit' })
-            depositPage++
+            dataPackets.push({ data: rawData, type: 'deposit' });
+            depositPage++;
           }
           if (rawData.data['deposits'].length < 10) {
             endOfDepositData = true;
           }
         } else {
-          endOfDepositData = true
+          endOfDepositData = true;
         }
       }
 
-      let endOfWithdrawalData = false
+      let endOfWithdrawalData = false;
       let withdrawalPage = 1;
       while (!endOfWithdrawalData) {
-        let rawData: boolean | GraphData = await vault_graph_query(vaultEndpoint, withdrawalPage, false)
+        let rawData: boolean | GraphData = await vault_graph_query(vaultEndpoint, withdrawalPage, false, irrStartDate);
         if (rawData && rawData['data'] && rawData['data']['withdraws']) {
           if (rawData['data']['withdraws'].length > 0) {
             dataPackets.push({ data: rawData, type: 'withdrawal' })
-            withdrawalPage++
+            withdrawalPage++;
           }
           if (rawData['data']['withdraws'].length < 10) {
             endOfWithdrawalData = true;
           }
         } else {
-          endOfWithdrawalData = true
+          endOfWithdrawalData = true;
         }
       }
 
       if (dataPackets.length > 0) {      
-        let vault = new Vault(vaultName, vaultAddress, vaultEndpoint, dataPackets, isInverted)
+        let vault = new Vault(vaultName, vaultAddress, vaultEndpoint, dataPackets, isInverted, irrStartDate)
       
-        await vault.calcCurrentValue()
-        await vault.getAPR()
-        await vault.getIRR()
+        await vault.calcCurrentValue();
+        await vault.getAPR();
+        await vault.getIRR();
 
-        vaultAPR = vault.APR
-        vaultIRR = vault.IRR
+        vaultAPR = vault.APR;
+        vaultIRR = vault.IRR;
       }
     }
   }
