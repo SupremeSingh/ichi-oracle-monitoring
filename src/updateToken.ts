@@ -24,9 +24,6 @@ const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
 const RPC_HOST = `https://mainnet.infura.io/v3/${infuraId}`;
 const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
 
-const farmV1 = ADDRESSES.farming_V1;
-const farmV2 = ADDRESSES.farming_V2;
-
 const lookUpTokenPrices = async function(id_array) {
   let ids = id_array.join("%2C");
   return await axios.get(
@@ -110,9 +107,10 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
   let circulating = totalTokens;
 
   if (tokenName == "ichi") {
-    const v1Balance = await tokenContract.balanceOf(farmV1);
-    const v2Balance = await tokenContract.balanceOf(farmV2);
-    circulating = (Number(totalSupply) - v1Balance - v2Balance) / 10 ** 9;
+    const v1Balance = await tokenContract.balanceOf(ADDRESSES.farming_V1);
+    const v2Balance = await tokenContract.balanceOf(ADDRESSES.farming_V2);
+    const communityGnosisBalance = await tokenContract.balanceOf(ADDRESSES.ichi_community_gnosis);
+    circulating = (Number(totalSupply) - v1Balance - v2Balance - communityGnosisBalance) / 10 ** 9;
   }
 
   console.log(tokenName);
