@@ -19,15 +19,29 @@ export const updateFarms = async (tableName: string,
     } else {
       specific_graph_farm = false;
     }
-    promises.push(updateFarm(tableName, POOLS.activePools[i], tokenPrices, tokenNames, knownIchiPerBlock, specific_graph_farm));
+    promises.push(updateFarm(tableName, POOLS.activePools[i], tokenPrices, tokenNames, knownIchiPerBlock, specific_graph_farm, false));
   }
+
+  if (graph_farm) 
+    specific_graph_farm = graph_farm.get(adjustedPid(1016));
+  else
+    specific_graph_farm = false;
+  const oneUni_vault = await updateFarm(tableName, 1016, tokenPrices, tokenNames, knownIchiPerBlock, specific_graph_farm, false);
+  const oneUni_vault_obj = JSON.parse(oneUni_vault.body);
   
   for (let i = 0; i < POOLS.activeVaults.length; i++) {
+    if (POOLS.activeVaults[i] == 1016) continue;
+
     if (graph_farm && isFarmV2(POOLS.activeVaults[i])) {
       specific_graph_farm = graph_farm.get(adjustedPid(POOLS.activeVaults[i]));
     } else {
       specific_graph_farm = false;
     }
-    promises.push(updateFarm(tableName, POOLS.activeVaults[i], tokenPrices, tokenNames, knownIchiPerBlock, specific_graph_farm));
+
+    if (POOLS.activeVaults[i] == 10006) {
+      promises.push(updateFarm(tableName, POOLS.activeVaults[i], tokenPrices, tokenNames, knownIchiPerBlock, specific_graph_farm, oneUni_vault_obj));
+    } else {
+      promises.push(updateFarm(tableName, POOLS.activeVaults[i], tokenPrices, tokenNames, knownIchiPerBlock, specific_graph_farm, false));
+    }
   }
 };

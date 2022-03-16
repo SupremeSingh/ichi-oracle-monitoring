@@ -58,7 +58,8 @@ export const updateFarm = async (tableName: string, poolId: number,
     tokenPrices: {[name: string]: number}, 
     tokenNames: {[name: string]: string},
     knownIchiPerBlock: { [poolId: string]: string },
-    farm_subgraph:GraphFarm | false ): Promise<APIGatewayProxyResult> => {
+    farm_subgraph:GraphFarm | false,
+    dub_vault: any | false ): Promise<APIGatewayProxyResult> => {
   const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
 
   const farming_V1 = new ethers.Contract(
@@ -223,7 +224,11 @@ export const updateFarm = async (tableName: string, poolId: number,
   let baseTokenTVL = Number(pool['tvl']);
   let vaultAPR = 0
   let vaultIRR = 0
-  if (isVault) {
+  if (dub_vault) {
+    baseTokenTVL = Number(dub_vault["Attributes"]["baseTokenTVL"]["N"])
+    vaultAPR = Number(dub_vault["Attributes"]["vaultAPR"]["N"])
+    vaultIRR = Number(dub_vault["Attributes"]["vaultIRR"]["N"])
+  } else if (isVault) {
     let isHodl: boolean = LABELS[poolId].isHodl
     let vaultName: string = LABELS[poolId].vaultName
     let vaultAddress: string = LABELS[poolId].vaultAddress
