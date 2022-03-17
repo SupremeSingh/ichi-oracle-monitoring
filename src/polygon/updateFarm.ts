@@ -341,6 +341,7 @@ export const updateFarm = async (tableName: string, poolId: number,
     // https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_UpdateItem.html#API_UpdateItem_Examples
     const result = await dbClient.updateItem(params).promise();
     console.log(`Successfully updated table: ${tableName}`);
+    console.log(JSON.stringify(result));
     return {
       statusCode: 200,
       body: JSON.stringify(result)

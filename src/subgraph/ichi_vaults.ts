@@ -171,27 +171,42 @@ export class Vault {
         // exception for GNO vault: 
         // Transactions earlier than 2022-03-10T14:25:23.000Z are removed. 
         // First big transaction amount is changed to 17916. 
-        // amounts are multiplied by 100 because of GNO price.
-        const firstTxDate = new Date('2022-03-10T14:25:23.000Z');
+        let firstTxDate = new Date('2022-03-10T14:25:23.000Z');
         if (this.vaultName === 'gno') {
-          xirrObjArray = xirrObjArray.filter((tx) => { 
-            const currTxDate = new Date(tx.when);
-            return currTxDate >= firstTxDate});
-          // replace first tx amount
-          xirrObjArray = xirrObjArray.map((tx) => {
-            const currTxDate = new Date(tx.when);
-            if (currTxDate.getTime() === firstTxDate.getTime()){
-              return {amount: -17916, when: tx.when};
-            } else {
-              return {amount: tx.amount, when: tx.when};
-            }
-          });
-          xirrObjArray = xirrObjArray.map((i) => ({amount: i.amount*100, when: i.when}));
-          xirrObjArray.push({ amount: this.currentVaultValue*100, when: new Date(Date.now()) });
-          // console.log(`========xirrObjArray for ${this.vaultName} - 2=========== ${JSON.stringify(xirrObjArray)}`)
-        } else {
-          xirrObjArray.push({ amount: this.currentVaultValue, when: new Date(Date.now()) });
-        }        
+            xirrObjArray = xirrObjArray.filter((tx) => { 
+                const currTxDate = new Date(tx.when);
+                return currTxDate >= firstTxDate
+            });
+            // replace first tx amount
+            xirrObjArray = xirrObjArray.map((tx) => {
+                const currTxDate = new Date(tx.when);
+                if (currTxDate.getTime() === firstTxDate.getTime()){
+                    return {amount: -17916, when: tx.when};
+                } else {
+                    return {amount: tx.amount, when: tx.when};
+                }
+            });
+        }
+        // exception for wNXM vault: 
+        // Transactions earlier than Mar-15-2022 07:04:48 PM are removed. 
+        // First big transaction amount (made on Mar-15-2022 07:04:48 PM) is changed to 222193. 
+        firstTxDate = new Date('2022-03-15T19:04:48.000Z');
+        if (this.vaultName === 'wnxm') {
+            xirrObjArray = xirrObjArray.filter((tx) => { 
+                const currTxDate = new Date(tx.when);
+                return currTxDate >= firstTxDate
+            });
+            // replace first tx amount
+            xirrObjArray = xirrObjArray.map((tx) => {
+                const currTxDate = new Date(tx.when);
+                if (currTxDate.getTime() === firstTxDate.getTime()){
+                    return {amount: -222193, when: tx.when};
+                } else {
+                    return {amount: tx.amount, when: tx.when};
+                }
+            });
+        }
+        xirrObjArray.push({ amount: this.currentVaultValue, when: new Date(Date.now()) });
 
         //console.log(xirrObjArray);
 
