@@ -72,7 +72,6 @@ const getOneTokenAttributes = async function(tokenName) {
 
   if (tokenName == 'onebtc') {
     template.stimulus_decimals = 8,
-    template.abi_type = 'ONELINK',
     template.base_name = 'btc'
   }
   if (tokenName == 'onevbtc') {

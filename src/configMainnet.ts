@@ -219,7 +219,7 @@ const TOKENS = {
     stimulusDisplayName: 'ETH',
     isV2: false
   },
-  onebtc: { 
+/*  old_onebtc: { 
     address: "0xC88F47067dB2E25851317A2FDaE73a22c0777c37",
     strategy: "",
     aux_strategy: "",
@@ -229,7 +229,7 @@ const TOKENS = {
     stimulusName: 'wbtc',
     stimulusDisplayName: 'BTC',
     isV2: false
-  },
+  },*/
   onevbtc: { 
     address: "0x7BD198b9107496fD5cC3d7655AF52f43a8eDBc4C",
     strategy: "",
@@ -275,6 +275,18 @@ const TOKENS = {
     stimulusName: '1inch',
     stimulusDisplayName: '1INCH',
     tradeUrl: 'https://app.1inch.io/#/1/swap/ETH/1inch'
+  },
+  onebtc: { 
+    address: "0xEc4325F0518584F0774b483c215F65474EAbD27F",
+    strategy: "0x435B65196f302b04bAabcc1E5f07CA1192736771",
+    aux_strategy: "",
+    decimals: 18,
+    displayName: "oneBTC",
+    isOneToken: true,
+    isV2: true,
+    stimulusName: 'wbtc',
+    stimulusDisplayName: 'wBTC',
+    tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599&chain=mainnet',
   },
   onefuse: { 
     address: "0xBbcE03B2E7f53caDCA93251CA4c928aF01Db6404",

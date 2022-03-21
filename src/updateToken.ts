@@ -72,7 +72,7 @@ async function lookUpMemberTokenPrice(address: string, memberToken: string, deci
 
   const oracleContract = new ethers.Contract(oracleAddress, ORACLE_ABI as ContractInterface, provider);
 
-  const price = await oracleContract.read(address, Number(10 ** decimals).toString());
+  const price = await oracleContract.read(memberToken, Number(10 ** decimals).toString());
 
   return Number(price["amountUsd"]) / 10 ** 18;
 }
@@ -140,7 +140,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
         price = await lookupStimulusUSDPrice(TOKENS['oneeth']['address'], 9);
         break;
       case 'wbtc':
-        price = await lookupStimulusOraclePrice(TOKENS['onebtc']['address'], 9);
+        price = await lookUpMemberTokenPrice(TOKENS['onebtc']['address'], TOKENS['wbtc']['address'], 8);
         break;
       case 'link':
         price = await lookupStimulusOraclePrice(TOKENS['onelink']['address'], 9);
