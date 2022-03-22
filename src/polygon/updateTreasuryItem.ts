@@ -76,7 +76,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const attr = await getOneTokenAttributes(itemName.toLowerCase());
   const oneTokenAddress = attr.address;
   const strategyAddress = attr.strategy;
-  const auxStrategyAddress = attr.aux_strategy;
+  const auxStrategies = attr.aux_strategy;
   const stimulusTokenAddress = attr.stimulus_address;
   const stimulusDisplayName = attr.stimulus_display_name;
   const stimulusTokenName = attr.stimulus_name;
@@ -106,12 +106,14 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let strategy_balance_onetoken = 0;
   let strategy_balance_ichi = 0;
   let uni_v3_positions = 0;
+  let aux_strategy_balance_usdc = 0;
+  
   if (strategyAddress !== "") {
-    strategy_balance_usdc = Number(await USDC.balanceOf(strategyAddress));
+    strategy_balance_usdc += Number(await USDC.balanceOf(strategyAddress));
 
-    strategy_balance_stimulus = Number(await stimulusToken.balanceOf(strategyAddress));
-    strategy_balance_onetoken = Number(await oneToken.balanceOf(strategyAddress));
-    strategy_balance_ichi = Number(await ICHI.balanceOf(strategyAddress));
+    strategy_balance_stimulus += Number(await stimulusToken.balanceOf(strategyAddress));
+    strategy_balance_onetoken += Number(await oneToken.balanceOf(strategyAddress));
+    strategy_balance_ichi += Number(await ICHI.balanceOf(strategyAddress));
 
     let strategy_balance_vault_lp = 0;
     if (attr.ichiVault.farm > 0 && attr.ichiVault.externalFarm === '') {
@@ -184,6 +186,19 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       }
     }*/
   }
+
+  if (auxStrategies.length > 0) {
+    // there could be multiple aux strategies
+    for (let i = 0; i < auxStrategies.length; i++) {
+      let auxStrategyAddress = auxStrategies[i];
+
+      // aux strategy may own USDC
+      aux_strategy_balance_usdc = Number(await USDC.balanceOf(auxStrategyAddress));
+      strategy_balance_usdc += aux_strategy_balance_usdc;
+
+    }
+  }
+
 
   let oneToken_stimulus_price = tokenPrices[stimulusTokenName.toLowerCase()];
 

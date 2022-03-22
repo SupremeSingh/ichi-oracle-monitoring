@@ -40,7 +40,7 @@ const TOKENS = {
   pol_onebtc: { 
     address: "0x1f194578e7510A350fb517a9ce63C40Fa1899427",
     strategy: "0x51803f621c5e90011DE58b57fD5b7A92e0e39B08",
-    aux_strategy: "",
+    aux_strategy: [],
     decimals: 18,
     displayName: "oneBTC",
     isOneToken: true,

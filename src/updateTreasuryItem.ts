@@ -126,7 +126,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const attr = await getOneTokenAttributes(itemName.toLowerCase());
   const oneTokenAddress = attr.address;
   const strategyAddress = attr.strategy;
-  const auxStrategyAddress = attr.aux_strategy;
+  const auxStrategies = attr.aux_strategy;
   const stimulusTokenAddress = attr.stimulus_address;
   const stimulusDisplayName = attr.stimulus_display_name;
   const stimulusTokenName = attr.stimulus_name;
@@ -168,9 +168,11 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let strategy_balance_oja = 0;
   let strategy_balance_ichi = 0;
   let strategy_balance_bmi_usdt = 0;
-  let strategy_balance_riskharbor_usdc = 0;
-  let uni_v3_positions = 0;
   let strategy_balance_st1inch = 0;
+  let uni_v3_positions = 0;
+  let aux_strategy_balance_riskharbor_usdc = 0;
+  let aux_strategy_balance_usdc = 0;
+
   if (strategyAddress !== "") {
     const strategy_balance_rari_oneuni = Number(await rari_OneUni.balanceOf(strategyAddress));
     const strategy_balance_rari_oneuni_usd = strategy_balance_rari_oneuni * (rari_OneUni_exchangeRate / 10 ** 18); 
@@ -180,22 +182,18 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     // console.log(strategy_balance_rari_oneuni_usd);
     // console.log(strategy_balance_rari_usdc_usd);
 
-    strategy_balance_usdc = Number(await USDC.balanceOf(strategyAddress));
+    strategy_balance_usdc += Number(await USDC.balanceOf(strategyAddress));
     strategy_balance_usdc += strategy_balance_rari_usdc_usd;
 
-    if (auxStrategyAddress !== "") {
-      let aux_strategy_balance_usdc = Number(await USDC.balanceOf(auxStrategyAddress));
-      strategy_balance_usdc += aux_strategy_balance_usdc;
-    }
-    strategy_balance_stimulus = Number(await stimulusToken.balanceOf(strategyAddress));
-    strategy_balance_onetoken = Number(await oneToken.balanceOf(strategyAddress));
+    strategy_balance_stimulus += Number(await stimulusToken.balanceOf(strategyAddress));
+    strategy_balance_onetoken += Number(await oneToken.balanceOf(strategyAddress));
     if (itemName !== 'oneUNI') {
-      strategy_balance_one_uni = Number(await oneUNI.balanceOf(strategyAddress));
+      strategy_balance_one_uni += Number(await oneUNI.balanceOf(strategyAddress));
       strategy_balance_one_uni += strategy_balance_rari_oneuni_usd;
     } else {
       strategy_balance_onetoken += strategy_balance_rari_oneuni_usd;
     }
-    strategy_balance_ichi = Number(await ICHI.balanceOf(strategyAddress));
+    strategy_balance_ichi += Number(await ICHI.balanceOf(strategyAddress));
 
     let strategy_balance_vault_lp = 0;
     if (attr.ichiVault.farm > 0 && attr.ichiVault.externalFarm === '') {
@@ -239,38 +237,48 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     strategy_balance_bmi_usdt = Number(await BMI_STAKING.totalStaked(strategyAddress));
     uni_v3_positions = Number(await uniswap_V3_positions.balanceOf(strategyAddress));
     if (itemName == 'one1INCH') {
-      strategy_balance_st1inch = Number(await st1INCH.balanceOf(strategyAddress));
+      strategy_balance_st1inch += Number(await st1INCH.balanceOf(strategyAddress));
       strategy_balance_stimulus += Number(await _1INCH_STAKING.earned(strategyAddress));
     }
   }
-  if (auxStrategyAddress !== "") {
-    // const rhBPS = 10;
-    // let strategy_balance_riskharbor_shares = Number(await riskHarbor.balanceOf(auxStrategyAddress, rhBPS));
-    // strategy_balance_riskharbor_usdc = Number(await riskHarbor.getSharesPrice(rhBPS, strategy_balance_riskharbor_shares));
 
-    let rh_total_shares = 0;
-    let rh_strategy_shares = 0;
-    let rh_total_capacity = 0;
-    let rh_total_premiums = 0;
-    let rawData: boolean | GraphData = await risk_harbor_graph_query(APIS.subgraph_risk_harbor, auxStrategyAddress);
-    if (rawData && rawData['data']) {
-      let rhData = rawData['data']['underwriterPositions'] as RiskHarborPosition[]
-      for (let i = 0; i < rhData.length; i++) {
-        let rh_position = rhData[i];
-        rh_strategy_shares += Number(rh_position.shares);
-        rh_total_shares = Number(rh_position.vault.totalSharesIssued);
-        rh_total_capacity = Number(rh_position.vault.totalCapacity);
-        rh_total_premiums = Number(rh_position.vault.totalPremiumsPaid);
+  if (auxStrategies.length > 0) {
+    // there could be multiple aux strategies
+    for (let i = 0; i < auxStrategies.length; i++) {
+      let auxStrategyAddress = auxStrategies[i];
+
+      // aux strategy may own USDC
+      aux_strategy_balance_usdc = Number(await USDC.balanceOf(auxStrategyAddress));
+      strategy_balance_usdc += aux_strategy_balance_usdc;
+
+      // aux strategy may own Risk Harbor postions
+      let rh_total_shares = 0;
+      let rh_strategy_shares = 0;
+      let rh_total_capacity = 0;
+      let rh_total_premiums = 0;
+      let rawData: boolean | GraphData = await risk_harbor_graph_query(APIS.subgraph_risk_harbor, auxStrategyAddress);
+      if (rawData && rawData['data']) {
+        let rhData = rawData['data']['underwriterPositions'] as RiskHarborPosition[]
+        for (let i = 0; i < rhData.length; i++) {
+          let rh_position = rhData[i];
+          rh_strategy_shares += Number(rh_position.shares);
+          rh_total_shares = Number(rh_position.vault.totalSharesIssued);
+          rh_total_capacity = Number(rh_position.vault.totalCapacity);
+          rh_total_premiums = Number(rh_position.vault.totalPremiumsPaid);
+        }
+        if (rh_total_shares > 0) {
+          let rh_price = (rh_total_capacity + rh_total_premiums) / rh_total_shares;
+          aux_strategy_balance_riskharbor_usdc = rh_strategy_shares * rh_price;
+        }
+      } else {
+        console.log('no risk harbor data')
       }
-      if (rh_total_shares > 0) {
-        let rh_price = (rh_total_capacity + rh_total_premiums) / rh_total_shares;
-        strategy_balance_riskharbor_usdc = rh_strategy_shares * rh_price;
-      }
-    } else {
-      console.log('no risk harbor data')
+  
     }
   }
-  // console.log(strategy_balance_riskharbor_usdc);
+  
+  //console.log(aux_strategy_balance_usdc);
+  //console.log(aux_strategy_balance_riskharbor_usdc);
 
   if (uni_v3_positions > 0) {
     let all_v3_positions = await callDebunkOpenAPI(strategyAddress, DEBUNK_PROTOCOLS.UNI_V3);
@@ -570,7 +578,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     strategy_balance_one_uni / 10 ** 18 +
     strategy_balance_one_oja / 10 ** 18 +
     usdc_price * (strategy_balance_usdc / 10 ** 6) +
-    usdc_price * (strategy_balance_riskharbor_usdc / 10 ** 6) +
+    usdc_price * (aux_strategy_balance_riskharbor_usdc / 10 ** 6) +
     usdt_price * (strategy_balance_bmi_usdt / 10 ** 18);
 
   let oneToken_collateral_only = oneToken_collateral_USDC_only +
@@ -591,14 +599,14 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       || strategy_balance_onetoken > 0
       || strategy_balance_one_uni > 0
       || strategy_balance_one_oja > 0
-      || strategy_balance_riskharbor_usdc > 0
+      || aux_strategy_balance_riskharbor_usdc > 0
       || strategy_balance_bmi_usdt > 0) {
           const assets = [];
       if (strategy_balance_usdc > 0) {
         assets.push({ M: { 
           name: { S: "USDC" }, 
           // balance: { N: Number(strategy_balance_usdc / 10 ** 6).toString() } 
-          balance: { N: Number((strategy_balance_usdc + strategy_balance_riskharbor_usdc) / 10 ** 6).toString() } 
+          balance: { N: Number((strategy_balance_usdc + aux_strategy_balance_riskharbor_usdc) / 10 ** 6).toString() } 
         }});
       }
       if (strategy_balance_onetoken > 0) {
@@ -625,10 +633,10 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
           balance: { N: Number(strategy_balance_bmi_usdt / 10 ** 18).toString() } 
         }});
       }
-      /* if (strategy_balance_riskharbor_usdc > 0) {
+      /* if (aux_strategy_balance_riskharbor_usdc > 0) {
         assets.push({ M: { 
           name: { S: "Risk Harbor" }, 
-          balance: { N: Number(strategy_balance_riskharbor_usdc / 10 ** 6).toString() } 
+          balance: { N: Number(aux_strategy_balance_riskharbor_usdc / 10 ** 6).toString() } 
         }});
       } */
       oneTokenCollateralPostions.push({ M: { 
@@ -700,7 +708,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       reserveRatio = 100; // 10000%
     }
 
-    let totalUSDC = (oneToken_USDC + strategy_balance_usdc + strategy_balance_riskharbor_usdc) / 10 ** 6 +
+    let totalUSDC = (oneToken_USDC + strategy_balance_usdc + aux_strategy_balance_riskharbor_usdc) / 10 ** 6 +
       strategy_balance_bmi_usdt / 10 ** 18;
 
     let res = {

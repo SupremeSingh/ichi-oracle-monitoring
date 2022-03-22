@@ -211,7 +211,7 @@ const TOKENS = {
   oneeth: { 
     address: "0xEc0d77a58528a218cBf41Fa6E1585c8D7A085868",
     strategy: "",
-    aux_strategy: "",
+    aux_strategy: [],
     decimals: 9,
     displayName: "oneETH",
     isOneToken: true,
@@ -222,7 +222,7 @@ const TOKENS = {
 /*  old_onebtc: { 
     address: "0xC88F47067dB2E25851317A2FDaE73a22c0777c37",
     strategy: "",
-    aux_strategy: "",
+    aux_strategy: [],
     decimals: 9,
     displayName: "oneBTC",
     isOneToken: true,
@@ -233,7 +233,7 @@ const TOKENS = {
   onevbtc: { 
     address: "0x7BD198b9107496fD5cC3d7655AF52f43a8eDBc4C",
     strategy: "",
-    aux_strategy: "",
+    aux_strategy: [],
     decimals: 9,
     displayName: "oneVBTC",
     isOneToken: true,
@@ -244,7 +244,7 @@ const TOKENS = {
   onelink: { 
     address: "0x18Cc17a1EeD37C02A77B0B96b7890C7730E2a2CF",
     strategy: "",
-    aux_strategy: "",
+    aux_strategy: [],
     decimals: 9,
     displayName: "oneLINK",
     isOneToken: true,
@@ -255,7 +255,7 @@ const TOKENS = {
   onefil: { 
     address: "0x6d82017e55b1D24C53c7B33BbB770A86f2ca229D",
     strategy: "0xc9682298cd1C39145EB34614a0B4356c7F29c92e",
-    aux_strategy: "",
+    aux_strategy: [],
     decimals: 18,
     displayName: "oneFIL",
     isOneToken: true,
@@ -267,7 +267,7 @@ const TOKENS = {
   one1inch: { 
     address: "0x853bb55c1f469902f088a629db8c8803a9be3857",
     strategy: "0x97B380Ae50160E400d68c92ABeAf24402C9CaA62",
-    aux_strategy: "",
+    aux_strategy: [],
     decimals: 18,
     displayName: "one1INCH",
     isOneToken: true,
@@ -279,7 +279,7 @@ const TOKENS = {
   onebtc: { 
     address: "0xEc4325F0518584F0774b483c215F65474EAbD27F",
     strategy: "0x435B65196f302b04bAabcc1E5f07CA1192736771",
-    aux_strategy: "",
+    aux_strategy: [],
     decimals: 18,
     displayName: "oneBTC",
     isOneToken: true,
@@ -291,7 +291,7 @@ const TOKENS = {
   onefuse: { 
     address: "0xBbcE03B2E7f53caDCA93251CA4c928aF01Db6404",
     strategy: "0x8740C9f316241F905323920F4f4FA8A4d6aB100b",
-    aux_strategy: "",
+    aux_strategy: [],
     decimals: 18,
     displayName: "oneFUSE",
     isOneToken: true,
@@ -311,7 +311,7 @@ const TOKENS = {
   onemph: { 
     address: "0xBE3F88E18BE3944FdDa830695228ADBB82fA125F",
     strategy: "0xF1587Cb51349CDf5bb408845249De36466C35F41",
-    aux_strategy: "",
+    aux_strategy: [],
     decimals: 18,
     displayName: "oneMPH",
     isOneToken: true,
@@ -323,7 +323,7 @@ const TOKENS = {
   oneperl: { 
     address: "0xD9A24485e71B9148e0Fd51F0162072099DF0dB67",
     strategy: "0x2Dfb5348CC20218426e566C1bD7B8b3789CBa9d5",
-    aux_strategy: "",
+    aux_strategy: [],
     decimals: 18,
     displayName: "onePERL",
     isOneToken: true,
@@ -335,7 +335,7 @@ const TOKENS = {
   oneoja: { 
     address: "0xbB9E5DB6F357BB4dF35E8B90B37b8A3F33031D86",
     strategy: "0x2E76A8D053f839A04235341dF1f25235437fEDd6",
-    aux_strategy: "",
+    aux_strategy: [],
     decimals: 18,
     displayName: "oneOJA",
     isOneToken: true,
@@ -355,7 +355,8 @@ const TOKENS = {
   oneuni: { 
     address: "0x8290d7a64f25e6b5002d98367e8367c1b532b534",
     strategy: "0x6287d56e246EEE33beAd2D7DD3a99Db693f4554C",
-    aux_strategy: "0x55922Fa5084f9367B73FC0df9163B089D8Ac4CB7",
+    aux_strategy: ["0x55922Fa5084f9367B73FC0df9163B089D8Ac4CB7",
+                   "0x8529687adD661120C9E23E366Cc7F545f1A03ADf"],
     decimals: 18,
     displayName: "oneUNI",
     isOneToken: true,
@@ -375,7 +376,7 @@ const TOKENS = {
   onedodo: { 
     address: "0xcA37530E7c5968627BE470081d1C993eb1dEaf90",
     strategy: "0x1faac4842054F2dB2DdDFC8152D7C259d5102c13",
-    aux_strategy: "",
+    aux_strategy: [],
     decimals: 18,
     displayName: "oneDODO",
     isOneToken: true,
@@ -387,7 +388,7 @@ const TOKENS = {
   onefox: { 
     address: "0x03352D267951E96c6F7235037C5DFD2AB1466232",
     strategy: "0xeB370EE6927e4655a463F898fFF30479b34708f6",
-    aux_strategy: "",
+    aux_strategy: [],
     decimals: 18,
     displayName: "oneFOX",
     isOneToken: true,
@@ -407,7 +408,7 @@ const TOKENS = {
   onewing: { 
     address: "0x5047fc5C9D7c49Ab22e390d13646a6A3a2476eff",
     strategy: "0xac20007A5CBDA40d8E16df26bAD89E8738404691",
-    aux_strategy: "",
+    aux_strategy: [],
     decimals: 18,
     displayName: "oneWING",
     isOneToken: true,
@@ -427,7 +428,7 @@ const TOKENS = {
   bootusd: { 
     address: "0x78a3b2f1e7eec1073088ea4a193618743f81cef8",
     strategy: "0x4ed128f3087DB2D9F6Ea0f1dca3b7FC716EC256C",
-    aux_strategy: "",
+    aux_strategy: [],
     decimals: 18,
     displayName: "BOOTusd",
     isOneToken: true,
