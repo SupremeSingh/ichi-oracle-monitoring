@@ -1109,6 +1109,101 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
   
         return poolRecord;
       }
+      if (poolID === 10009) {
+        const lensContract = new ethers.Contract(
+          ADDRESSES.rari_pool_lens,
+          RARI_POOL_LENS_ABI,
+          provider
+        );
+
+        const lensContractSecondary = new ethers.Contract(
+          ADDRESSES.rari_pool_lens_secondary,
+          RARI_POOL_LENS_SECONDARY_ABI,
+          provider
+        );
+
+        // get rewardSpeed from the secondary lens contract
+        let secondaryData = await lensContractSecondary.callStatic.getRewardSpeedsByPool(
+          ADDRESSES.rari_comptroller
+        );
+
+        let rewardSpeed = 0
+        // make sure rewardSpeed matched the index of the oneUNI cToken address
+        // cToken addresses are in array 0, rewardSpeeds are in array 3
+        for (let i = 0; i < secondaryData[0].length; i++) {
+          if (secondaryData[0][i].toString().toLowerCase() == ADDRESSES.rari_onebtc.toLowerCase()) {
+            rewardSpeed = Number(secondaryData[3][i])
+            break
+          }
+        }
+        //console.log(secondaryData)
+        //console.log(secondaryData[3][3].toString())
+        //console.log(secondaryData[3][6].toString())
+
+        let data = await lensContract.callStatic.getPoolAssetsWithData(ADDRESSES.rari_comptroller);
+
+        let combinedAPR = 0;
+        let reserve0 = 0;
+        let poolLP = '';
+        for (let item of data) {
+          if (item['underlyingSymbol'] == 'oneBTC') {
+            //console.log(item['totalSupply'].toString());
+            //console.log(item['supplyRatePerBlock'].toString());
+            //console.log(item['underlyingPrice'].toString()); // in ETH
+
+            //const apy = convertMantissaToAPY(item['supplyRatePerBlock'], 365)
+            //console.log(apy.toString());
+            
+            const apr = convertMantissaToAPR(item['supplyRatePerBlock'])
+            //console.log(apr.toString());
+
+            reserve0 = Number(item['totalSupply']);
+            poolLP = item['totalSupply'].toString();
+
+            const newRewardUSDPerBlock = Number(tokenPrices["ichi"]) * (rewardSpeed / 10 ** 9);
+            const newUnderlyingTotalSupplyUSD = reserve0 / 10 ** 18;
+            const newMantissa = (newRewardUSDPerBlock * 1e18) / newUnderlyingTotalSupplyUSD;
+
+            const rewardsAPR = convertMantissaToAPR(newMantissa)
+            //console.log(rewradsAPR.toString());
+            combinedAPR = apr + rewardsAPR;
+          }
+        }
+        //console.log(combinedAPR.toString());
+
+        let reserve0Raw = reserve0 / 10 ** 18; //oneUNI
+        let reserve1Raw = 0;
+  
+        let TVL = reserve0Raw + reserve1Raw;
+
+        let farmTVL = TVL;
+
+        let yearlyAPY = combinedAPR;
+        let dailyAPY = yearlyAPY / 365;
+  
+        let poolRecord = {
+          pool: poolID,
+          lpAddress: TOKENS['onebtc']['address'],
+          dailyAPY: dailyAPY,
+          weeklyAPY: dailyAPY * 7,
+          monthlyAPY: dailyAPY * 30,
+          yearlyAPY: yearlyAPY,
+          totalPoolLP: poolLP,
+          totalFarmLP: poolLP,
+          tvl: TVL,
+          farmTVL: farmTVL,
+          reserve0Raw: reserve0Raw,
+          reserve1Raw: reserve1Raw,
+          address0: TOKENS['onebtc']['address'],
+          address1: '',
+          decimals0: 18,
+          decimals1: 0,
+          token0: "oneBTC",
+          token1: ''
+        };
+  
+        return poolRecord;
+      }
       return {};
   }
   

@@ -41,16 +41,16 @@ const APIS = {
 };
 
 const POOLS = {
-  activePools : [1001, 1004, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005],
+  activePools : [1001, 1004, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005, 10009],
   //activePools : [],
-  depositPools : [1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10005],
+  depositPools : [1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10005, 10009],
   activeVaults: [1016, 1019, 1020, 1021, 1022, 20001, 20002, 20003, 20004, 10006, 10008],
   //activeVaults: [],
   underlyingVaults: [1023],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
-  unretiredPools : [10001, 10008, 20004, 1001, 1005, 1019, 1020, 1021, 1022, 1023],
+  unretiredPools : [10001, 10008, 10009, 20004, 1001, 1005, 1019, 1020, 1021, 1022, 1023],
   oneInchPools : [15, 16, 10001],
   balancerPools : [18, 1001, 1002, 1008],
   balancerSmartPools : [1003, 1007],
@@ -58,7 +58,7 @@ const POOLS = {
   uniPools : [1005],
   loopringPools : [10002],
   dodoPools : [10004, 10007],
-  rariAssets : [10005, 10006, 10008],
+  rariAssets : [10005, 10006, 10008, 10009],
   specialPricing: [19],
   activeAPR: [1016, 1019, 10006, 1021]
   //activeAPR: []
@@ -560,6 +560,15 @@ LABELS[10008] = {
   irrStartDate: new Date(0),
   externalUrl: 'https://app.rari.capital/fuse/pool/136',
   externalText: 'Earn $ICHI',
+  externalButton: 'RARI'
+}
+LABELS[10009] = {
+  name: 'oneBTC Deposit',
+  lpName: 'oneBTC',
+  shortLpName: 'oneBTC',
+  farmAddress: ADDRESSES.farming_V2,
+  externalUrl: 'https://app.rari.capital/fuse/pool/136',
+  externalText: 'Earn $ICHI and $oneBTC',
   externalButton: 'RARI'
 }
 LABELS[1001] = {
