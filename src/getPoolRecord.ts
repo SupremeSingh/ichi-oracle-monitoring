@@ -90,7 +90,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
     let isBalancerPool = POOLS.balancerPools.includes(poolID);
     let isBancorPool = POOLS.bancorPools.includes(poolID);
     let isBalancerSmartPool = POOLS.balancerSmartPools.includes(poolID);
-    let isVault = POOLS.activeVaults.includes(poolID);
+    let isVault = POOLS.activeVaults.includes(poolID) || POOLS.underlyingVaults.includes(poolID);
   
     let poolToken = '';
     if (isFarmV1(poolID)) {
@@ -265,7 +265,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
   async function getPoolReserves(poolID, poolContract) {
   
     let isBancorPool = POOLS.bancorPools.includes(poolID);
-    let isVault = POOLS.activeVaults.includes(poolID);
+    let isVault = POOLS.activeVaults.includes(poolID) || POOLS.underlyingVaults.includes(poolID);
     let isDodoPool = POOLS.dodoPools.includes(poolID);
   
     if (isBancorPool) {
@@ -1037,6 +1037,73 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
           token0: "oneDODO",
           token1: "USDC"
         };
+  
+        return poolRecord;
+      }
+      if (poolID === 10008) {
+
+        let poolRecord = await getPoolRecord(1023, tokenPrices, knownIchiPerBlock, false);
+        let lpPrice = poolRecord.tvl / Number(poolRecord.totalPoolLP)
+
+        /*const lensContract = new ethers.Contract(
+          ADDRESSES.rari_pool_lens,
+          RARI_POOL_LENS_ABI,
+          provider
+        );
+
+        const lensContractSecondary = new ethers.Contract(
+          ADDRESSES.rari_pool_lens_secondary,
+          RARI_POOL_LENS_SECONDARY_ABI,
+          provider
+        );
+
+        // get rewardSpeed from the secondary lens contract
+        let secondaryData = await lensContractSecondary.callStatic.getRewardSpeedsByPool(
+          ADDRESSES.rari_comptroller
+        );
+
+        let rewardSpeed = 0
+        // make sure rewardSpeed matched the index of the VAULT LP cToken address
+        // cToken addresses are in array 0, rewardSpeeds are in array 3
+        for (let i = 0; i < secondaryData[0].length; i++) {
+          if (secondaryData[0][i].toString().toLowerCase() == ADDRESSES.rari_ichi_vault_lp_token.toLowerCase()) {
+            rewardSpeed = Number(secondaryData[3][i])
+            break
+          }
+        }
+
+        let data = await lensContract.callStatic.getPoolAssetsWithData(ADDRESSES.rari_comptroller);
+
+        let combinedAPR = 0;
+        let reserve0 = 0;
+        for (let item of data) {
+          if (item['underlyingSymbol'] == 'ICHI_Vault_LP') {
+            // no base APR on Rari, because LPs can't be borrowed
+            const apr = 0
+            //const apr = convertMantissaToAPR(item['supplyRatePerBlock'])
+
+            reserve0 = Number(item['totalSupply']);
+
+            const newRewardUSDPerBlock = Number(tokenPrices["ichi"]) * (rewardSpeed / 10 ** 9);
+            const newUnderlyingTotalSupplyUSD = reserve0 * lpPrice;
+            const newMantissa = (newRewardUSDPerBlock * 1e18) / newUnderlyingTotalSupplyUSD;
+
+            const rewardsAPR = convertMantissaToAPR(newMantissa)
+            combinedAPR = apr + rewardsAPR;
+          }
+        }
+
+        let farmTVL = reserve0 * lpPrice;
+
+        let yearlyAPY = combinedAPR;
+        let dailyAPY = yearlyAPY / 365;*/
+
+        poolRecord.pool = poolID;
+        /*poolRecord.dailyAPY = dailyAPY;
+        poolRecord.weeklyAPY = dailyAPY * 7;
+        poolRecord.monthlyAPY = dailyAPY * 30;
+        poolRecord.yearlyAPY = yearlyAPY;
+        poolRecord.farmTVL = farmTVL;*/
   
         return poolRecord;
       }

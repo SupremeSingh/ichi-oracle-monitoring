@@ -40,14 +40,15 @@ const APIS = {
 
 const POOLS = {
   activePools : [1001, 1004, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005],
-  // activePools : [],
+  //activePools : [],
   depositPools : [1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10005],
-  activeVaults: [1016, 1019, 1020, 1021, 1022, 20001, 20002, 20003, 20004, 10006],
-  // activeVaults: [],
+  activeVaults: [1016, 1019, 1020, 1021, 1022, 20001, 20002, 20003, 20004, 10006, 10008],
+  //activeVaults: [],
+  underlyingVaults: [1023],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
-  unretiredPools : [10001, 20004, 1001, 1005, 1019, 1020, 1021, 1022],
+  unretiredPools : [10001, 10008, 20004, 1001, 1005, 1019, 1020, 1021, 1022, 1023],
   oneInchPools : [15, 16, 10001],
   balancerPools : [18, 1001, 1002, 1008],
   balancerSmartPools : [1003, 1007],
@@ -55,7 +56,7 @@ const POOLS = {
   uniPools : [1005],
   loopringPools : [10002],
   dodoPools : [10004, 10007],
-  rariAssets : [10005, 10006],
+  rariAssets : [10005, 10006, 10008],
   specialPricing: [19],
   activeAPR: [1016, 1019, 10006, 1021]
   //activeAPR: []
@@ -543,6 +544,21 @@ LABELS[10007] = {
   externalAddress: '0x4be2d9251849DB6d3980cE3E13915980C1AE3065',
   externalUrl: 'https://app.dodoex.io/mining?network=bsc-mainnet&address=0x4be2d9251849DB6d3980cE3E13915980C1AE3065',
   externalButton: 'DODO'
+}
+LABELS[10008] = {
+  name: 'oneBTC Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0xEc4325F0518584F0774b483c215F65474EAbD27F&chain=mainnet',
+  subgraphEndpoint: 'https://api.thegraph.com/subgraphs/name/ichi-org/onebtc-vault',
+  isInverted: true,
+  isHodl: false,
+  vaultName: 'onebtc',
+  vaultAddress: '0x5318c21c96256ce4b73c27D405147df97d28E0Be',
+  irrStartDate: new Date(0),
+  externalUrl: 'https://app.rari.capital/fuse/pool/136',
+  externalText: 'Earn $ICHI',
+  externalButton: 'RARI'
 }
 LABELS[1001] = {
   name: '80/20 ICHI-ETH',

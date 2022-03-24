@@ -9,6 +9,7 @@ export const VAULT_DECIMAL_TRACKER={
     "gno": {baseToken:18, scarceToken:9},
     "cel": {baseToken:4, scarceToken:9},
     "wbtc": {baseToken:8, scarceToken:9},
+    "onebtc": {baseToken:18, scarceToken:9},
     "wnxm": {baseToken:18, scarceToken:9},
     "fox": {baseToken:18, scarceToken:18}
 }  
