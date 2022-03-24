@@ -47,8 +47,8 @@ export async function vault_graph_query(
     page: number, 
     isDeposit: boolean,
     irrStartDate: Date) {
-    let tokensQuery = isDeposit ? rangedDepositTokensQuery : rangedWithdrawalTokens;
-    var client = new ApolloClient({
+    const tokensQuery = isDeposit ? rangedDepositTokensQuery : rangedWithdrawalTokens;
+    const client = new ApolloClient({
         uri: endpoint,
         cache: new InMemoryCache(),
     })
@@ -136,7 +136,7 @@ export class Vault {
     }
 
     public async calcCurrentValue() {
-        let value = await getCurrentVaultValue(
+        const value = await getCurrentVaultValue(
             this.vaultAddress, 
             this.amountsInverted, 
             this.decimals.baseToken, 
@@ -156,8 +156,8 @@ export class Vault {
         const vaultTimeYears = 
             ((transactions[numTransactions - 1]).when.getTime() - transactions[0].when.getTime()) / millisecondsToYears;
 
-        for (let transaction of transactions) {
-            let amount = transaction.amount;
+        for (const transaction of transactions) {
+            const amount = transaction.amount;
             amount < 0 ? deposits += amount : withdrawals += amount;
         }
     
@@ -210,18 +210,23 @@ export class Vault {
 
         //console.log(xirrObjArray);
 
-        let irr = xirr(xirrObjArray, { guess: -0.9975 });
+        let irr = 0;
+        try {
+          irr = xirr(xirrObjArray, { guess: -0.9975 });
+        } catch (error) {
+          console.error(`Error calculating IRR for ${this.vaultName}: ${JSON.stringify(error)}`)
+        }
         this.IRR = irr * 100;
         // console.log(`The IRR of the ${this.vaultName} vault is: `,irr)
     }
 
     public async getDateRangeDistilled(milliseconds: number): Promise<DistilledTransaction[]> {
-        let cutoff = Date.now() - milliseconds; 
+        const cutoff = Date.now() - milliseconds; 
         if (cutoff <= this.distilledTransactions[0].when.getTime()) {
           return this.distilledTransactions;
         } else {
-            let rangedDistilledTransactions: DistilledTransaction[] = [];
-            for (let distilledTransactionObjectInstance of this.distilledTransactions) {
+            const rangedDistilledTransactions: DistilledTransaction[] = [];
+            for (const distilledTransactionObjectInstance of this.distilledTransactions) {
             if (cutoff <= distilledTransactionObjectInstance.when.getTime()) {
                 rangedDistilledTransactions.push(distilledTransactionObjectInstance)
             } 
@@ -238,9 +243,9 @@ function getVerboseTransactions(
     scarceTokenDecimals: number): VerboseTransaction[] {
 
     let isDeposit: boolean;
-    let verboseTransactions: VerboseTransaction[] = [];
+    const verboseTransactions: VerboseTransaction[] = [];
     let packetData: any[];
-    for (let packet of dataPackets) {
+    for (const packet of dataPackets) {
         if (packet.type == 'deposit') {
             isDeposit = true;
             packetData = packet.data.data['deposits'];
@@ -283,7 +288,7 @@ function getVerboseTransactions(
 
             const type = packet.type;
 
-            let holder: VerboseTransaction = {
+            const holder: VerboseTransaction = {
                 date: date,
                 oneTokenAmount: oneTokenAmount,
                 scarceTokenAmount: scarceTokenAmount,
@@ -308,13 +313,13 @@ function getDistilledTransactions(
     verboseTransactions: VerboseTransaction[],
     cutOffDate: Date
   ): DistilledTransaction[] {
-    let distilledTransactions: DistilledTransaction[] = [];
+    const distilledTransactions: DistilledTransaction[] = [];
   
     //aggregates the transactions before the IRR start date
-    let aggregateOneToken = verboseTransactions[0].oneTokenTotalAmountBeforeEvent;
-    let aggregateScarceToken = verboseTransactions[0].scarceTokenTotalAmountBeforeEvent;
-    let aggregateAmount = aggregateOneToken + aggregateScarceToken * verboseTransactions[0].price
-    let aggregateHolder: DistilledTransaction = {
+    const aggregateOneToken = verboseTransactions[0].oneTokenTotalAmountBeforeEvent;
+    const aggregateScarceToken = verboseTransactions[0].scarceTokenTotalAmountBeforeEvent;
+    const aggregateAmount = aggregateOneToken + aggregateScarceToken * verboseTransactions[0].price
+    const aggregateHolder: DistilledTransaction = {
       amount: -aggregateAmount,
       when: cutOffDate
     }
@@ -353,7 +358,8 @@ function compare(a, b){
     }
 }
 
-export async function getCurrentVaultValue(vaultAddress: string, amountsInverted: boolean, baseTokenDecimals:number, scarceTokenDecimals:number): Promise<number>{
+export async function getCurrentVaultValue(vaultAddress: string, 
+    amountsInverted: boolean, baseTokenDecimals:number, scarceTokenDecimals:number): Promise<number>{
     //get Current Balance
     const infuraId = process.env.INFURA_ID;
     const RPC_HOST = `https://mainnet.infura.io/v3/${infuraId}`;
@@ -374,6 +380,6 @@ export async function getCurrentVaultValue(vaultAddress: string, amountsInverted
     const sqrtPrice = slot0[0];
     const price = getPrice(amountsInverted, sqrtPrice, baseTokenDecimals, scarceTokenDecimals);
     
-    let currentVaultValue = totalBaseTokenAmount + price * totalScarceTokenAmount;
+    const currentVaultValue = totalBaseTokenAmount + price * totalScarceTokenAmount;
     return currentVaultValue;
 }

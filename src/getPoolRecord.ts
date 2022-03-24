@@ -945,8 +945,9 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
         let combinedAPR = 0;
         let reserve0 = 0;
         for (let item of data) {
-          if (item['underlyingSymbol'] == 'ICHI_Vault_LP') {
-            // no base APR on Rari, because LPs can't be borrowed
+          if (item['underlyingSymbol'] == 'ICHI_Vault_LP' && 
+            item['cToken'].toLowerCase() == ADDRESSES.rari_ichi_vault_lp_token.toLowerCase()) {
+              // no base APR on Rari, because LPs can't be borrowed
             const apr = 0
             //const apr = convertMantissaToAPR(item['supplyRatePerBlock'])
 
@@ -1045,7 +1046,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
         let poolRecord = await getPoolRecord(1023, tokenPrices, knownIchiPerBlock, false);
         let lpPrice = poolRecord.tvl / Number(poolRecord.totalPoolLP)
 
-        /*const lensContract = new ethers.Contract(
+        const lensContract = new ethers.Contract(
           ADDRESSES.rari_pool_lens,
           RARI_POOL_LENS_ABI,
           provider
@@ -1066,7 +1067,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
         // make sure rewardSpeed matched the index of the VAULT LP cToken address
         // cToken addresses are in array 0, rewardSpeeds are in array 3
         for (let i = 0; i < secondaryData[0].length; i++) {
-          if (secondaryData[0][i].toString().toLowerCase() == ADDRESSES.rari_ichi_vault_lp_token.toLowerCase()) {
+          if (secondaryData[0][i].toString().toLowerCase() == ADDRESSES.rari_onebtc_vault_lp_token.toLowerCase()) {
             rewardSpeed = Number(secondaryData[3][i])
             break
           }
@@ -1077,7 +1078,8 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
         let combinedAPR = 0;
         let reserve0 = 0;
         for (let item of data) {
-          if (item['underlyingSymbol'] == 'ICHI_Vault_LP') {
+          if (item['underlyingSymbol'] == 'ICHI_Vault_LP' &&
+            item['cToken'].toLowerCase() == ADDRESSES.rari_onebtc_vault_lp_token.toLowerCase()) {
             // no base APR on Rari, because LPs can't be borrowed
             const apr = 0
             //const apr = convertMantissaToAPR(item['supplyRatePerBlock'])
@@ -1096,14 +1098,14 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
         let farmTVL = reserve0 * lpPrice;
 
         let yearlyAPY = combinedAPR;
-        let dailyAPY = yearlyAPY / 365;*/
+        let dailyAPY = yearlyAPY / 365;
 
         poolRecord.pool = poolID;
-        /*poolRecord.dailyAPY = dailyAPY;
+        poolRecord.dailyAPY = dailyAPY;
         poolRecord.weeklyAPY = dailyAPY * 7;
         poolRecord.monthlyAPY = dailyAPY * 30;
         poolRecord.yearlyAPY = yearlyAPY;
-        poolRecord.farmTVL = farmTVL;*/
+        poolRecord.farmTVL = farmTVL;
   
         return poolRecord;
       }

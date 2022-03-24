@@ -18,8 +18,10 @@ const ADDRESSES = {
   rari_pool_lens_secondary: "0xc76190E04012f26A364228Cfc41690429C44165d",
   rari_oneuni_token: "0x342AC2C024f214a711356F48326614E1d8Dd0420",
   rari_ichi_vault_lp_token: "0x78DcC36DC532b0dEF7b53a56A91610C44DD09444",
+  rari_onebtc_vault_lp_token: "0x90313731C407376535ac1bFae14D45C7f964edeE",
   rari_comptroller: "0xAbDFCdb1503d89D9a6fFE052a526d7A41f5b76D6",
   rari_oneuni: "0x342AC2C024f214a711356F48326614E1d8Dd0420",
+  rari_onebtc: "0x43854261848F67b04a6bf9E6fC757e0F8993fc81",
   rari_usdc: "0xecE2c0aA6291e3f1222B6f056596dfE0E81039b9",
   rari_wbtc: "0x5933F2109652C019CEab70dabf4Bc9E0E29873F5"
 };
