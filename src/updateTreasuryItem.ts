@@ -329,6 +329,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
   }
 
+  strategy_balance_usdc += strategy_balance_usdc_treasury;
+
   // special case of oneUNI investing into OJA vault
   if (itemName == 'oneUNI') {
     const OJA = new ethers.Contract(TOKENS['oja']['address'], ERC20_ABI, provider);
@@ -584,7 +586,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
   stimulusPositionsUSDValue = stimulusPositionsUSDValue +
     Number(oneToken_stimulus_price) * (strategy_balance_stimulus / 10 ** stimulusDecimals) +
-    usdc_price * (strategy_balance_usdc_treasury / 10 ** TOKENS.usdc.decimals) +    
+    //usdc_price * (strategy_balance_usdc_treasury / 10 ** TOKENS.usdc.decimals) +    
     wbtc_price * (strategy_balance_wbtc / 10 ** TOKENS.wbtc.decimals) +
     ichi_price * (strategy_balance_ichi / 10 ** TOKENS.ichi.decimals);
 
@@ -700,7 +702,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         strategy_balance_ichi > 0 || 
         strategy_balance_wbtc > 0 || 
         strategy_balance_oja > 0 || 
-        strategy_balance_usdc_treasury > 0 ||
+        //strategy_balance_usdc_treasury > 0 ||
         strategy_balance_st1inch > 0) {
       const assets = [];
       if (strategy_balance_stimulus > 0) {
@@ -721,12 +723,12 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
           balance: { N: Number(strategy_balance_wbtc / 10 ** TOKENS.wbtc.decimals).toString() } 
         }});
       }
-      if (strategy_balance_usdc_treasury > 0) {
+      /*if (strategy_balance_usdc_treasury > 0) {
         assets.push({ M: { 
           name: { S: "USDC" }, 
           balance: { N: Number(strategy_balance_usdc_treasury / 10 ** TOKENS.usdc.decimals).toString() } 
         }});
-      }
+      }*/
       if (strategy_balance_oja > 0) {
         assets.push({ M: { 
           name: { S: "OJA" }, 
