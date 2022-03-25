@@ -164,6 +164,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let strategy_balance_usdc_treasury = 0;
   let strategy_balance_stimulus = 0;
   let strategy_balance_onetoken = 0;
+  let strategy_balance_one_btc = 0;
   let strategy_balance_one_uni = 0;
   let strategy_balance_one_oja = 0;
   let strategy_balance_oja = 0;
@@ -309,6 +310,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
               strategy_balance_ichi += Number(supply_token.amount) * 10 ** TOKENS.ichi.decimals;
             } else if (supply_token.id.toLowerCase() === TOKENS['usdc']['address'].toLowerCase()) {
               usdc_in_position += Number(supply_token.amount) * 10 ** TOKENS.usdc.decimals;
+            } else if (supply_token.id.toLowerCase() === TOKENS['onebtc']['address'].toLowerCase()) {
+              strategy_balance_one_btc += Number(supply_token.amount) * 10 ** TOKENS.onebtc.decimals;
             } else if (supply_token.id.toLowerCase() === stimulusTokenAddress.toLowerCase()) {
               strategy_balance_stimulus += Number(supply_token.amount) * 10 ** stimulusDecimals;
             } else if (supply_token.id.toLowerCase() === TOKENS['wbtc']['address'].toLowerCase()){
@@ -333,12 +336,9 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     const ojaFarm = new ethers.Contract(TOKENS['oneoja']['ichiVault']['externalFarm'], GENERIC_FARMING_V2_ABI, provider);
     const ojaVault = new ethers.Contract(TOKENS['oneoja']['ichiVault']['address'], VAULT_ABI, provider);
 
-    strategy_balance_one_oja = Number(await oneOJA.balanceOf(strategyAddress));
-    strategy_balance_oja = Number(await OJA.balanceOf(strategyAddress));
+    strategy_balance_one_oja += Number(await oneOJA.balanceOf(strategyAddress));
+    strategy_balance_oja += Number(await OJA.balanceOf(strategyAddress));
     
-    // console.log(strategy_balance_one_oja);
-    // console.log(strategy_balance_oja);
-
     const userInfo = await ojaFarm.userInfo(TOKENS['oneoja']['ichiVault']['farm'], strategyAddress);
     let strategy_balance_vault_lp_in_farm = Number(userInfo.amount);
     let strategy_balance_vault_lp = Number(await ojaVault.balanceOf(strategyAddress));
@@ -354,6 +354,30 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   }
   // console.log(strategy_balance_one_oja);
   // console.log(strategy_balance_oja);
+
+  // special case of oneUNI investing into oneBTC assets
+  if (itemName == 'oneUNI') {
+    const wBTC = new ethers.Contract(TOKENS['wbtc']['address'], ERC20_ABI, provider);
+    const oneBTC = new ethers.Contract(TOKENS['onebtc']['address'], oneTokenABI, provider);
+    const oneBTCVault = new ethers.Contract(TOKENS['onebtc']['ichiVault']['address'], VAULT_ABI, provider);
+
+    strategy_balance_one_btc += Number(await oneBTC.balanceOf(strategyAddress));
+    strategy_balance_wbtc += Number(await wBTC.balanceOf(strategyAddress));
+    
+    let strategy_balance_vault_lp = Number(await oneBTCVault.balanceOf(strategyAddress));
+
+    const vault_total_lp = Number(await oneBTCVault.totalSupply());
+    const vault_total_amounts = await oneBTCVault.getTotalAmounts();
+    if (strategy_balance_vault_lp > 0) {
+      const vault_ratio = strategy_balance_vault_lp / vault_total_lp;
+      strategy_balance_ichi += Number(vault_total_amounts.total0) * vault_ratio;
+      strategy_balance_one_btc += Number(vault_total_amounts.total1) * vault_ratio;
+    }
+  }
+  // console.log(strategy_balance_one_btc);
+  // console.log(strategy_balance_ichi);
+  // console.log(strategy_balance_wbtc);
+
 
   if (itemName == 'oneDODO') {
     // BCS positions for oneDODO
@@ -583,6 +607,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   collateralPositionsUSDValue = collateralPositionsUSDValue +
     strategy_balance_onetoken / 10 ** 18 +
     strategy_balance_one_uni / 10 ** 18 +
+    strategy_balance_one_btc / 10 ** 18 +
     strategy_balance_one_oja / 10 ** 18 +
     usdc_price * (strategy_balance_usdc / 10 ** TOKENS.usdc.decimals) +
     usdc_price * (aux_strategy_balance_riskharbor_usdc / 10 ** TOKENS.usdc.decimals) +
@@ -605,6 +630,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     if (strategy_balance_usdc > 0 
       || strategy_balance_onetoken > 0
       || strategy_balance_one_uni > 0
+      || strategy_balance_one_btc > 0
       || strategy_balance_one_oja > 0
       || aux_strategy_balance_riskharbor_usdc > 0
       || strategy_balance_bmi_usdt > 0) {
@@ -626,6 +652,12 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         assets.push({ M: { 
           name: { S: "oneUNI" }, 
           balance: { N: (Number(strategy_balance_one_uni / 10 ** 18)).toString() } 
+        }});
+      }
+      if (strategy_balance_one_btc > 0) {
+        assets.push({ M: { 
+          name: { S: "oneBTC" }, 
+          balance: { N: (Number(strategy_balance_one_btc / 10 ** 18)).toString() } 
         }});
       }
       if (strategy_balance_one_oja > 0) {
@@ -666,6 +698,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   
     if (strategy_balance_stimulus > 0 || 
         strategy_balance_ichi > 0 || 
+        strategy_balance_wbtc > 0 || 
         strategy_balance_oja > 0 || 
         strategy_balance_usdc_treasury > 0 ||
         strategy_balance_st1inch > 0) {
