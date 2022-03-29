@@ -236,6 +236,7 @@ export const updateFarm = async (tableName: string, poolId: number,
     let dataPackets: DataPacket[] = [];
     let isInverted: boolean = LABELS[poolId].isInverted;
     let irrStartDate: Date = LABELS[poolId].irrStartDate;
+    let irrStartTxAmount: number = LABELS[poolId].irrStartTxAmount;
     const decimals = VAULT_DECIMAL_TRACKER[vaultName];
 
     if (isHodl) {
@@ -288,7 +289,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       
         await vault.calcCurrentValue();
         await vault.getAPR();
-        await vault.getIRR();
+        await vault.getIRR(irrStartDate, irrStartTxAmount);
 
         vaultAPR = vault.APR;
         vaultIRR = vault.IRR;

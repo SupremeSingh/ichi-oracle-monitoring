@@ -71,6 +71,7 @@ LABELS[4000] = {
   vaultName: 'polygon_onebtc',
   vaultAddress: '0xfaeCcee632912c42a7c88c3544885A8D455408FA',
   irrStartDate: new Date(0),
+  irrStartTxAmount: 0,
 }
 
 export { ADDRESSES, POOLS, LABELS, TOKENS, CHAIN_ID };

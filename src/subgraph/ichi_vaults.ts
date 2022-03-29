@@ -165,14 +165,14 @@ export class Vault {
         // console.log(`The APR of the ${this.vaultName} vault is: ${this.APR}`)
     }
   
-    public async getIRR() {
+    public async getIRR(irrStartDate: Date, irrStartTxAmount: number) {
         let xirrObjArray = this.distilledTransactions;
+        let firstTxDate = new Date();
     
-        // exception for GNO vault: 
-        // Transactions earlier than 2022-03-10T14:25:23.000Z are removed. 
-        // First big transaction amount is changed to 17916. 
-        let firstTxDate = new Date('2022-03-10T14:25:23.000Z');
-        if (this.vaultName === 'gno') {
+        // Transactions earlier than irrStartDate are removed. 
+        // First big transaction amount (made on irrStartDate) is replaced with irrStartTxAmount. 
+        if (irrStartTxAmount !== 0) {
+            firstTxDate = irrStartDate;
             xirrObjArray = xirrObjArray.filter((tx) => { 
                 const currTxDate = new Date(tx.when);
                 return currTxDate >= firstTxDate
@@ -181,34 +181,16 @@ export class Vault {
             xirrObjArray = xirrObjArray.map((tx) => {
                 const currTxDate = new Date(tx.when);
                 if (currTxDate.getTime() === firstTxDate.getTime()){
-                    return {amount: -17916, when: tx.when};
+                    return {amount: -irrStartTxAmount, when: tx.when};
                 } else {
                     return {amount: tx.amount, when: tx.when};
                 }
             });
         }
-        // exception for wNXM vault: 
-        // Transactions earlier than Mar-15-2022 07:04:48 PM are removed. 
-        // First big transaction amount (made on Mar-15-2022 07:04:48 PM) is changed to 222193. 
-        firstTxDate = new Date('2022-03-15T19:04:48.000Z');
-        if (this.vaultName === 'wnxm') {
-            xirrObjArray = xirrObjArray.filter((tx) => { 
-                const currTxDate = new Date(tx.when);
-                return currTxDate >= firstTxDate
-            });
-            // replace first tx amount
-            xirrObjArray = xirrObjArray.map((tx) => {
-                const currTxDate = new Date(tx.when);
-                if (currTxDate.getTime() === firstTxDate.getTime()){
-                    return {amount: -222193, when: tx.when};
-                } else {
-                    return {amount: tx.amount, when: tx.when};
-                }
-            });
-        }
+
         xirrObjArray.push({ amount: this.currentVaultValue, when: new Date(Date.now()) });
 
-        //console.log(xirrObjArray);
+        // console.log(xirrObjArray);
 
         let irr = 0;
         try {
@@ -218,6 +200,7 @@ export class Vault {
         }
         this.IRR = irr * 100;
         // console.log(`The IRR of the ${this.vaultName} vault is: `,irr)
+        return this.IRR
     }
 
     public async getDateRangeDistilled(milliseconds: number): Promise<DistilledTransaction[]> {
