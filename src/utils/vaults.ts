@@ -21,7 +21,10 @@ export function getPrice(
         decimals0: number, 
         decimals1: number,
         decimalPlaces = 3) : number {
-    const decimalArray = [decimals0, decimals1]
+    let decimalArray = [decimals0, decimals1];
+    if (isInverted) {
+        decimalArray = [decimals1, decimals0];
+    }
     const price = univ3prices(decimalArray, sqrtPrice).toSignificant({
         reverse: isInverted,
         decimalPlaces: decimalPlaces
