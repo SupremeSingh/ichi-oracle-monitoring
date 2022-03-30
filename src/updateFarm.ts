@@ -244,7 +244,8 @@ export const updateFarm = async (tableName: string, poolId: number,
         vaultAddress,
         isInverted,
         decimals.baseToken,
-        decimals.scarceToken
+        decimals.scarceToken,
+        provider
       ));
     }
 
@@ -285,7 +286,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       }
 
       if (dataPackets.length > 0) {      
-        let vault = new Vault(vaultName, vaultAddress, vaultEndpoint, dataPackets, isInverted, irrStartDate);
+        let vault = new Vault(vaultName, vaultAddress, vaultEndpoint, dataPackets, isInverted, irrStartDate, provider);
       
         await vault.calcCurrentValue();
         await vault.getAPR();

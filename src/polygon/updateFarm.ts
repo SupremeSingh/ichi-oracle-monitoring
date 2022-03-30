@@ -7,6 +7,7 @@ import { GraphFarm } from '../subgraph/farm_v2';
 import { vault_graph_query, Vault, DataPacket, getCurrentVaultValue } from '../subgraph/ichi_vaults';
 import { adjustedPid, adjustedPidString, isFarmExternal, isFarmGeneric, isFarmV2, isFarmV2Polygon, isUnretired } from '../utils/pids';
 import { VAULT_DECIMAL_TRACKER } from '../utils/vaults';
+import { ethers } from 'ethers';
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
@@ -42,6 +43,7 @@ export const updateFarm = async (tableName: string, poolId: number,
     tokenNames: {[name: string]: string},
     knownIchiPerBlock: { [poolId: string]: string },
     farm_subgraph:GraphFarm | false ): Promise<APIGatewayProxyResult> => {
+  const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
 
   let pool = await getPoolRecord(poolId, tokenPrices, knownIchiPerBlock, farm_subgraph);
   if (pool['pool'] == null) {
@@ -202,7 +204,8 @@ export const updateFarm = async (tableName: string, poolId: number,
         vaultAddress,
         isInverted,
         decimals.baseToken,
-        decimals.scarceToken
+        decimals.scarceToken,
+        provider
       ));
     }
 
@@ -243,7 +246,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       }
 
       if (dataPackets.length > 0) {      
-        let vault = new Vault(vaultName, vaultAddress, vaultEndpoint, dataPackets, isInverted, irrStartDate)
+        let vault = new Vault(vaultName, vaultAddress, vaultEndpoint, dataPackets, isInverted, irrStartDate, provider)
       
         await vault.calcCurrentValue();
         await vault.getAPR();

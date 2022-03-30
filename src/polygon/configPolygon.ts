@@ -9,11 +9,11 @@ const ADDRESSES = {
 const POOLS = {
   activePools : [],
   depositPools : [],
-  activeVaults: [],
+  activeVaults: [4000,4001],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
-  unretiredPools : [4000],
+  unretiredPools : [4000,4001],
   activeAPR: []
 }
 
@@ -45,17 +45,17 @@ const TOKENS = {
     displayName: "oneBTC",
     isOneToken: true,
     isV2: true,
-    /*ichiVault: { 
-      address: '0xfaeCcee632912c42a7c88c3544885A8D455408FA',
+    ichiVault: { 
+      address: '0xE5bf5D33C617556B91558aAfb7BeadB68E9Cea81',
       farm: 0,
       externalFarm: '',
-      scarceToken: 'token1',
+      scarceToken: 'token0',
       scarceTokenName: 'pol_ichi',
       scarceTokenDecimals: 18,
-    },*/
+    },
     stimulusName: 'pol_wbtc',
     stimulusDisplayName: 'wBTC',
-    tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
+    tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6&chain=polygon',
   },
 }
 
@@ -64,12 +64,25 @@ LABELS[4000] = {
   name: 'oneBTC Vault',
   lpName: 'ICHI_VAULT_LP',
   shortLpName: 'VAULT_LP',
-  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x8290d7a64f25e6b5002d98367e8367c1b532b534',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174&outputCurrency=0x1f194578e7510A350fb517a9ce63C40Fa1899427&chain=polygon',
   subgraphEndpoint: '',
-  isInverted: false,
+  isInverted: true,
   isHodl: false,
   vaultName: 'polygon_onebtc',
-  vaultAddress: '0xfaeCcee632912c42a7c88c3544885A8D455408FA',
+  vaultAddress: '0xE5bf5D33C617556B91558aAfb7BeadB68E9Cea81',
+  irrStartDate: new Date(0),
+  irrStartTxAmount: 0,
+}
+LABELS[4001] = {
+  name: 'wBTC Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174&outputCurrency=0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6&chain=polygon',
+  subgraphEndpoint: '',
+  isInverted: true,
+  isHodl: true,
+  vaultName: 'polygon_wbtc',
+  vaultAddress: '0x4aEF5144131dB95c110af41c8Ec09f46295a7C4B',
   irrStartDate: new Date(0),
   irrStartTxAmount: 0,
 }

@@ -107,6 +107,7 @@ export class Vault {
     cutOffDate: Date;
     APR: number;
     IRR: number;
+    provider: ethers.providers.JsonRpcProvider;
 
     constructor(
         vaultName: string, 
@@ -114,7 +115,9 @@ export class Vault {
         vaultEndpoint: string, 
         data: DataPacket[], 
         isInverted: boolean,
-        cutOffDate: Date) {
+        cutOffDate: Date,
+        provider: ethers.providers.JsonRpcProvider) {
+        this.provider = provider;
         this.vaultName = vaultName;
         this.vaultEndpoint = vaultEndpoint;
         this.vaultAddress = vaultAddress;
@@ -140,7 +143,8 @@ export class Vault {
             this.vaultAddress, 
             this.amountsInverted, 
             this.decimals.baseToken, 
-            this.decimals.scarceToken
+            this.decimals.scarceToken,
+            this.provider
         );
         
         this.currentVaultValue = value;
@@ -342,11 +346,9 @@ function compare(a, b){
 }
 
 export async function getCurrentVaultValue(vaultAddress: string, 
-    amountsInverted: boolean, baseTokenDecimals:number, scarceTokenDecimals:number): Promise<number>{
+    amountsInverted: boolean, baseTokenDecimals:number, scarceTokenDecimals:number,
+    provider: ethers.providers.JsonRpcProvider): Promise<number>{
     //get Current Balance
-    const infuraId = process.env.INFURA_ID;
-    const RPC_HOST = `https://mainnet.infura.io/v3/${infuraId}`;
-    const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
     const vaultContract = new ethers.Contract(vaultAddress, vaultABI, provider)
     const totalAmountArray = await vaultContract.getTotalAmounts();
 

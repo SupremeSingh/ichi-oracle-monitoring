@@ -1,5 +1,6 @@
 import { POOLS as MAINNET_POOLS } from '../configMainnet';
 import { POOLS as KOVAN_POOLS } from '../kovan/configKovan';
+import { POOLS as POLYGON_POOLS } from '../polygon/configPolygon';
 import { POOLS as MUMBAI_POOLS } from '../mumbai/configMumbai';
 
 export function isFarmV1(pid: number): boolean {
@@ -32,6 +33,7 @@ export function isFarmExternal(pid: number): boolean {
 
 export function isUnretired(pid: number): boolean {
     return (MAINNET_POOLS.unretiredPools.includes(pid)) ||
+    (POLYGON_POOLS.unretiredPools.includes(pid)) ||
     (MUMBAI_POOLS.unretiredPools.includes(pid)) ||
     (KOVAN_POOLS.unretiredPools.includes(pid));
 };
