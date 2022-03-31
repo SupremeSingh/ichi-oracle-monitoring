@@ -142,6 +142,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const USDC = new ethers.Contract(TOKENS['usdc']['address'], ERC20_ABI, provider);
   const oneToken = new ethers.Contract(oneTokenAddress, oneTokenABI, provider);
   const oneUNI = new ethers.Contract(TOKENS['oneuni']['address'], oneTokenABI, provider);
+  const oneBTC = new ethers.Contract(TOKENS['onebtc']['address'], oneTokenABI, provider);
   const BMI_STAKING = new ethers.Contract(ADDRESSES.bmi_staking, BMI_STAKING_ABI, provider);
   const _1INCH_STAKING = new ethers.Contract(ADDRESSES._1inch_staking, _1INCH_STAKING_ABI, provider);
   const st1INCH = new ethers.Contract(ADDRESSES.st1inch, ERC20_ABI, provider);
@@ -153,6 +154,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
   const rari_OneUni = new ethers.Contract(ADDRESSES.rari_oneuni, RARI_POOL_ABI, provider);
   const rari_OneUni_exchangeRate = Number(await rari_OneUni.exchangeRateStored());
+  const rari_OneBTC = new ethers.Contract(ADDRESSES.rari_onebtc, RARI_POOL_ABI, provider);
+  const rari_OneBTC_exchangeRate = Number(await rari_OneBTC.exchangeRateStored());
   const rari_USDC = new ethers.Contract(ADDRESSES.rari_usdc, RARI_POOL_ABI, provider);
   const rari_USDC_exchangeRate = Number(await rari_USDC.exchangeRateStored());
   const rari_wBTC = new ethers.Contract(ADDRESSES.rari_wbtc, RARI_POOL_ABI, provider);
@@ -179,6 +182,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   if (strategyAddress !== "") {
     const strategy_balance_rari_oneuni = Number(await rari_OneUni.balanceOf(strategyAddress));
     const strategy_balance_rari_oneuni_usd = strategy_balance_rari_oneuni * (rari_OneUni_exchangeRate / 10 ** 18); 
+    const strategy_balance_rari_onebtc = Number(await rari_OneBTC.balanceOf(strategyAddress));
+    const strategy_balance_rari_onebtc_usd = strategy_balance_rari_onebtc * (rari_OneBTC_exchangeRate / 10 ** 18); 
     const strategy_balance_rari_usdc = Number(await rari_USDC.balanceOf(strategyAddress));
     const strategy_balance_rari_usdc_usd = strategy_balance_rari_usdc * (rari_USDC_exchangeRate / 10 ** 18);
     const strategy_balance_rari_wbtc = Number(await rari_wBTC.balanceOf(strategyAddress));
@@ -198,6 +203,12 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       strategy_balance_one_uni += strategy_balance_rari_oneuni_usd;
     } else {
       strategy_balance_onetoken += strategy_balance_rari_oneuni_usd;
+    }
+    if (itemName !== 'oneBTC') {
+      strategy_balance_one_btc += Number(await oneBTC.balanceOf(strategyAddress));
+      strategy_balance_one_btc += strategy_balance_rari_onebtc_usd;
+    } else {
+      strategy_balance_onetoken += strategy_balance_rari_onebtc_usd;
     }
     strategy_balance_ichi += Number(await ICHI.balanceOf(strategyAddress));
 
