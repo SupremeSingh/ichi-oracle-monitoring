@@ -53,7 +53,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
 
   if (poolId === -1) {
     await updateTokens(token_tableName);
-    //await updateTokensPolygon(token_tableName);
+    await updateTokensPolygon(token_tableName);
   }
 
   const tokenPrices = {};
@@ -121,8 +121,8 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   //console.log(knownIchiPerBlock);
 
   if (poolId === -1) {
-    //await updateFarmsPolygon(farms_tableName, tokenPrices, tokenNames, knownIchiPerBlock);
-    //await updateTreasuryPolygon(treasury_tableName, tokenPrices, tokenNames);
+    await updateFarmsPolygon(farms_tableName, tokenPrices, tokenNames, knownIchiPerBlock);
+    await updateTreasuryPolygon(treasury_tableName, tokenPrices, tokenNames);
     await updateFarms(farms_tableName, tokenPrices, tokenNames, knownIchiPerBlock);
     await updateTreasury(treasury_tableName, tokenPrices, tokenNames);
   } else {
