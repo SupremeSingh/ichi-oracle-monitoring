@@ -368,7 +368,7 @@ const TOKENS = {
     address: "0x8290d7a64f25e6b5002d98367e8367c1b532b534",
     strategy: "0x6287d56e246EEE33beAd2D7DD3a99Db693f4554C",
     aux_strategy: ["0x55922Fa5084f9367B73FC0df9163B089D8Ac4CB7",
-                   "0x0B10E483AAC4340256772754d23131B6E0Dc31EA"],
+                   "0x0b10e483aac4340256772754d23131b6e0dc31ea"],
     decimals: 18,
     displayName: "oneUNI",
     isOneToken: true,
