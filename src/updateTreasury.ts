@@ -7,7 +7,7 @@ export const updateTreasury = async (
   tokenNames: {[name: string]: string}): Promise<void> => {
 
   let treasuryPositions = ['oneBTC', 'oneFIL', 'one1INCH', 'oneFUSE', 'oneMPH', 'onePERL', 'oneUNI', 'oneDODO', 'oneFOX', 'oneWING', 'BOOTusd', 'oneOJA'];
-  // let treasuryPositions = ['oneBTC'];
+  //let treasuryPositions = ['oneUNI'];
 
   const promises: Promise<APIGatewayProxyResult>[] = [];
   for (const treasury of treasuryPositions) {
