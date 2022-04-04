@@ -60,7 +60,7 @@ const POOLS = {
   dodoPools : [10004, 10007],
   rariAssets : [10005, 10006, 10008, 10009],
   specialPricing: [19],
-  activeAPR: [1016, 1019, 1020, 10006, 1021, 20003]
+  activeAPR: [1016, 1019, 1020, 10006, 1021, 1022, 20003]
   //activeAPR: []
 }
 
@@ -741,8 +741,8 @@ LABELS[1022] = {
   isHodl: true,
   vaultName: 'wbtc',
   vaultAddress: '0xeF88913c674a9cA1E79b3986e4b222F3E75c7d05',
-  irrStartDate: new Date(0),
-  irrStartTxAmount: 0,
+  irrStartDate: new Date('2022-03-30T18:17:57'),
+  irrStartTxAmount: 75.482852739,
 }
 LABELS[20001] = {
   name: 'oneFUSE Vault',
