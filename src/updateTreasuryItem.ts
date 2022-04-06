@@ -153,11 +153,11 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const oneToken_ichi = Number(await ICHI.balanceOf(oneTokenAddress));
 
   const rari_OneUni = new ethers.Contract(ADDRESSES.rari_oneuni, RARI_POOL_ABI, provider);
-  const rari_OneUni_exchangeRate = Number(await rari_OneUni.exchangeRateStored());
+  //const rari_OneUni_exchangeRate = Number(await rari_OneUni.exchangeRateStored());
   const rari_OneBTC = new ethers.Contract(ADDRESSES.rari_onebtc, RARI_POOL_ABI, provider);
-  const rari_OneBTC_exchangeRate = Number(await rari_OneBTC.exchangeRateStored());
+  //const rari_OneBTC_exchangeRate = Number(await rari_OneBTC.exchangeRateStored());
   const rari_USDC = new ethers.Contract(ADDRESSES.rari_usdc, RARI_POOL_ABI, provider);
-  const rari_USDC_exchangeRate = Number(await rari_USDC.exchangeRateStored());
+  //const rari_USDC_exchangeRate = Number(await rari_USDC.exchangeRateStored());
   const rari_wBTC = new ethers.Contract(ADDRESSES.rari_wbtc, RARI_POOL_ABI, provider);
   
   // =================================================================================
@@ -180,19 +180,17 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let aux_strategy_balance_usdc = 0;
 
   if (strategyAddress !== "") {
-    const strategy_balance_rari_oneuni = Number(await rari_OneUni.balanceOf(strategyAddress));
-    const strategy_balance_rari_oneuni_usd = strategy_balance_rari_oneuni * (rari_OneUni_exchangeRate / 10 ** 18); 
-    const strategy_balance_rari_onebtc = Number(await rari_OneBTC.balanceOf(strategyAddress));
-    const strategy_balance_rari_onebtc_usd = strategy_balance_rari_onebtc * (rari_OneBTC_exchangeRate / 10 ** 18); 
-    const strategy_balance_rari_usdc = Number(await rari_USDC.balanceOf(strategyAddress));
-    const strategy_balance_rari_usdc_usd = strategy_balance_rari_usdc * (rari_USDC_exchangeRate / 10 ** 18);
+    const strategy_balance_rari_oneuni = Number(await rari_OneUni.callStatic.balanceOfUnderlying(strategyAddress));
+    const strategy_balance_rari_onebtc = Number(await rari_OneBTC.callStatic.balanceOfUnderlying(strategyAddress));
+    const strategy_balance_rari_usdc = Number(await rari_USDC.callStatic.balanceOfUnderlying(strategyAddress));
     const strategy_balance_rari_wbtc = Number(await rari_wBTC.callStatic.balanceOfUnderlying(strategyAddress));
     
     //console.log(strategy_balance_rari_wbtc);
-    //console.log(strategy_balance_rari_usdc_usd);
+    //console.log(strategy_balance_rari_usdc);
+    //console.log(strategy_balance_rari_onebtc);
 
     strategy_balance_usdc += Number(await USDC.balanceOf(strategyAddress));
-    strategy_balance_usdc += strategy_balance_rari_usdc_usd;
+    strategy_balance_usdc += strategy_balance_rari_usdc;
 
     strategy_balance_wbtc += strategy_balance_rari_wbtc;
 
@@ -200,15 +198,15 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     strategy_balance_onetoken += Number(await oneToken.balanceOf(strategyAddress));
     if (itemName !== 'oneUNI') {
       strategy_balance_one_uni += Number(await oneUNI.balanceOf(strategyAddress));
-      strategy_balance_one_uni += strategy_balance_rari_oneuni_usd;
+      strategy_balance_one_uni += strategy_balance_rari_oneuni;
     } else {
-      strategy_balance_onetoken += strategy_balance_rari_oneuni_usd;
+      strategy_balance_onetoken += strategy_balance_rari_oneuni;
     }
     if (itemName !== 'oneBTC') {
       strategy_balance_one_btc += Number(await oneBTC.balanceOf(strategyAddress));
-      strategy_balance_one_btc += strategy_balance_rari_onebtc_usd;
+      strategy_balance_one_btc += strategy_balance_rari_onebtc;
     } else {
-      strategy_balance_onetoken += strategy_balance_rari_onebtc_usd;
+      strategy_balance_onetoken += strategy_balance_rari_onebtc;
     }
     strategy_balance_ichi += Number(await ICHI.balanceOf(strategyAddress));
 
@@ -341,6 +339,12 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   }
 
   strategy_balance_usdc += strategy_balance_usdc_treasury;
+
+  // in case of oneBTC combine all wBTC positions into one
+  if (itemName == 'oneBTC') {
+    strategy_balance_stimulus += strategy_balance_wbtc;
+    strategy_balance_wbtc = 0;
+  }
 
   // special case of oneUNI investing into OJA vault
   if (itemName == 'oneUNI') {
