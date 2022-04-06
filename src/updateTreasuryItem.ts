@@ -186,10 +186,10 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     const strategy_balance_rari_onebtc_usd = strategy_balance_rari_onebtc * (rari_OneBTC_exchangeRate / 10 ** 18); 
     const strategy_balance_rari_usdc = Number(await rari_USDC.balanceOf(strategyAddress));
     const strategy_balance_rari_usdc_usd = strategy_balance_rari_usdc * (rari_USDC_exchangeRate / 10 ** 18);
-    const strategy_balance_rari_wbtc = Number(await rari_wBTC.balanceOf(strategyAddress));
+    const strategy_balance_rari_wbtc = Number(await rari_wBTC.callStatic.balanceOfUnderlying(strategyAddress));
     
-    // console.log(strategy_balance_rari_oneuni_usd);
-    // console.log(strategy_balance_rari_usdc_usd);
+    //console.log(strategy_balance_rari_wbtc);
+    //console.log(strategy_balance_rari_usdc_usd);
 
     strategy_balance_usdc += Number(await USDC.balanceOf(strategyAddress));
     strategy_balance_usdc += strategy_balance_rari_usdc_usd;
