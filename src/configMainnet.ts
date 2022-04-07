@@ -60,7 +60,7 @@ const POOLS = {
   dodoPools : [10004, 10007],
   rariAssets : [10005, 10006, 10008, 10009],
   specialPricing: [19],
-  activeAPR: [1016, 1019, 1020, 10006, 1021, 1022, 20003]
+  activeAPR: [1016, 1019, 1020, 10006, 10008, 1021, 1022, 20003]
   //activeAPR: []
 }
 
