@@ -151,7 +151,7 @@ export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock, grap
     let reward = 0;
     let bonusToRealRatio = 1;
     let inTheFarmLP = '';
-    let rewardTokenDecimals = 9;
+    let rewardTokenDecimals = 18;
     let rewardTokenName = 'ichi';
     
     let rewardsPerBlock = 0;
