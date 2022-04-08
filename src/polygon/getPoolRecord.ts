@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from 'ethers';
-import { ADDRESSES, POOLS, TOKENS, LABELS } from './configPolygon';
+import { ADDRESSES, POOLS, TOKENS, LABELS, BLOCKS_PER_DAY } from './configPolygon';
 import FARMING_V2_ABI from '../abis/FARMING_V2_ABI.json';
 import ERC20_ABI from '../abis/ERC20_ABI.json';
 import PAIR_ABI from '../abis/PAIR_ABI.json';
@@ -263,7 +263,7 @@ export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock, grap
     let dailyAPY = 0;
     if (apyTVL !== 0) {
       let ichiReturnUsd =
-      6500 *
+      BLOCKS_PER_DAY *
       reward *
       tokenPrices[rewardTokenName] / apyTVL;
       dailyAPY = ichiReturnUsd * 100;
@@ -272,7 +272,7 @@ export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock, grap
     // calculate future APY for deposits
     let futureReward = 0.1; // 0.1 ichiPerBlock
     let futureIchiReturnUsd =
-    6500 *
+    BLOCKS_PER_DAY *
     futureReward *
     tokenPrices[rewardTokenName] / apyTVL;
     let futureAPY = futureIchiReturnUsd * 100;

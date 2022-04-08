@@ -1,4 +1,5 @@
 const CHAIN_ID = 1;
+const BLOCKS_PER_DAY = 6500;
 
 const ADDRESSES = {
   // to look for BNT Converter addresses use this contract: 0xC0205e203F423Bcd8B2a4d6f8C8A154b0Aa60F19
@@ -817,4 +818,4 @@ LABELS[20004] = {
   irrStartTxAmount: 0,
 }
 
-export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID, DEBUNK_PROTOCOLS };
+export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID, DEBUNK_PROTOCOLS, BLOCKS_PER_DAY };

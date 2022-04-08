@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { ADDRESSES, TOKENS, POOLS, LABELS, CHAIN_ID } from './configMumbai';
+import { ADDRESSES, TOKENS, POOLS, LABELS, CHAIN_ID, BLOCKS_PER_DAY } from './configMumbai';
 import FARMING_V2_ABI from './../abis/FARMING_V2_ABI.json';
 import GENERIC_FARMING_V2_ABI from './../abis/GENERIC_FARMING_V2_ABI.json';
 import ERC20_ABI from './../abis/ERC20_ABI.json';
@@ -244,7 +244,7 @@ export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
   let dailyAPY = 0;
   if (apyTVL !== 0) {
     let ichiReturnUsd =
-    6500 *
+    BLOCKS_PER_DAY *
     reward *
     tokenPrices[rewardTokenName] / apyTVL;
     dailyAPY = ichiReturnUsd * 100;

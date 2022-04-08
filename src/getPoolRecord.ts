@@ -1,5 +1,5 @@
 import { BigNumber, ethers } from 'ethers';
-import { ADDRESSES, POOLS, TOKENS, APIS, LABELS } from './configMainnet';
+import { ADDRESSES, POOLS, TOKENS, APIS, LABELS, BLOCKS_PER_DAY } from './configMainnet';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import GENERIC_FARMING_V2_ABI from './abis/GENERIC_FARMING_V2_ABI.json';
@@ -417,7 +417,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
         let dailyAPY = 0;
         if (apyTVL !== 0) {
           let ichiReturnUsd =
-          6500 *
+          BLOCKS_PER_DAY *
           reward *
           tokenPrices[rewardTokenName] / apyTVL;
           dailyAPY = ichiReturnUsd * 100;
@@ -531,7 +531,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
         let dailyAPY = 0;
         if (apyTVL !== 0) {
           let ichiReturnUsd =
-          6500 *
+          BLOCKS_PER_DAY *
           reward *
           tokenPrices[rewardTokenName] / apyTVL;
           dailyAPY = ichiReturnUsd * 100;
@@ -540,7 +540,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
         // calculate future APY for deposits
         let futureReward = 0.1; // 0.1 ichiPerBlock
         let futureIchiReturnUsd =
-        6500 *
+        BLOCKS_PER_DAY *
         futureReward *
         tokenPrices[rewardTokenName] / apyTVL;
         let futureAPY = futureIchiReturnUsd * 100;
@@ -720,7 +720,7 @@ async function getPoolContract(poolID, useBasic, farm, adjusterPoolId) {
         if (knownIchiPerBlock['10003']) {
           if (farmTVL !== 0) {
             let ichiReturnUsd =
-            6500 *
+            BLOCKS_PER_DAY *
             (Number(knownIchiPerBlock['10003']) / 10 ** 9) *
             tokenPrices['ichi'] / farmTVL;
             dailyAPY = ichiReturnUsd * 100;

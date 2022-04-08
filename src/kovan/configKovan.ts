@@ -1,4 +1,5 @@
 const CHAIN_ID = 42;
+const BLOCKS_PER_DAY = 6500;
 
 const ADDRESSES = {
   farming_V2: "0xCfF363294b876F27dF7aCe9584B243177bF618af",
@@ -170,4 +171,4 @@ LABELS[20000] = {
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x8290d7a64f25e6b5002d98367e8367c1b532b534',
 }
 
-export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID };
+export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID, BLOCKS_PER_DAY };
