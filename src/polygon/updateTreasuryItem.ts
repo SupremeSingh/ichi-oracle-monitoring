@@ -50,6 +50,10 @@ const getOneTokenAttributes = async function(tokenName) {
     }
   }
 
+  if (tokenName == 'pol_onebtc') {
+    template.stimulus_decimals = 8
+  }
+
   template.stimulus_address = TOKENS[template.stimulus_name]['address'];
 
   return template;
