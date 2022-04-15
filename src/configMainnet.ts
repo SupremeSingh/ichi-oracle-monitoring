@@ -51,7 +51,7 @@ const POOLS = {
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
-  unretiredPools : [10001, 10008, 10009, 20002, 20004, 1001, 1005, 1019, 1020, 1021, 1022, 1023],
+  unretiredPools : [10001, 10008, 10009, 20001, 20002, 20004, 1001, 1005, 1019, 1020, 1021, 1022, 1023],
   oneInchPools : [15, 16, 10001],
   balancerPools : [18, 1001, 1002, 1008],
   balancerSmartPools : [1003, 1007],
