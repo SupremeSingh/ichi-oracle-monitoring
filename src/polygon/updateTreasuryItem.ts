@@ -372,6 +372,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
     console.log(res);
 
+    const isLegacy = false;
+
     // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
     console.log(`Attempting to update table: ${tableName}, token: ${itemName}`);
     const params: AWS.DynamoDB.UpdateItemInput = {
@@ -404,6 +406,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         'treasuryBacked = :treasuryBacked, ' + 
         'chainId = :chainId, ' +
         'tradeUrl = :tradeUrl, ' +
+        'isLegacy = :isLegacy, ' + 
         'oneTokenVersion = :oneTokenVersion, ' +
         'reserveRatio = :reserveRatio',
       ExpressionAttributeValues: {
@@ -429,6 +432,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         ':treasuryBacked': { N: Number(oneToken_treasury_backed).toString() },
         ':chainId': { N: Number(CHAIN_ID).toString() },
         ':tradeUrl': { S: tradeUrl },
+        ':isLegacy': { BOOL: isLegacy },
         ':oneTokenVersion': { N: Number(oneTokenVersion).toString() },
         ':reserveRatio': { N: Number(reserveRatio).toString() }
       },

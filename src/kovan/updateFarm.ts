@@ -156,6 +156,8 @@ export const updateFarm = async (tableName: string, poolId: number,
 
   let baseTokenTVL = Number(pool['tvl']);
 
+  const isLegacy = false;
+
   // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
   console.log(`Attempting to update table: ${tableName}, token: ${poolId}`);
   const params: AWS.DynamoDB.UpdateItemInput = {
@@ -194,6 +196,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       'isIchiPool = :isIchiPool, ' + 
       'isDeposit = :isDeposit, ' + 
       'isPosition = :isPosition, ' + 
+      'isLegacy = :isLegacy, ' + 
       'chainId = :chainId, ' +
       'farmName = :farmName', 
     ExpressionAttributeValues: {
@@ -225,6 +228,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       ':isIchiPool': { BOOL: isIchiPool },
       ':isDeposit': { BOOL: isDeposit },
       ':isPosition': { BOOL: isVault },
+      ':isLegacy': { BOOL: isLegacy },
       ':chainId': { N: Number(CHAIN_ID).toString() },
       ':farmName': { S: farmName }
     },
