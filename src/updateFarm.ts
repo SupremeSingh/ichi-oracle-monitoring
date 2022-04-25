@@ -99,6 +99,8 @@ export const updateFarm = async (tableName: string, poolId: number,
   }
   farmPoolId = adjustedPid(poolId);
 
+  const isLegacy = POOLS.legacyPools.includes(poolId);
+
   let tokens = [];
 
   if (pool['token0'] == '') {
@@ -338,6 +340,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       'isIchiPool = :isIchiPool, ' + 
       'isDeposit = :isDeposit, ' + 
       'isPosition = :isPosition, ' + 
+      'isLegacy = :isLegacy, ' + 
       'chainId = :chainId, ' +
       'farmName = :farmName, ' +
       'vaultAPR = :vaultAPR, ' +
@@ -373,6 +376,7 @@ export const updateFarm = async (tableName: string, poolId: number,
       ':isIchiPool': { BOOL: isIchiPool },
       ':isDeposit': { BOOL: isDeposit },
       ':isPosition': { BOOL: isVault },
+      ':isLegacy': { BOOL: isLegacy },
       ':chainId': { N: Number(CHAIN_ID).toString() },
       ':farmName': { S: farmName },
       ':vaultAPR': { N: Number(vaultAPR).toString() },

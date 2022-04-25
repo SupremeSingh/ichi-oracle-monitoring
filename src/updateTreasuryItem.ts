@@ -1,7 +1,7 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { ethers, utils } from 'ethers';
-import { ADDRESSES, TOKENS, CHAIN_ID, APIS, DEBUNK_PROTOCOLS } from './configMainnet';
+import { ADDRESSES, TOKENS, CHAIN_ID, APIS, DEBUNK_PROTOCOLS, TREASURIES } from './configMainnet';
 import { BSC_ADDRESSES, BSC_APIS } from './configBSC';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
@@ -96,6 +96,7 @@ const getOneTokenAttributes = async function(tokenName) {
 
 const callDebunkOpenAPI = async function(address, protocol) {
   let url = APIS.debunk_openapi + "?id=" + address + "&protocol_id=" + protocol;
+  console.log(url);
   return await axios.get(url);
 };
 
@@ -136,6 +137,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const tradeUrl = attr.tradeUrl;
   const isV2 = attr.isV2;
   const oneTokenABI = await getABI(attr.abi_type);
+
+  const isLegacy = TREASURIES.legacyTreasuries.includes(itemName);
 
   const ICHI = new ethers.Contract(TOKENS['ichi']['address'], ERC20_ABI, provider);
   const stimulusToken = new ethers.Contract(stimulusTokenAddress, ERC20_ABI, provider);
@@ -295,6 +298,55 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   //console.log(aux_strategy_balance_usdc);
   //console.log(aux_strategy_balance_riskharbor_usdc);
 
+  // 217812, 212009, 194119, 188941
+  if (itemName == 'oneUNI') {
+    strategy_balance_onetoken += Number(6007000) * 10**18;
+    strategy_balance_ichi += Number(11550+13380) * 10**9;
+    strategy_balance_usdc += Number(1.1) * 10**6;
+    strategy_balance_one_btc += Number(7852000) * 10**18;
+  }
+  // 214077, 214019
+  if (itemName == 'oneBTC') {
+    strategy_balance_ichi += Number(19990 + 19990) * 10**9;
+  }
+  // 188159, 170022
+  if (itemName == 'oneFOX') {
+    strategy_balance_stimulus += Number(2499000) * 10**18;
+    strategy_balance_onetoken += Number(1927000) * 10**18;
+    strategy_balance_usdc += Number(388700) * 10**6;
+  }
+  // 186217, 109896
+  if (itemName == 'oneFUSE') {
+    strategy_balance_stimulus += Number(649900) * 10**18;
+    strategy_balance_onetoken += Number(298000) * 10**18;
+    strategy_balance_usdc += Number(202300) * 10**6;
+  }
+  // 186276
+  if (itemName == 'oneWING') {
+    strategy_balance_stimulus += Number(23990) * 10**9;
+  }
+  // 116806
+  if (itemName == 'onePERL') {
+    strategy_balance_onetoken += Number(382300) * 10**18;
+    strategy_balance_usdc += Number(112700) * 10**6;
+  }
+  // 200812
+  if (itemName == 'oneOJA') {
+    strategy_balance_onetoken += Number(204500) * 10**18;
+    strategy_balance_usdc += Number(43100) * 10**6;
+  }
+  // 109848
+  if (itemName == 'oneMPH') {
+    strategy_balance_onetoken += Number(233700) * 10**18;
+    strategy_balance_usdc += Number(22060) * 10**6;
+  }
+  // 108331
+  if (itemName == 'one1INCH') {
+    strategy_balance_onetoken += Number(129900) * 10**18;
+    strategy_balance_usdc += Number(17880) * 10**6;
+  }
+
+  /*
   if (uni_v3_positions > 0) {
     let all_v3_positions = await callDebunkOpenAPI(strategyAddress, DEBUNK_PROTOCOLS.UNI_V3);
     if (all_v3_positions.data && all_v3_positions.data.portfolio_item_list && 
@@ -337,6 +389,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     }
 
   }
+*/
 
   strategy_balance_usdc += strategy_balance_usdc_treasury;
 
@@ -831,6 +884,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         'treasuryBacked = :treasuryBacked, ' + 
         'chainId = :chainId, ' +
         'tradeUrl = :tradeUrl, ' +
+        'isLegacy = :isLegacy, ' + 
         'oneTokenVersion = :oneTokenVersion, ' +
         'reserveRatio = :reserveRatio',
       ExpressionAttributeValues: {
@@ -856,6 +910,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         ':treasuryBacked': { N: Number(oneToken_treasury_backed).toString() },
         ':chainId': { N: Number(CHAIN_ID).toString() },
         ':tradeUrl': { S: tradeUrl },
+        ':isLegacy': { BOOL: isLegacy },
         ':oneTokenVersion': { N: Number(oneTokenVersion).toString() },
         ':reserveRatio': { N: Number(reserveRatio).toString() }
       },

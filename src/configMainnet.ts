@@ -41,6 +41,12 @@ const APIS = {
   subgraph_risk_harbor: "https://api.thegraph.com/subgraphs/name/risk-harbor/v2-mainnet"
 };
 
+const TREASURIES = {
+  treasuries: ['oneBTC', 'oneFIL', 'one1INCH', 'oneFUSE', 'oneMPH', 'onePERL', 'oneUNI', 'oneDODO', 'oneFOX', 'oneWING', 'BOOTusd', 'oneOJA'],
+  //treasuries: ['oneWING'],
+  legacyTreasuries: ['oneBTC', 'oneDODO', 'oneUNI']
+}
+
 const POOLS = {
   activePools : [1001, 1004, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005, 10009],
   //activePools : [],
@@ -61,6 +67,7 @@ const POOLS = {
   dodoPools : [10004, 10007],
   rariAssets : [10005, 10006, 10008, 10009],
   specialPricing: [19],
+  legacyPools : [1001, 1009, 1014, 1016, 10017, 10004, 10005, 10006, 10007, 10008],
   activeAPR: [1016, 1019, 1020, 10006, 10008, 1021, 1022, 20003]
   //activeAPR: []
 }
@@ -818,4 +825,4 @@ LABELS[20004] = {
   irrStartTxAmount: 0,
 }
 
-export { ADDRESSES, APIS, POOLS, LABELS, TOKENS, CHAIN_ID, DEBUNK_PROTOCOLS, BLOCKS_PER_DAY };
+export { ADDRESSES, APIS, POOLS, TREASURIES, LABELS, TOKENS, CHAIN_ID, DEBUNK_PROTOCOLS, BLOCKS_PER_DAY };
