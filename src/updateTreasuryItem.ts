@@ -298,6 +298,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   //console.log(aux_strategy_balance_usdc);
   //console.log(aux_strategy_balance_riskharbor_usdc);
 
+  /*
   // 217812, 212009, 194119, 188941
   if (itemName == 'oneUNI') {
     strategy_balance_onetoken += Number(6007000) * 10**18;
@@ -345,8 +346,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     strategy_balance_onetoken += Number(129900) * 10**18;
     strategy_balance_usdc += Number(17880) * 10**6;
   }
-
-  /*
+` */
+  
   if (uni_v3_positions > 0) {
     let all_v3_positions = await callDebunkOpenAPI(strategyAddress, DEBUNK_PROTOCOLS.UNI_V3);
     if (all_v3_positions.data && all_v3_positions.data.portfolio_item_list && 
@@ -389,7 +390,6 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     }
 
   }
-*/
 
   strategy_balance_usdc += strategy_balance_usdc_treasury;
 
