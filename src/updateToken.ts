@@ -9,6 +9,7 @@ import ORACLE_ABI from './abis/ORACLE_ABI.json';
 import { ADDRESSES, TOKENS, CHAIN_ID } from './configMainnet';
 import axios from 'axios';
 import { ChainId, Token, WETH, Fetcher, Route } from '@uniswap/sdk';
+import { getOneTokenPriceFromVault } from './subgraph/ichi_vaults';
 
 const infuraId = process.env.INFURA_ID;
 if (!infuraId) {
@@ -119,6 +120,13 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
   } else if (isOneToken) {*/
   if (isOneToken) {
     price = 1;
+    if (tokenName == 'onebtc' || tokenName == 'oneuni') {
+      // special case - get price from oneToken/ICHI vault's pool
+      let ichiAddress = TOKENS['ichi']['address'];
+      let lookup_price = await lookUpTokenPrices([ichiAddress.toLowerCase()]);
+      let ichi_price = lookup_price.data[ichiAddress.toLowerCase()].usd;
+      price = await getOneTokenPriceFromVault(tokenName, ichi_price, provider);
+    }
   } else {
     switch(tokenName) {
       case 'usdc':

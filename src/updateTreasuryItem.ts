@@ -651,6 +651,17 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let usdc_price = tokenPrices['usdc'];
   let oja_price = tokenPrices['oja'];
   let usdt_price = 1;
+  let oneToken_price = 1;
+  let onebtc_price = 1;
+  let oneuni_price = 1;
+  /*onebtc_price = tokenPrices['onebtc'];
+  oneuni_price = tokenPrices['oneuni'];
+  if (itemName == "oneUNI") {
+    oneToken_price = oneuni_price;
+  }
+  if (itemName == "oneBTC") {
+    oneToken_price = onebtc_price;
+  }*/
 
   stimulusPositionsUSDValue = stimulusPositionsUSDValue +
     Number(oneToken_stimulus_price) * (strategy_balance_stimulus / 10 ** stimulusDecimals) +
@@ -675,9 +686,9 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     usdc_price * (oneToken_USDC / 10 ** TOKENS.usdc.decimals);
 
   collateralPositionsUSDValue = collateralPositionsUSDValue +
-    strategy_balance_onetoken / 10 ** 18 +
-    strategy_balance_one_uni / 10 ** 18 +
-    strategy_balance_one_btc / 10 ** 18 +
+    strategy_balance_onetoken * oneToken_price / 10 ** 18 +
+    strategy_balance_one_uni * oneuni_price / 10 ** 18 +
+    strategy_balance_one_btc * onebtc_price / 10 ** 18 +
     strategy_balance_one_oja / 10 ** 18 +
     usdc_price * (strategy_balance_usdc / 10 ** TOKENS.usdc.decimals) +
     usdc_price * (aux_strategy_balance_riskharbor_usdc / 10 ** TOKENS.usdc.decimals) +

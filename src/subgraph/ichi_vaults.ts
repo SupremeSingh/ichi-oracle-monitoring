@@ -8,6 +8,7 @@ import xirr from 'xirr'
 import { getPrice, VAULT_DECIMAL_TRACKER } from '../utils/vaults';
 import { BNtoNumberWithoutDecimals } from '../utils/numbers';
 import { GraphData } from './model';
+import { POOLS, TOKENS } from '../configMainnet';
 
 const { ApolloClient, InMemoryCache, gql } = pkg;
 
@@ -367,4 +368,34 @@ export async function getCurrentVaultValue(vaultAddress: string,
     
     const currentVaultValue = totalBaseTokenAmount + price * totalScarceTokenAmount;
     return currentVaultValue;
+}
+
+export async function getOneTokenPriceFromVault(name: string, ichi_price: number,
+    provider: ethers.providers.JsonRpcProvider): Promise<number>{
+
+    let vaultAddress = "";
+    let inverted = true;
+    if (name == "onebtc") { 
+        vaultAddress = TOKENS.onebtc.ichiVault.address;
+    }
+    if (name == "oneuni") {
+        vaultAddress = TOKENS.oneuni.ichiVault.address;
+        inverted = false;
+    }
+
+    const vaultContract = new ethers.Contract(vaultAddress, vaultABI, provider)
+
+    const poolAddress: string = await vaultContract.pool();
+    
+    if (vaultAddress == "") return 1;
+
+    const poolContract = new ethers.Contract(poolAddress, poolABI, provider);
+    const slot0 = await poolContract.slot0();
+    
+    const sqrtPrice = slot0[0];
+    const price = getPrice(inverted, sqrtPrice, 18, 9, 5);
+    console.log(price);
+    console.log(ichi_price / price);
+    
+    return (ichi_price / price);
 }
