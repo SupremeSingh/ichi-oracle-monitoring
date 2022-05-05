@@ -394,8 +394,8 @@ export async function getOneTokenPriceFromVault(name: string, ichi_price: number
     
     const sqrtPrice = slot0[0];
     const price = getPrice(inverted, sqrtPrice, 18, 9, 5);
-    console.log(price);
-    console.log(ichi_price / price);
+    //console.log(price);
+    //console.log(ichi_price / price);
     
     return (ichi_price / price);
 }

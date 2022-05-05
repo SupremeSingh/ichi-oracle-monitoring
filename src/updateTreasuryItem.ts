@@ -96,7 +96,7 @@ const getOneTokenAttributes = async function(tokenName) {
 
 const callDebunkOpenAPI = async function(address, protocol) {
   let url = APIS.debunk_openapi + "?id=" + address + "&protocol_id=" + protocol;
-  console.log(url);
+  //console.log(url);
   return await axios.get(url);
 };
 
