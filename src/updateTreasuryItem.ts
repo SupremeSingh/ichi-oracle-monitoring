@@ -7,6 +7,7 @@ import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import GENERIC_FARMING_V2_ABI from './abis/GENERIC_FARMING_V2_ABI.json';
 import ERC20_ABI from './abis/ERC20_ABI.json';
+import ALLY_ABI from './abis/ALLY_ABI.json';
 import _1INCH_STAKING_ABI from './abis/1INCH_STAKING_ABI.json';
 import VAULT_ABI from './abis/ICHI_VAULT_ABI.json';
 import BMI_STAKING_ABI from './abis/BMI_STAKING_ABI.json';
@@ -15,7 +16,6 @@ import ONELINK_ABI from './abis/oneLINK_ABI.json';
 import ONEETH_ABI from './abis/oneETH_ABI.json';
 import UNISWAP_V3_POSITIONS from './abis/UNISWAP_V3_POSITIONS_ABI.json';
 import UNI_V3_POOL from './abis/UNI_V3_POOL_ABI.json';
-import RARI_POOL_ABI from './abis/RARI_POOL_ABI.json';
 import { getPoolRecord } from './getPoolRecord';
 import axios from 'axios';
 import { GraphData } from './subgraph/model';
@@ -52,6 +52,7 @@ const getOneTokenAttributes = async function(tokenName) {
     decimals: TOKENS[tokenName]['decimals'],
     strategy: TOKENS[tokenName]['strategy'],
     aux_strategy: TOKENS[tokenName]['aux_strategy'],
+    ally_swap: TOKENS[tokenName]['ally_swap'] ? TOKENS[tokenName]['ally_swap'] : '',
     tradeUrl: TOKENS[tokenName]['tradeUrl'],
     stimulus_address: '',
     stimulus_name: TOKENS[tokenName]['stimulusName'],
@@ -128,6 +129,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const oneTokenAddress = attr.address;
   const strategyAddress = attr.strategy;
   const auxStrategies = attr.aux_strategy;
+  const allySwapAddress = attr.ally_swap;
   const stimulusTokenAddress = attr.stimulus_address;
   const stimulusDisplayName = attr.stimulus_display_name;
   const stimulusTokenName = attr.stimulus_name;
@@ -143,6 +145,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const ICHI = new ethers.Contract(TOKENS['ichi']['address'], ERC20_ABI, provider);
   const stimulusToken = new ethers.Contract(stimulusTokenAddress, ERC20_ABI, provider);
   const USDC = new ethers.Contract(TOKENS['usdc']['address'], ERC20_ABI, provider);
+  const ally = new ethers.Contract(ADDRESSES.ALLY, ALLY_ABI, provider);
   const oneToken = new ethers.Contract(oneTokenAddress, oneTokenABI, provider);
   const oneUNI = new ethers.Contract(TOKENS['oneuni']['address'], oneTokenABI, provider);
   const oneBTC = new ethers.Contract(TOKENS['onebtc']['address'], oneTokenABI, provider);
@@ -155,14 +158,6 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const oneToken_stimulus = Number(await stimulusToken.balanceOf(oneTokenAddress));
   const oneToken_ichi = Number(await ICHI.balanceOf(oneTokenAddress));
 
-  const rari_OneUni = new ethers.Contract(ADDRESSES.rari_oneuni, RARI_POOL_ABI, provider);
-  //const rari_OneUni_exchangeRate = Number(await rari_OneUni.exchangeRateStored());
-  const rari_OneBTC = new ethers.Contract(ADDRESSES.rari_onebtc, RARI_POOL_ABI, provider);
-  //const rari_OneBTC_exchangeRate = Number(await rari_OneBTC.exchangeRateStored());
-  const rari_USDC = new ethers.Contract(ADDRESSES.rari_usdc, RARI_POOL_ABI, provider);
-  //const rari_USDC_exchangeRate = Number(await rari_USDC.exchangeRateStored());
-  const rari_wBTC = new ethers.Contract(ADDRESSES.rari_wbtc, RARI_POOL_ABI, provider);
-  
   // =================================================================================
   // get balances from the strategy, if it exists
 
@@ -170,6 +165,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let strategy_balance_usdc_treasury = 0;
   let strategy_balance_stimulus = 0;
   let strategy_balance_onetoken = 0;
+  let strategy_balance_ally = 0;
   let strategy_balance_one_btc = 0;
   let strategy_balance_one_uni = 0;
   let strategy_balance_one_oja = 0;
@@ -183,33 +179,15 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let aux_strategy_balance_usdc = 0;
 
   if (strategyAddress !== "") {
-    const strategy_balance_rari_oneuni = Number(await rari_OneUni.callStatic.balanceOfUnderlying(strategyAddress));
-    const strategy_balance_rari_onebtc = Number(await rari_OneBTC.callStatic.balanceOfUnderlying(strategyAddress));
-    const strategy_balance_rari_usdc = Number(await rari_USDC.callStatic.balanceOfUnderlying(strategyAddress));
-    const strategy_balance_rari_wbtc = Number(await rari_wBTC.callStatic.balanceOfUnderlying(strategyAddress));
-    
-    //console.log(strategy_balance_rari_wbtc);
-    //console.log(strategy_balance_rari_usdc);
-    //console.log(strategy_balance_rari_onebtc);
-
     strategy_balance_usdc += Number(await USDC.balanceOf(strategyAddress));
-    strategy_balance_usdc += strategy_balance_rari_usdc;
-
-    strategy_balance_wbtc += strategy_balance_rari_wbtc;
 
     strategy_balance_stimulus += Number(await stimulusToken.balanceOf(strategyAddress));
     strategy_balance_onetoken += Number(await oneToken.balanceOf(strategyAddress));
     if (itemName !== 'oneUNI') {
       strategy_balance_one_uni += Number(await oneUNI.balanceOf(strategyAddress));
-      strategy_balance_one_uni += strategy_balance_rari_oneuni;
-    } else {
-      strategy_balance_onetoken += strategy_balance_rari_oneuni;
     }
     if (itemName !== 'oneBTC') {
       strategy_balance_one_btc += Number(await oneBTC.balanceOf(strategyAddress));
-      strategy_balance_one_btc += strategy_balance_rari_onebtc;
-    } else {
-      strategy_balance_onetoken += strategy_balance_rari_onebtc;
     }
     strategy_balance_ichi += Number(await ICHI.balanceOf(strategyAddress));
 
@@ -258,6 +236,11 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       strategy_balance_st1inch += Number(await st1INCH.balanceOf(strategyAddress));
       strategy_balance_stimulus += Number(await _1INCH_STAKING.earned(strategyAddress));
     }
+  }
+
+  if (allySwapAddress !== "") {
+    strategy_balance_onetoken += Number(await oneToken.balanceOf(allySwapAddress));
+    strategy_balance_ally += Number(await ally.balanceOf(allySwapAddress));
   }
 
   if (auxStrategies.length > 0) {
@@ -677,6 +660,13 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     stimulusPositionsUSDValue += oja_price * (strategy_balance_oja / 10 ** 18);
   }
 
+  let stimulusPositionsAllyValue = 0;
+  if (strategy_balance_ally > 0) {
+    const ichiPerAlly = Number(await ally.ichiPerAlly());
+    stimulusPositionsAllyValue = (strategy_balance_ally / 10 ** 18) * (ichiPerAlly / 10 ** 18) * ichi_price;
+    stimulusPositionsUSDValue += stimulusPositionsAllyValue;
+  }
+
   let oneToken_stimulus_usd =
     Number(oneToken_stimulus_price) * (oneToken_stimulus / 10 ** stimulusDecimals) +
     ichi_price * (oneToken_ichi / 10 ** TOKENS.ichi.decimals) +
@@ -780,6 +770,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     if (strategy_balance_stimulus > 0 || 
         strategy_balance_ichi > 0 || 
         strategy_balance_wbtc > 0 || 
+        strategy_balance_ally > 0 || 
         strategy_balance_oja > 0 || 
         //strategy_balance_usdc_treasury > 0 ||
         strategy_balance_st1inch > 0) {
@@ -794,6 +785,12 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         assets.push({ M: { 
           name: { S: "ICHI" }, 
           balance: { N: Number(strategy_balance_ichi / 10 ** TOKENS.ichi.decimals).toString() } 
+        }});
+      }
+      if (strategy_balance_ally > 0) {
+        assets.push({ M: { 
+          name: { S: "ALLY" }, 
+          balance: { N: Number(strategy_balance_ally / 10 ** 18).toString() } 
         }});
       }
       if (strategy_balance_wbtc > 0) {
