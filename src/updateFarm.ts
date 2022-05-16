@@ -137,7 +137,8 @@ export const updateFarm = async (tableName: string, poolId: number,
 
   let isExternal = isFarmExternal(poolId);
   let isGeneric = isFarmGeneric(poolId);
-  let isIchiPool = pool['token0'].toLowerCase() == 'ichi' || pool['token1'].toLowerCase() == 'ichi';
+  let isIchiPool = pool['token0'].toLowerCase() == 'ichi' || pool['token1'].toLowerCase() == 'ichi' ||
+    pool['token0'].toLowerCase() == 'ichi_v2' || pool['token1'].toLowerCase() == 'ichi_v2';
   isIchiPool = isIchiPool || poolId == 10004; // oneDODO-USDC to include into ICHI farms for now
   let isUpcoming = POOLS.upcomingPools.includes(poolId);
   let isMigrating = POOLS.migratingPools.includes(poolId);
