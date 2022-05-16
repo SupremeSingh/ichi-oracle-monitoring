@@ -52,13 +52,13 @@ const POOLS = {
   activePools : [1001, 1004, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005, 10009],
   //activePools : [],
   depositPools : [1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10005, 10009],
-  activeVaults: [1016, 1019, 1020, 1021, 1022, 20001, 20002, 20003, 20004, 10006, 10008],
+  activeVaults: [1016, 1019, 1020, 1021, 1022, 1024, 1025, 1026, 20001, 20002, 20003, 20004, 10006, 10008],
   //activeVaults: [],
   underlyingVaults: [1023],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
-  unretiredPools : [10001, 10008, 10009, 20001, 20002, 20003, 20004, 1001, 1005, 1019, 1020, 1021, 1022, 1023],
+  unretiredPools : [10001, 10008, 10009, 20001, 20002, 20003, 20004, 1001, 1005, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026],
   oneInchPools : [15, 16, 10001],
   balancerPools : [18, 1001, 1002, 1008],
   balancerSmartPools : [1003, 1007],
@@ -68,7 +68,7 @@ const POOLS = {
   dodoPools : [10004, 10007],
   rariAssets : [10005, 10006, 10008, 10009],
   specialPricing: [19],
-  legacyPools : [1001, 1009, 1014, 1016, 1017, 10004, 10005, 10006, 10007, 10008, 10009],
+  legacyPools : [1001, 1009, 1014, 1016, 1017, 1019, 1020, 1021, 1022, 10004, 10005, 10006, 10007, 10008, 10009],
   activeAPR: [1016, 1019, 1020, 10006, 10008, 1021, 1022]
   //activeAPR: []
 }
@@ -705,7 +705,7 @@ LABELS[1018] = {
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x5047fc5C9D7c49Ab22e390d13646a6A3a2476eff',
 }
 LABELS[1019] = {
-  name: 'GNO Vault',
+  name: 'GNO Vault (legacy)',
   lpName: 'ICHI_VAULT_LP',
   shortLpName: 'VAULT_LP',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x6810e776880C02933D47DB1b9fc05908e5386b96&chain=mainnet',
@@ -718,7 +718,7 @@ LABELS[1019] = {
   irrStartTxAmount: 17916,
 }
 LABELS[1020] = {
-  name: 'CEL Vault',
+  name: 'CEL Vault (legacy)',
   lpName: 'ICHI_VAULT_LP',
   shortLpName: 'VAULT_LP',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0xaaAEBE6Fe48E54f431b0C390CfaF0b017d09D42d&chain=mainnet',
@@ -731,7 +731,7 @@ LABELS[1020] = {
   irrStartTxAmount: 346101.2345,
 }
 LABELS[1021] = {
-  name: 'wNXM Vault',
+  name: 'wNXM Vault (legacy)',
   lpName: 'ICHI_VAULT_LP',
   shortLpName: 'VAULT_LP',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x0d438f3b5175bebc262bf23753c1e53d03432bde&chain=mainnet',
@@ -744,7 +744,7 @@ LABELS[1021] = {
   irrStartTxAmount: 222193,
 }
 LABELS[1022] = {
-  name: 'wBTC Vault',
+  name: 'wBTC Vault (legacy)',
   lpName: 'ICHI_VAULT_LP',
   shortLpName: 'VAULT_LP',
   tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599&chain=mainnet',
@@ -755,6 +755,45 @@ LABELS[1022] = {
   vaultAddress: '0xeF88913c674a9cA1E79b3986e4b222F3E75c7d05',
   irrStartDate: new Date('2022-03-30T18:17:57'),
   irrStartTxAmount: 75.482852739,
+}
+LABELS[1024] = {
+  name: 'wNXM Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x0d438f3b5175bebc262bf23753c1e53d03432bde&chain=mainnet',
+  subgraphEndpoint: '',
+  isInverted: false,
+  isHodl: true,
+  vaultName: 'wnxm_v2',
+  vaultAddress: '0x8abb986fB2C72aBc5a08f4D34BaF15279Dd5581F',
+  irrStartDate: new Date(0),
+  irrStartTxAmount: 0,
+}
+LABELS[1025] = {
+  name: 'CEL Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0xaaAEBE6Fe48E54f431b0C390CfaF0b017d09D42d&chain=mainnet',
+  subgraphEndpoint: '',
+  isInverted: true,
+  isHodl: true,
+  vaultName: 'cel_v2',
+  vaultAddress: '0x5fEb9A87A9C7d05C9Fbf7D24e753ceEE6696f10D',
+  irrStartDate: new Date(0),
+  irrStartTxAmount: 0,
+}
+LABELS[1026] = {
+  name: 'GNO Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x6810e776880C02933D47DB1b9fc05908e5386b96&chain=mainnet',
+  subgraphEndpoint: '',
+  isInverted: true,
+  isHodl: true,
+  vaultName: 'gno_v2',
+  vaultAddress: '0xd9E3646f5f6F491c0011796C0f7eC45C6639c4C6',
+  irrStartDate: new Date(0),
+  irrStartTxAmount: 0,
 }
 LABELS[20001] = {
   name: 'oneFUSE Vault',

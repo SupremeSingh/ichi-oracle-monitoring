@@ -7,12 +7,15 @@ export const VAULT_DECIMAL_TRACKER={
     "wing": {baseToken:18, scarceToken:9},
     "oja": {baseToken:18, scarceToken:18},
     "gno": {baseToken:18, scarceToken:9},
+    "gno_v2": {baseToken:18, scarceToken:18},
     "cel": {baseToken:4, scarceToken:9},
+    "cel_v2": {baseToken:4, scarceToken:18},
     "wbtc": {baseToken:8, scarceToken:9},
     "polygon_wbtc": {baseToken:8, scarceToken:18},
     "onebtc": {baseToken:18, scarceToken:9},
     "polygon_onebtc": {baseToken:18, scarceToken:18},
     "wnxm": {baseToken:18, scarceToken:9},
+    "wnxm_v2": {baseToken:18, scarceToken:18},
     "fox": {baseToken:18, scarceToken:18}
 }  
 
