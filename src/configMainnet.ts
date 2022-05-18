@@ -45,7 +45,7 @@ const APIS = {
 const TREASURIES = {
   treasuries: ['oneBTC', 'oneFIL', 'one1INCH', 'oneFUSE', 'oneMPH', 'onePERL', 'oneUNI', 'oneDODO', 'oneFOX', 'oneWING', 'BOOTusd', 'oneOJA'],
   //treasuries: ['oneWING'],
-  legacyTreasuries: ['oneBTC', 'oneDODO', 'oneUNI']
+  legacyTreasuries: ['oneBTC', 'oneFIL', 'oneMPH', 'onePERL', 'oneDODO', 'oneUNI', 'oneOJA']
 }
 
 const POOLS = {
@@ -53,12 +53,12 @@ const POOLS = {
   //activePools : [],
   depositPools : [1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10005, 10009],
   activeVaults: [1016, 1019, 1020, 1021, 1022, 1024, 1025, 1026, 20001, 20002, 20003, 20004, 10006, 10008],
-  //activeVaults: [],
+  //activeVaults: [20005],
   underlyingVaults: [1023],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
-  unretiredPools : [10001, 10008, 10009, 20001, 20002, 20003, 20004, 
+  unretiredPools : [10001, 10008, 10009, 20001, 20002, 20003, 20004, 20005,
     1001, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026],
   oneInchPools : [15, 16, 10001],
   balancerPools : [18, 1001, 1002, 1008],
@@ -69,7 +69,10 @@ const POOLS = {
   dodoPools : [10004, 10007],
   rariAssets : [10005, 10006, 10008, 10009],
   specialPricing: [19],
-  legacyPools : [1001, 1009, 1014, 1016, 1017, 1019, 1020, 1021, 1022, 10004, 10005, 10006, 10007, 10008, 10009],
+  legacyPools : [1001, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 
+    10001, 10004, 10005, 10006, 10007, 10008, 10009,
+    20002, 20004
+  ],
   activeAPR: [1016, 1019, 1020, 10006, 10008, 1021, 1022]
   //activeAPR: []
 }
@@ -135,6 +138,12 @@ const TOKENS = {
     address: "0xDb0f18081b505A7DE20B18ac41856BCB4Ba86A1a",
     decimals: 9,
     displayName: "pWING",
+    isOneToken: false
+  },
+  qrdo: {
+    address: "0x4123a133ae3c521FD134D7b13A2dEC35b56c2463",
+    decimals: 8,
+    displayName: "QRDO",
     isOneToken: false
   },
   wbtc: {
@@ -865,6 +874,24 @@ LABELS[20004] = {
   isHodl: false,
   vaultName: 'oja',
   vaultAddress: '0x98bAd5Ce592DcfE706CC95a1B9dB7008B6D418F8',
+  irrStartDate: new Date(0),
+  irrStartTxAmount: 0,
+}
+LABELS[20005] = {
+  name: 'QRDO Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  farmAddress: '0x15187432d28d8Ee94957a3277A51708b707D374e',
+  farmId: 0,
+  farmRewardTokenName: 'QRDO',
+  farmRewardTokenDecimals: 8,
+  farmRewardTokenAddress: '0x4123a133ae3c521FD134D7b13A2dEC35b56c2463',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x4123a133ae3c521FD134D7b13A2dEC35b56c2463&chain=mainnet',
+  subgraphEndpoint: '',
+  isInverted: true,
+  isHodl: false,
+  vaultName: 'qrdo',
+  vaultAddress: '0x784Ac9aaeaB58AAf904cc69e105aa51343E4C693',
   irrStartDate: new Date(0),
   irrStartTxAmount: 0,
 }
