@@ -3,6 +3,8 @@ import { BigNumber } from 'ethers';
 
 export const VAULT_DECIMAL_TRACKER={
     "ichi": {baseToken:18, scarceToken:9},
+    "usdc-ichi": {baseToken:6, scarceToken:18},
+    "oneichi": {baseToken:18, scarceToken:18},
     "fuse": {baseToken:18, scarceToken:18},
     "wing": {baseToken:18, scarceToken:9},
     "oja": {baseToken:18, scarceToken:18},
@@ -17,6 +19,7 @@ export const VAULT_DECIMAL_TRACKER={
     "polygon_onebtc": {baseToken:18, scarceToken:18},
     "wnxm": {baseToken:18, scarceToken:9},
     "wnxm_v2": {baseToken:18, scarceToken:18},
+    "qrdo": {baseToken:6, scarceToken:8},
     "fox": {baseToken:18, scarceToken:18}
 }  
 

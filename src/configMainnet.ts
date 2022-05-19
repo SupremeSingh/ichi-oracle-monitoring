@@ -9,6 +9,7 @@ const ADDRESSES = {
   ALLY: "0x1aa1e61369874bae3444A8Ef6528d6b13D6952EF",
   farming_V1: "0xcC50953A743B9CE382f423E37b07Efa6F9d9B000",
   farming_V2: "0x275dFE03bc036257Cd0a713EE819Dbd4529739c8",
+  farming_V3: "0x4B162306eE680Bf440541c3E5C70c553f632C8aA",
   ichi_community_gnosis: "0x8f3c97DdC88D7A75b8c3f872b525B30932D3014c",
   uniswap_V3_positions: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
   _1inch_ICHI_LP: "0x1dcE26F543E591c27717e25294AEbbF59AD9f3a5",
@@ -43,8 +44,8 @@ const APIS = {
 };
 
 const TREASURIES = {
-  treasuries: ['oneBTC', 'oneFIL', 'one1INCH', 'oneFUSE', 'oneMPH', 'onePERL', 'oneUNI', 'oneDODO', 'oneFOX', 'oneWING', 'BOOTusd', 'oneOJA'],
-  //treasuries: ['oneWING'],
+  treasuries: ['oneBTC', 'oneFIL', 'one1INCH', 'oneFUSE', 'oneMPH', 'onePERL', 'oneUNI', 'oneDODO', 'oneFOX', 'oneWING', 'BOOTusd', 'oneOJA', 'oneICHI'],
+  //treasuries: ['oneICHI'],
   legacyTreasuries: ['oneBTC', 'oneFIL', 'oneMPH', 'onePERL', 'oneDODO', 'oneUNI', 'oneOJA']
 }
 
@@ -52,13 +53,16 @@ const POOLS = {
   activePools : [1001, 1004, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005, 10009],
   //activePools : [],
   depositPools : [1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10005, 10009],
-  activeVaults: [1016, 1019, 1020, 1021, 1022, 1024, 1025, 1026, 1028, 20001, 20002, 20003, 20004, 10006, 10008],
-  //activeVaults: [],
+  activeVaults: [1016, 1019, 1020, 1021, 1022, 1024, 1025, 1026, 1028, 
+    20001, 20002, 20003, 20004, 20005, 20006, 20007,
+    10006, 10008],
+  //activeVaults: [20005, 20006, 20007],
   underlyingVaults: [1023],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
-  unretiredPools : [10001, 10008, 10009, 20001, 20002, 20003, 20004, 20005,
+  unretiredPools : [10001, 10008, 10009, 
+    20001, 20002, 20003, 20004, 20005, 20006, 20007,
     1001, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1028],
   oneInchPools : [15, 16, 10001],
   balancerPools : [18, 1001, 1002, 1008],
@@ -73,7 +77,7 @@ const POOLS = {
     10001, 10004, 10005, 10006, 10007, 10008, 10009,
     20002, 20004
   ],
-  activeAPR: [1016, 1019, 1020, 10006, 10008, 1021, 1022]
+  activeAPR: [1016, 1019, 1020, 1021, 1022, 10006, 10008]
   //activeAPR: []
 }
 
@@ -470,6 +474,18 @@ const TOKENS = {
     stimulusName: 'boot',
     stimulusDisplayName: 'BOOT',
     tradeUrl: 'https://www.boot.finance',
+  },
+  oneichi: { 
+    address: "0x4db2c02831c9ac305FF9311Eb661f80f1dF61e07",
+    strategy: "0xAC225b5Be5b2EBe53b75798366287626b9881BC8",
+    aux_strategy: [],
+    decimals: 18,
+    displayName: "oneICHI",
+    isOneToken: true,
+    isV2: true,
+    stimulusName: 'ichi_v2',
+    stimulusDisplayName: 'ICHI',
+    tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x111111517e4929D3dcbdfa7CCe55d30d4B6BC4d6&chain=mainnet',
   },
 }
 
@@ -899,12 +915,48 @@ LABELS[20005] = {
   farmRewardTokenName: 'QRDO',
   farmRewardTokenDecimals: 8,
   farmRewardTokenAddress: '0x4123a133ae3c521FD134D7b13A2dEC35b56c2463',
-  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&outputCurrency=0x4123a133ae3c521FD134D7b13A2dEC35b56c2463&chain=mainnet',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&chain=mainnet',
   subgraphEndpoint: '',
   isInverted: true,
   isHodl: false,
   vaultName: 'qrdo',
   vaultAddress: '0x784Ac9aaeaB58AAf904cc69e105aa51343E4C693',
+  irrStartDate: new Date(0),
+  irrStartTxAmount: 0,
+}
+LABELS[20006] = {
+  name: 'USDC Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  farmAddress: ADDRESSES.farming_V3,
+  farmId: 0,
+  farmRewardTokenName: TOKENS.ichi_v2.displayName,
+  farmRewardTokenDecimals: 18,
+  farmRewardTokenAddress: TOKENS.ichi_v2.address,
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48&chain=mainnet',
+  subgraphEndpoint: '',
+  isInverted: true,
+  isHodl: false,
+  vaultName: 'usdc-ichi',
+  vaultAddress: '0x683F081DBC729dbD34AbaC708Fa0B390d49F1c39',
+  irrStartDate: new Date(0),
+  irrStartTxAmount: 0,
+}
+LABELS[20007] = {
+  name: 'oneICHI Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  farmAddress: ADDRESSES.farming_V3,
+  farmId: 1,
+  farmRewardTokenName: TOKENS.ichi_v2.displayName,
+  farmRewardTokenDecimals: 18,
+  farmRewardTokenAddress: TOKENS.ichi_v2.address,
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x4db2c02831c9ac305FF9311Eb661f80f1dF61e07&chain=mainnet',
+  subgraphEndpoint: '',
+  isInverted: true,
+  isHodl: false,
+  vaultName: 'oneichi',
+  vaultAddress: '0x46f9490bcbcd0A12d3d8578B5b3AB19f8EF0617D',
   irrStartDate: new Date(0),
   irrStartTxAmount: 0,
 }
