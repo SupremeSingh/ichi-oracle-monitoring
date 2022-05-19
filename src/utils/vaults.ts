@@ -11,6 +11,7 @@ export const VAULT_DECIMAL_TRACKER={
     "cel": {baseToken:4, scarceToken:9},
     "cel_v2": {baseToken:4, scarceToken:18},
     "wbtc": {baseToken:8, scarceToken:9},
+    "wbtc_v2": {baseToken:8, scarceToken:18},
     "polygon_wbtc": {baseToken:8, scarceToken:18},
     "onebtc": {baseToken:18, scarceToken:9},
     "polygon_onebtc": {baseToken:18, scarceToken:18},
