@@ -15,6 +15,7 @@ const BANNERS = {
       }
     ],
     baseColor: '#751F95',
+    gradientDirection: '',
     gradientColor0: '#751F95',
     gradientColor1: '#0676FF'
   },
@@ -34,6 +35,7 @@ const BANNERS = {
       }
     ],
     baseColor: '#0676FF',
+    gradientDirection: '',
     gradientColor0: '#751F95',
     gradientColor1: '#0676FF'
   },
@@ -49,6 +51,7 @@ const BANNERS = {
       }
     ],
     baseColor: '#0676FF',
+    gradientDirection: '',
     gradientColor0: '#751F95',
     gradientColor1: '#0676FF'
   }

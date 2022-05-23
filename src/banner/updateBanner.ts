@@ -35,6 +35,7 @@ export const updateBanner = async (tableName: string, bannerName: string): Promi
       'textCountdown = :textCountdown, ' +
       'buttons = :buttons, ' +
       'baseColor = :baseColor, ' +
+      'gradientDirection = :gradientDirection, ' +
       'gradientColor0 = :gradientColor0, ' +
       'gradientColor1 = :gradientColor1',
     ExpressionAttributeValues: {
@@ -44,6 +45,7 @@ export const updateBanner = async (tableName: string, bannerName: string): Promi
       ':textCountdown': { S: BANNERS[bannerName]['textCountdown'] },
       ':buttons': { L: buttons },
       ':baseColor': { S: BANNERS[bannerName]['baseColor'] },
+      ':gradientDirection': { S: BANNERS[bannerName]['gradientDirection'] },
       ':gradientColor0': { S: BANNERS[bannerName]['gradientColor0'] },
       ':gradientColor1': { S: BANNERS[bannerName]['gradientColor1'] },
     },
