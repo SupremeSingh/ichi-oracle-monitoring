@@ -11,6 +11,7 @@ const ADDRESSES = {
   farming_V2: "0x275dFE03bc036257Cd0a713EE819Dbd4529739c8",
   farming_V3: "0x4B162306eE680Bf440541c3E5C70c553f632C8aA",
   ichi_community_gnosis: "0x8f3c97DdC88D7A75b8c3f872b525B30932D3014c",
+  ichi_v2_gnosis: "0x94A5980d5634533551dcB7108322f6C4f2a80E6B",
   uniswap_V3_positions: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
   _1inch_ICHI_LP: "0x1dcE26F543E591c27717e25294AEbbF59AD9f3a5",
   _1inch_staking: "0x0F85A912448279111694F4Ba4F85dC641c54b594",
@@ -46,7 +47,7 @@ const APIS = {
 const TREASURIES = {
   treasuries: ['oneBTC', 'oneFIL', 'one1INCH', 'oneFUSE', 'oneMPH', 'onePERL', 'oneUNI', 'oneDODO', 'oneFOX', 'oneWING', 'BOOTusd', 'oneOJA', 'oneICHI'],
   //treasuries: ['oneICHI'],
-  legacyTreasuries: ['oneBTC', 'oneFIL', 'oneMPH', 'onePERL', 'oneDODO', 'oneUNI', 'oneOJA']
+  legacyTreasuries: ['oneBTC', 'oneFIL', 'oneMPH', 'onePERL', 'oneDODO', 'oneUNI', 'oneOJA', 'oneWING']
 }
 
 const POOLS = {

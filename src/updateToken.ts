@@ -108,10 +108,37 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
   let circulating = totalTokens;
 
   if (tokenName == "ichi") {
-    const v1Balance = await tokenContract.balanceOf(ADDRESSES.farming_V1);
-    const v2Balance = await tokenContract.balanceOf(ADDRESSES.farming_V2);
-    const communityGnosisBalance = await tokenContract.balanceOf(ADDRESSES.ichi_community_gnosis);
-    circulating = (Number(totalSupply) - v1Balance - v2Balance - communityGnosisBalance) / 10 ** 9;
+    const ichiV2Contract = new ethers.Contract(TOKENS.ichi_v2.address, ERC20_ABI as ContractInterface, provider);
+    let ichiV2TotalSupply = Number(await ichiV2Contract.totalSupply()) / 10 ** 18;
+
+    const v1Balance = Number(await tokenContract.balanceOf(ADDRESSES.farming_V1)) / 10 ** 9;
+    const v2Balance = Number(await tokenContract.balanceOf(ADDRESSES.farming_V2)) / 10 ** 9;
+    const v3Balance = Number(await ichiV2Contract.balanceOf(ADDRESSES.farming_V3)) / 10 ** 18;
+    const communityGnosisBalance = Number(await tokenContract.balanceOf(ADDRESSES.ichi_community_gnosis)) / 10 ** 9;
+    const ichiV2GnosisBalance = Number(await ichiV2Contract.balanceOf(ADDRESSES.ichi_v2_gnosis)) / 10 ** 18;
+    const ichiAllyBalance = Number(await ichiV2Contract.balanceOf(ADDRESSES.ALLY)) / 10 ** 18;
+    const ichiInV2Balance = Number(await ichiV2Contract.balanceOf(TOKENS.ichi.address)) / 10 ** 9;
+    circulating = totalTokens + ichiV2TotalSupply 
+      - v1Balance - v2Balance - v3Balance
+      - ichiInV2Balance 
+      - communityGnosisBalance - ichiV2GnosisBalance - ichiAllyBalance;
+  }
+
+  if (tokenName == "ichi_v2") {
+    const ichiContract = new ethers.Contract(TOKENS.ichi.address, ERC20_ABI as ContractInterface, provider);
+    let ichiTotalSupply = Number(await ichiContract.totalSupply()) / 10 ** 9;
+ 
+    const v1Balance = Number(await ichiContract.balanceOf(ADDRESSES.farming_V1)) / 10 ** 9;
+    const v2Balance = Number(await ichiContract.balanceOf(ADDRESSES.farming_V2)) / 10 ** 9;
+    const v3Balance = Number(await tokenContract.balanceOf(ADDRESSES.farming_V3)) / 10 ** 18;
+    const communityGnosisBalance = Number(await ichiContract.balanceOf(ADDRESSES.ichi_community_gnosis)) / 10 ** 9;
+    const ichiV2GnosisBalance = Number(await tokenContract.balanceOf(ADDRESSES.ichi_v2_gnosis)) / 10 ** 18;
+    const ichiAllyBalance = Number(await tokenContract.balanceOf(ADDRESSES.ALLY)) / 10 ** 18;
+    const ichiInV2Balance = Number(await tokenContract.balanceOf(TOKENS.ichi.address)) / 10 ** 9;
+    circulating = totalTokens + ichiTotalSupply 
+      - v1Balance - v2Balance - v3Balance
+      - ichiInV2Balance 
+      - communityGnosisBalance - ichiV2GnosisBalance - ichiAllyBalance;
   }
 
   console.log(tokenName);
