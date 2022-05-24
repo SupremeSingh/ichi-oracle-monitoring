@@ -9,6 +9,8 @@ import { getPrice, VAULT_DECIMAL_TRACKER } from '../utils/vaults';
 import { BNtoNumberWithoutDecimals } from '../utils/numbers';
 import { GraphData } from './model';
 import { POOLS, TOKENS } from '../configMainnet';
+import { APIS }  from '../configMainnet'
+import { APIS as POLYGON_APIS } from '../polygon/configPolygon'
 
 const { ApolloClient, InMemoryCache, gql } = pkg;
 
@@ -43,12 +45,56 @@ query($first: Int, $skip:Int, $ts: Int){
 }
 `;
 
+const v1VaultDepositTokensQuery = `
+query($first: Int, $skip: Int, $vault: String, $ts: Int){
+  vaultDeposits(first: $first, skip: $skip, orderBy: createdAtTimestamp, where:{vault: $vault, createdAtTimestamp_gt: $ts}){
+    id
+    vault
+    amount0
+    amount1
+    createdAtTimestamp
+    sqrtPrice
+    totalAmount0
+    totalAmount1
+    totalAmount0BeforeEvent
+    totalAmount1BeforeEvent
+  }
+}`
+
+const v1VaultWithdrawTokensQuery = `
+query($first: Int, $skip: Int, $vault: String, $ts: Int){
+  vaultWithdraws(first: $first, skip: $skip, orderBy: createdAtTimestamp, where:{vault: $vault, createdAtTimestamp_gt: $ts}){
+    id
+    vault
+    amount0
+    amount1
+    createdAtTimestamp
+    sqrtPrice
+    totalAmount0
+    totalAmount1
+    totalAmount0BeforeEvent
+    totalAmount1BeforeEvent
+  }
+}`
+
 export async function vault_graph_query(
-    endpoint: string, 
     page: number, 
     isDeposit: boolean,
-    irrStartDate: Date) {
-    const tokensQuery = isDeposit ? rangedDepositTokensQuery : rangedWithdrawalTokens;
+    irrStartDate: Date,
+    vault_address: String,
+    network: "mainnet" | "polygon") {
+    let endpoint;
+
+    switch(network) {
+        case "mainnet":
+            endpoint = APIS.subgraph_v1_mainnet
+            break;
+        case "polygon":
+            endpoint = POLYGON_APIS.subgraph_v1_polygon
+    }
+
+    const tokensQuery = isDeposit ? v1VaultDepositTokensQuery : v1VaultWithdrawTokensQuery;
+
     const client = new ApolloClient({
         uri: endpoint,
         cache: new InMemoryCache(),
@@ -57,8 +103,9 @@ export async function vault_graph_query(
         return await client.query({
             query: gql(tokensQuery),
             variables: {
-                first: 10,
-                skip: (page-1)*10,
+                first: 1000,
+                skip: (page - 1) * 1000,
+                vault: vault_address,
                 ts: Math.ceil(irrStartDate.getTime() / 1000)
             },
         });
@@ -168,12 +215,15 @@ export class Vault {
     
         this.APR = ((withdrawals + currentVaultValue) / (-deposits) * 100 - 100) / vaultTimeYears;
         // console.log(`The APR of the ${this.vaultName} vault is: ${this.APR}`)
+        if (this.APR > -0.01 && this.APR < 0.01) {
+            this.APR = 0;
+        }
     }
   
     public async getIRR(irrStartDate: Date, irrStartTxAmount: number) {
         let xirrObjArray = this.distilledTransactions;
         let firstTxDate = new Date();
-    
+
         // Transactions earlier than irrStartDate are removed. 
         // First big transaction amount (made on irrStartDate) is replaced with irrStartTxAmount. 
         if (irrStartTxAmount !== 0) {
@@ -195,7 +245,7 @@ export class Vault {
 
         xirrObjArray.push({ amount: this.currentVaultValue, when: new Date(Date.now()) });
 
-        // console.log(xirrObjArray);
+        //console.log(xirrObjArray);
 
         let irr = 0;
         try {
@@ -205,6 +255,9 @@ export class Vault {
         }
         this.IRR = irr * 100;
         // console.log(`The IRR of the ${this.vaultName} vault is: `,irr)
+        if (this.IRR > -0.01 && this.IRR < 0.01) {
+            this.IRR = 0;
+        }
         return this.IRR
     }
 
@@ -236,10 +289,10 @@ function getVerboseTransactions(
     for (const packet of dataPackets) {
         if (packet.type == 'deposit') {
             isDeposit = true;
-            packetData = packet.data.data['deposits'];
+            packetData = packet.data.data['vaultDeposits'];
         } else {
             isDeposit = false;
-            packetData = packet.data.data['withdraws'];
+            packetData = packet.data.data['vaultWithdraws'];
         }
         for (const transaction of packetData) {
 

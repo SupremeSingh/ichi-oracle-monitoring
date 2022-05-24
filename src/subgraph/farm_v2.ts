@@ -54,7 +54,7 @@ async function farm_v2_graph_query(endpoint: string) {
 }
 
 export async function getSubgraphPoolRecords(): Promise<false | Map<number,GraphFarm>> {
-    let data: boolean | GraphData = await farm_v2_graph_query(APIS.subgraph_farming_v2);
+    let data: boolean | GraphData = await farm_v2_graph_query(APIS.subgraph_v1_mainnet);
     let farm_map = new Map();
     if(data && data.data && data.data.farms && data.data.farms.length > 0) {
         for (let farm of data.data.farms) {

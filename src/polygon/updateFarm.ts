@@ -214,13 +214,13 @@ export const updateFarm = async (tableName: string, poolId: number,
       let endOfDepositData = false;
       let depositPage = 1;
       while (!endOfDepositData) {
-        let rawData: boolean | GraphData = await vault_graph_query(vaultEndpoint, depositPage, true, irrStartDate)
-        if (rawData && rawData['data'] && rawData['data']['deposits']) {
-          if (rawData.data['deposits'].length > 0) {
+        let rawData: boolean | GraphData = await vault_graph_query(depositPage, true, irrStartDate, vaultAddress, "polygon")
+        if (rawData && rawData['data'] && rawData['data']['vaultDeposits']) {
+          if (rawData.data['vaultDeposits'].length > 0) {
             dataPackets.push({ data: rawData, type: 'deposit' });
             depositPage++;
           }
-          if (rawData.data['deposits'].length < 10) {
+          if (rawData.data['vaultDeposits'].length < 1000) {
             endOfDepositData = true;
           }
         } else {
@@ -231,13 +231,13 @@ export const updateFarm = async (tableName: string, poolId: number,
       let endOfWithdrawalData = false;
       let withdrawalPage = 1;
       while (!endOfWithdrawalData) {
-        let rawData: boolean | GraphData = await vault_graph_query(vaultEndpoint, withdrawalPage, false, irrStartDate);
-        if (rawData && rawData['data'] && rawData['data']['withdraws']) {
-          if (rawData['data']['withdraws'].length > 0) {
+        let rawData: boolean | GraphData = await vault_graph_query(withdrawalPage, false, irrStartDate, vaultAddress, "polygon");
+        if (rawData && rawData['data'] && rawData['data']['vaultWithdraws']) {
+          if (rawData['data']['vaultWithdraws'].length > 0) {
             dataPackets.push({ data: rawData, type: 'withdrawal' })
             withdrawalPage++;
           }
-          if (rawData['data']['withdraws'].length < 10) {
+          if (rawData['data']['vaultWithdraws'].length < 1000) {
             endOfWithdrawalData = true;
           }
         } else {

@@ -41,7 +41,8 @@ const APIS = {
   debunk_openapi: "https://openapi.debank.com/v1/user/protocol",
   _1inchPoolAPI: "https://governance.1inch.exchange/v1.1/farming/pools",
   subgraph_farming_v2: "https://api.thegraph.com/subgraphs/name/ichi-org/farmv2",
-  subgraph_risk_harbor: "https://api.thegraph.com/subgraphs/name/risk-harbor/v2-mainnet"
+  subgraph_risk_harbor: "https://api.thegraph.com/subgraphs/name/risk-harbor/v2-mainnet",
+  subgraph_v1_mainnet: "https://api.thegraph.com/subgraphs/name/ichi-org/v1"
 };
 
 const TREASURIES = {
@@ -57,7 +58,7 @@ const POOLS = {
   activeVaults: [1016, 1019, 1020, 1021, 1022, 1024, 1025, 1026, 1028, 
     20001, 20002, 20003, 20004, 20005, 20006, 20007,
     10006, 10008],
-  //activeVaults: [20005, 20006, 20007],
+  //activeVaults: [],
   underlyingVaults: [1023],
   upcomingPools : [],
   migratingPools : [],
@@ -78,8 +79,7 @@ const POOLS = {
     10001, 10004, 10005, 10006, 10007, 10008, 10009,
     20002, 20004
   ],
-  activeAPR: [1016, 1019, 1020, 1021, 1022, 10006, 10008]
-  //activeAPR: []
+  activeAPR: [20005, 20006, 20007, 1024, 1025, 1026, 1028]
 }
 
 const TOKENS = {

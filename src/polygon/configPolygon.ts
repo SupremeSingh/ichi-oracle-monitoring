@@ -7,6 +7,10 @@ const ADDRESSES = {
   uniswap_V3_positions: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
 };
 
+const APIS = {
+  subgraph_v1_polygon: "https://api.thegraph.com/subgraphs/name/ichi-org/polygon-v1"
+};
+
 const POOLS = {
   activePools : [],
   depositPools : [],
@@ -15,7 +19,7 @@ const POOLS = {
   migratingPools : [],
   retiredPools : [],
   unretiredPools : [4000,4001],
-  activeAPR: []
+  activeAPR: [4000,4001]
 }
 
 const TOKENS = {
@@ -88,4 +92,4 @@ LABELS[4001] = {
   irrStartTxAmount: 0,
 }
 
-export { ADDRESSES, POOLS, LABELS, TOKENS, CHAIN_ID, BLOCKS_PER_DAY };
+export { ADDRESSES, POOLS, LABELS, APIS, TOKENS, CHAIN_ID, BLOCKS_PER_DAY };
