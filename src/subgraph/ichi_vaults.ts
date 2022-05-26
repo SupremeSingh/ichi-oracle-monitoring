@@ -218,6 +218,9 @@ export class Vault {
         if (this.APR > -0.01 && this.APR < 0.01) {
             this.APR = 0;
         }
+        if (this.APR < 0) {
+            this.APR = 0;
+        }
     }
   
     public async getIRR(irrStartDate: Date, irrStartTxAmount: number) {
@@ -256,6 +259,9 @@ export class Vault {
         this.IRR = irr * 100;
         // console.log(`The IRR of the ${this.vaultName} vault is: `,irr)
         if (this.IRR > -0.01 && this.IRR < 0.01) {
+            this.IRR = 0;
+        }
+        if (this.IRR < 0) {
             this.IRR = 0;
         }
         return this.IRR
