@@ -249,9 +249,9 @@ export class Vault {
 
         let irr = 0;
         try {
-          irr = xirr(xirrObjArray, { guess: -0.9975 });
+          irr = xirr(xirrObjArray, { guess: -0.999999999999975 });
         } catch (error) {
-          console.error(`Error calculating IRR for ${this.vaultName}: ${JSON.stringify(error)}`)
+          console.error(`Error calculating IRR for ${this.vaultName}: ${error}`)
         }
         this.IRR = irr * 100;
         // console.log(`The IRR of the ${this.vaultName} vault is: `,irr)
