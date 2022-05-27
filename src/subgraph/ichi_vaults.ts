@@ -252,7 +252,7 @@ export class Vault {
 
         let irr = 0;
         try {
-          irr = xirr(xirrObjArray, { guess: -0.999999999999975 });
+          irr = xirr(xirrObjArray, { guess: -0.9975 });
         } catch (error) {
           console.error(`Error calculating IRR for ${this.vaultName}: ${error}`)
         }

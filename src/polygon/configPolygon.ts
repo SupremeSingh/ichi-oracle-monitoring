@@ -14,12 +14,12 @@ const APIS = {
 const POOLS = {
   activePools : [],
   depositPools : [],
-  activeVaults: [4000,4001],
+  activeVaults: [4000,4001,4002],
   upcomingPools : [],
   migratingPools : [],
   retiredPools : [],
-  unretiredPools : [4000,4001],
-  activeAPR: [4000,4001]
+  unretiredPools : [4000,4001,4002],
+  activeAPR: [4000,4001,4002]
 }
 
 const TOKENS = {
@@ -88,6 +88,19 @@ LABELS[4001] = {
   isHodl: true,
   vaultName: 'polygon_wbtc',
   vaultAddress: '0x4aEF5144131dB95c110af41c8Ec09f46295a7C4B',
+  irrStartDate: new Date(0),
+  irrStartTxAmount: 0,
+}
+LABELS[4002] = {
+  name: 'USDC Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  tradeUrl: 'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174&chain=polygon',
+  subgraphEndpoint: '',
+  isInverted: true,
+  isHodl: false,
+  vaultName: 'polygon_usdc',
+  vaultAddress: '0x711901e4b9136119Fb047ABe8c43D49339f161c3',
   irrStartDate: new Date(0),
   irrStartTxAmount: 0,
 }
