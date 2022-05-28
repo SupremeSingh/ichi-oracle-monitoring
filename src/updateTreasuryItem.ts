@@ -1,7 +1,7 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { ethers, utils } from 'ethers';
-import { ADDRESSES, TOKENS, CHAIN_ID, APIS, DEBUNK_PROTOCOLS, TREASURIES } from './configMainnet';
+import { ADDRESSES, TOKENS, CHAIN_ID, APIS, DEBUNK_PROTOCOLS, TREASURIES, LABELS } from './configMainnet';
 import { BSC_ADDRESSES, BSC_APIS } from './configBSC';
 import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
@@ -431,6 +431,20 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   // console.log(strategy_balance_ichi);
   // console.log(strategy_balance_wbtc);
 
+  // special case of oneBTC investing into vaults
+  if (itemName == 'oneBTC') {
+    const wBTCVault = new ethers.Contract(LABELS[1028].vaultAddress, VAULT_ABI, provider);
+
+    let strategy_balance_vault_lp = Number(await wBTCVault.balanceOf(strategyAddress));
+
+    const vault_total_lp = Number(await wBTCVault.totalSupply());
+    const vault_total_amounts = await wBTCVault.getTotalAmounts();
+    if (strategy_balance_vault_lp > 0) {
+      const vault_ratio = strategy_balance_vault_lp / vault_total_lp;
+      strategy_balance_ichi += Number(vault_total_amounts.total0) * vault_ratio;
+      strategy_balance_wbtc += Number(vault_total_amounts.total1) * vault_ratio;
+    }
+  }
 
   if (itemName == 'oneDODO') {
     // BCS positions for oneDODO
