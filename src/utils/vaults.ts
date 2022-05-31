@@ -17,6 +17,7 @@ export const VAULT_DECIMAL_TRACKER={
     "polygon_wbtc": {baseToken:8, scarceToken:18},
     "onebtc": {baseToken:18, scarceToken:9},
     "polygon_onebtc": {baseToken:18, scarceToken:18},
+    "polygon_usdc": {baseToken:6, scarceToken:18},
     "wnxm": {baseToken:18, scarceToken:9},
     "wnxm_v2": {baseToken:18, scarceToken:18},
     "qrdo": {baseToken:6, scarceToken:8},
