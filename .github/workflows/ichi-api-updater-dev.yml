@@ -1,4 +1,4 @@
-name: Ichi Token Updater (Dev)
+name: Ichi API Updater (Dev)
 
 on:
   pull_request:
@@ -11,11 +11,15 @@ jobs:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     name: build-deploy-dev
     runs-on: ubuntu-latest
+    environment:
+      name: dev
+      url: https://console.aws.amazon.com/lambda/home?region=us-east-1#/functions/managed-ichi-api-updater-dev?tab=code
     env:
-        function-name: ichi-api-updater
-        function-arn: arn:aws:lambda:us-east-1:161115208194:function:ichi-api-updater-dev
-        env-name: dev
-        dist-directory: ./dist
+      function-name: managed-ichi-api-updater
+      env-name: dev
+      zip-name: ichi-api-updater-dev
+      s3-bucket-name: lambda-ichi-api-updater
+      dist-directory: ./dist
 
     steps:
 
@@ -26,47 +30,81 @@ jobs:
         with:
           node-version: 14.x
 
-      - name: npm install and build
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          # npm cache files are stored in `~/.npm` on Linux/macOS
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - name: npm install
         run: |
           npm i
-          npm run build
 
-      - name: lint
+      - name: Lint
         run: |
           npm run lint
 
+      # - name: Test
+      #   run: |
+      #     npm run test
+
+      - name: Build
+        run: |
+          npm run build
+
+      - name: Make artifact directory
+        run: mkdir -p ./artifacts
+
       - name: zip results
         run: |
-          zip -r ../${{env.function-name}}.zip *
+          zip -r ../artifacts/${{env.zip-name}}.zip *
         working-directory: ${{env.dist-directory}}
 
-      - name: list dir contents
+      - name: list artifacts contents
         run: |
-          ls -lah
+          ls -lah ./artifacts
 
-      - name: Deploy function ${{env.function-name}}-${{env.env-name}}
-        uses: appleboy/lambda-action@v0.1.3
-        with:
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_region: us-east-1
-          function_name: ${{env.function-name}}-${{env.env-name}}
-          zip_file: ${{env.function-name}}.zip
+      # Update the old function
+      # This works to update the funciton directly, but now we want to update
+      # the s3 bucket going forward, and this way we don't globber the old lambda
+      # - name: Deploy function ${{env.function-name}}-${{env.env-name}}
+      #   uses: appleboy/lambda-action@master
+      #   with:
+      #     aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws_region: us-east-1
+      #     function_name: ichi-api-updater-dev
+      #     zip_file: ./artifacts/${{env.zip-name}}.zip
 
       - name: Publish Artifacts
         uses: actions/upload-artifact@v1.0.0
         with:
-          name: ${{env.function-name}}
-          path: ${{env.function-name}}.zip
+          name: ${{env.zip-name}}
+          path: ./artifacts/${{env.zip-name}}.zip
 
-      # Locally this works fine, but in Github actions it flat out doesn't want to work, always returns a length of 0
-      # - name: Test lambda
-      #   run: |
-      #     aws lambda invoke --function-name "${{env.function-arn}}" lambda.out --log-type Tail --query 'LogResult' | sed -e 's/"//g' | base64 -d | grep "Successfully updated table" | wc -c | tr -d ' ' > function.out
-      #     response_length=$(cat function.out)
-      #     echo $response_length
-      #     echo "lambda-response=$response_length" >> $GITHUB_ENV
+      - name: Push zip to S3
+        uses: jakejarvis/s3-sync-action@v0.3.1
+        env:
+          SOURCE_DIR: ./artifacts
+          AWS_REGION: 'us-east-1'
+          AWS_S3_BUCKET: ${{env.s3-bucket-name}}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      # - name: Echo
-      #   run: |
-      #     echo "${{ env.lambda-response }}"
+      # Update the new function
+      # - name: Deploy function ${{env.function-name}}-${{env.env-name}}
+      #   uses: appleboy/lambda-action@master
+      #   with:
+      #     aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws_region: us-east-1
+      #     function_name: ${{env.function-name}}-${{env.env-name}}
+      #     s3_bucket: ${{env.s3-bucket-name}}
+      #     s3_key: ${{env.zip-name}}.zip
