@@ -1,11 +1,12 @@
 import { updateToken } from './updateToken';
 import { TOKENS } from './configMainnet';
+import { APIGatewayProxyResult } from 'aws-lambda';
 
 export const updateTokens = async (tableName: string) => {
-  for (const token in TOKENS) {  
-    let res = await updateToken(tableName, token);
-
-    console.log("update " + token + " results:");
-    console.log(res);
+  const promises: Promise<APIGatewayProxyResult>[] = [];
+  for (const token in TOKENS) {
+    promises.push(updateToken(tableName, token));
   }
+  const results = await Promise.all(promises);
+  console.log(`Finished updating tokens`, results);
 };

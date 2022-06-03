@@ -1,31 +1,20 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { ethers, utils } from 'ethers';
+import { ethers } from 'ethers';
 import { ADDRESSES, TOKENS, CHAIN_ID } from './configPolygon';
 import FARMING_V2_ABI from '../abis/FARMING_V2_ABI.json';
 import ERC20_ABI from '../abis/ERC20_ABI.json';
 import VAULT_ABI from '../abis/ICHI_VAULT_ABI.json';
 import ONETOKEN_ABI from '../abis/ONETOKEN_ABI.json';
 import UNISWAP_V3_POSITIONS from '../abis/UNISWAP_V3_POSITIONS_ABI.json';
+import { ChainId, getProvider } from '../providers';
+import { dbClient } from '../configMainnet';
 
-const infuraId = process.env.INFURA_ID;
-if (!infuraId) {
-  console.error('Please export INFURA_ID=*** which is used for https://polygon-mainnet.infura.io/v3/***');
-  process.exit();
-}
-
-AWS.config.update({
-  region: process.env.AWS_REGION || 'us-east-1',
-});
-const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
-
-const RPC_HOST = `https://polygon-mainnet.infura.io/v3/${infuraId}`;
-
-const getABI = async function(abiType) {
+const getABI = async function () {
   return ONETOKEN_ABI;
 };
 
-const getOneTokenAttributes = async function(tokenName) {
+const getOneTokenAttributes = async function (tokenName: string) {
   let template = {
     address: TOKENS[tokenName]['address'],
     decimals: TOKENS[tokenName]['decimals'],
@@ -48,10 +37,10 @@ const getOneTokenAttributes = async function(tokenName) {
       scarceTokenDecimals: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['scarceTokenDecimals'] : 18,
       scarceToken: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['scarceToken'] : ''
     }
-  }
+  };
 
   if (tokenName == 'pol_onebtc') {
-    template.stimulus_decimals = 8
+    template.stimulus_decimals = 8;
   }
 
   template.stimulus_address = TOKENS[template.stimulus_name]['address'];
@@ -61,21 +50,16 @@ const getOneTokenAttributes = async function(tokenName) {
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
-export const updateTreasuryItem = async (tableName: string, itemName: string, tokenPrices: {[name: string]: number}, 
-      tokenNames: {[name: string]: string}): Promise<APIGatewayProxyResult> => {
-  const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
+export const updateTreasuryItem = async (
+  tableName: string,
+  itemName: string,
+  tokenPrices: { [name: string]: number }
+): Promise<APIGatewayProxyResult> => {
+  const provider = await getProvider(ChainId.polygon);
 
-  const farming_V2 = new ethers.Contract(
-    ADDRESSES.farming_V2,
-    FARMING_V2_ABI,
-    provider
-  );
+  const farming_V2 = new ethers.Contract(ADDRESSES.farming_V2, FARMING_V2_ABI, provider);
 
-  const uniswap_V3_positions = new ethers.Contract(
-    ADDRESSES.uniswap_V3_positions,
-    UNISWAP_V3_POSITIONS,
-    provider
-  );
+  const uniswap_V3_positions = new ethers.Contract(ADDRESSES.uniswap_V3_positions, UNISWAP_V3_POSITIONS, provider);
 
   const attr = await getOneTokenAttributes(itemName.toLowerCase());
   const oneTokenAddress = attr.address;
@@ -90,7 +74,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   const decimals = attr.decimals;
   const tradeUrl = attr.tradeUrl;
   const isV2 = attr.isV2;
-  const oneTokenABI = await getABI(attr.abi_type);
+  const oneTokenABI = await getABI();
 
   const ICHI = new ethers.Contract(TOKENS['pol_ichi']['address'], ERC20_ABI, provider);
   const stimulusToken = new ethers.Contract(stimulusTokenAddress, ERC20_ABI, provider);
@@ -111,8 +95,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let strategy_balance_ichi = 0;
   let uni_v3_positions = 0;
   let aux_strategy_balance_usdc = 0;
-  
-  if (strategyAddress !== "") {
+
+  if (strategyAddress !== '') {
     strategy_balance_usdc += Number(await USDC.balanceOf(strategyAddress));
 
     strategy_balance_stimulus += Number(await stimulusToken.balanceOf(strategyAddress));
@@ -199,10 +183,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       // aux strategy may own USDC
       aux_strategy_balance_usdc = Number(await USDC.balanceOf(auxStrategyAddress));
       strategy_balance_usdc += aux_strategy_balance_usdc;
-
     }
   }
-
 
   let oneToken_stimulus_price = tokenPrices[stimulusTokenName.toLowerCase()];
 
@@ -218,20 +200,21 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let oneToken_burned_tokens = 0;
 
   if (collateralPositionsUSDValue > 0) {
-    collateralPositionsAPY = (collateralPositionsUSDValue * collateralPositionsAPY) / 
-      (collateralPositionsUSDValue);
+    collateralPositionsAPY = (collateralPositionsUSDValue * collateralPositionsAPY) / collateralPositionsUSDValue;
   }
 
   const oneToken_SUPPLY = await oneToken.totalSupply();
 
   let assets = [];
-  assets.push({ M: { 
-    name: { S: "USDC" }, 
-    balance: { N: (Number(oneToken_burned_tokens) / 10 ** decimals).toString() } 
-  }});
+  assets.push({
+    M: {
+      name: { S: 'USDC' },
+      balance: { N: (Number(oneToken_burned_tokens) / 10 ** decimals).toString() }
+    }
+  });
   if (Number(oneToken_burned_tokens) > 0) {
     let unredeemedCollateralPosition = {
-      name: { S: "unredeemed "+itemName },
+      name: { S: 'unredeemed ' + itemName },
       assets: { L: assets }
     };
     //oneTokenCollateralPostions.push({ M: unredeemedCollateralPosition });
@@ -245,9 +228,10 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let ichi_price = tokenPrices['pol_ichi'];
   let usdc_price = tokenPrices['pol_usdc'];
 
-  stimulusPositionsUSDValue = stimulusPositionsUSDValue +
+  stimulusPositionsUSDValue =
+    stimulusPositionsUSDValue +
     Number(oneToken_stimulus_price) * (strategy_balance_stimulus / 10 ** stimulusDecimals) +
-    usdc_price * (strategy_balance_usdc_treasury / 10 ** 6) +    
+    usdc_price * (strategy_balance_usdc_treasury / 10 ** 6) +
     ichi_price * (strategy_balance_ichi / 10 ** 18);
 
   let oneToken_stimulus_usd =
@@ -255,201 +239,215 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     ichi_price * (oneToken_ichi / 10 ** 18) +
     stimulusPositionsUSDValue;
 
-  let oneToken_collateral_USDC_only =
-    usdc_price * (oneToken_USDC / 10 ** 6);
+  let oneToken_collateral_USDC_only = usdc_price * (oneToken_USDC / 10 ** 6);
 
-  collateralPositionsUSDValue = collateralPositionsUSDValue +
-    strategy_balance_onetoken / 10 ** 18 +
-    usdc_price * (strategy_balance_usdc / 10 ** 6);
+  collateralPositionsUSDValue =
+    collateralPositionsUSDValue + strategy_balance_onetoken / 10 ** 18 + usdc_price * (strategy_balance_usdc / 10 ** 6);
 
-  let oneToken_collateral_only = oneToken_collateral_USDC_only +
-    collateralPositionsUSDValue;
+  let oneToken_collateral_only = oneToken_collateral_USDC_only + collateralPositionsUSDValue;
 
-  let oneToken_treasury_backed = 
-    ((Number(oneToken_SUPPLY) / 10 ** decimals) * (1 - oneToken_withdrawFee)) - 
+  let oneToken_treasury_backed =
+    (Number(oneToken_SUPPLY) / 10 ** decimals) * (1 - oneToken_withdrawFee) -
     oneToken_collateral_only +
     Number(oneToken_burned_tokens) / 10 ** decimals;
 
-    let oneToken_collateral_list = [];
-    oneToken_collateral_list.push({ M: { 
-      name: { S: "USDC" }, 
-      balance: { N: oneToken_collateral_USDC_only.toString() } 
-    }});
-
-    if (strategy_balance_usdc > 0 
-      || strategy_balance_onetoken > 0) {
-          const assets = [];
-      if (strategy_balance_usdc > 0) {
-        assets.push({ M: { 
-          name: { S: "USDC" }, 
-          balance: { N: Number(strategy_balance_usdc / 10 ** 6).toString() } 
-        }});
-      }
-      if (strategy_balance_onetoken > 0) {
-        assets.push({ M: { 
-          name: { S: TOKENS[itemName.toLowerCase()]['displayName'] }, 
-          balance: { N: (Number(strategy_balance_onetoken / 10 ** 18)).toString() } 
-        }});
-      }
-      oneTokenCollateralPostions.push({ M: { 
-        name: { S: 'Vault' }, 
-        assets: { L: assets },
-      }});
+  let oneToken_collateral_list = [];
+  oneToken_collateral_list.push({
+    M: {
+      name: { S: 'USDC' },
+      balance: { N: oneToken_collateral_USDC_only.toString() }
     }
-  
-    let oneToken_stimulus_list = [];
-    oneToken_stimulus_list.push({ M: { 
-      name: { S: stimulusDisplayName }, 
-      balance: { N: Number(oneToken_stimulus / 10 ** stimulusDecimals).toString() } 
-    }});
-    if (oneToken_ichi > 0) {
-      oneToken_stimulus_list.push({ M: { 
-        name: { S: "ICHI" }, 
-        balance: { N: Number(oneToken_ichi / 10 ** 18).toString() } 
-      }});
-    }
-  
-    if (strategy_balance_stimulus > 0 || 
-        strategy_balance_ichi > 0 || 
-        strategy_balance_usdc_treasury > 0) {
-      const assets = [];
-      if (strategy_balance_stimulus > 0) {
-        assets.push({ M: { 
-          name: { S: stimulusDisplayName }, 
-          balance: { N: Number(strategy_balance_stimulus / 10 ** stimulusDecimals).toString() } 
-        }});
-      }
-      if (strategy_balance_ichi > 0) {
-        assets.push({ M: { 
-          name: { S: "ICHI" }, 
-          balance: { N: Number(strategy_balance_ichi / 10 ** 18).toString() } 
-        }});
-      }
-      if (strategy_balance_usdc_treasury > 0) {
-        assets.push({ M: { 
-          name: { S: "USDC" }, 
-          balance: { N: Number(strategy_balance_usdc_treasury / 10 ** 6).toString() } 
-        }});
-      }
-      oneTokenStimulusPostions.push({ M: { 
-        name: { S: 'Vault' }, 
-        assets: { L: assets },
-      }});
-    }
+  });
 
-    const oneTokenVersion = isV2 ? 2 : 1;
-
-    let reserveRatio = 0;
-    if (oneToken_treasury_backed > 0) {
-      reserveRatio = oneToken_stimulus_usd / oneToken_treasury_backed;
-    } else {
-      reserveRatio = 100; // 10000%
-    }
-
-    let totalUSDC = (oneToken_USDC + strategy_balance_usdc) / 10 ** 6;
-
-    let res = {
-      name: itemName.toLowerCase(),
-      displayName: displayName,
-      base: baseName,
-      usdc: totalUSDC,
-      circulation: Number(oneToken_SUPPLY) / 10 ** decimals,
-      collateral: oneToken_collateral_list,
-      collateralPositions: oneTokenCollateralPostions,
-      collateralPositionsUSD: collateralPositionsUSDValue,
-      collateralUSD: oneToken_collateral_only,
-      stimulus: oneToken_stimulus_list,
-      stimulusUSD: oneToken_stimulus_usd,
-      stimulusPositions: oneTokenStimulusPostions,
-      stimulusPositionsUSD: stimulusPositionsUSDValue,
-      withdrawFee: oneToken_withdrawFee,
-      mintFee: oneToken_mintFee,
-      mintingRatio: oneToken_mintingRatio,
-      treasuryBacked: oneToken_treasury_backed,
-      oneTokenVersion: oneTokenVersion,
-      reserveRatio: reserveRatio
-    }
-
-    console.log(res);
-
-    const isLegacy = false;
-
-    // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
-    console.log(`Attempting to update table: ${tableName}, token: ${itemName}`);
-    const params: AWS.DynamoDB.UpdateItemInput = {
-      TableName: tableName,
-      Key: {
-        name: {
-          S: itemName.toLowerCase()
+  if (strategy_balance_usdc > 0 || strategy_balance_onetoken > 0) {
+    const assets = [];
+    if (strategy_balance_usdc > 0) {
+      assets.push({
+        M: {
+          name: { S: 'USDC' },
+          balance: { N: Number(strategy_balance_usdc / 10 ** 6).toString() }
         }
-      },
-      UpdateExpression: 'set ' + 
-        'baseName = :baseName, ' + 
-        'address = :address, ' + 
-        'strategy = :strategy, ' + 
-        'displayName = :displayName, ' + 
-        'usdc = :usdc, ' + 
-        'circulation = :circulation, ' + 
-        'collateral = :collateral, ' +
-        'collateralPositions = :collateralPositions, ' +
-        'collateralPositionsAPY = :collateralPositionsAPY, ' +
-        'collateralPositionsUSD = :collateralPositionsUSD, ' +
-        'collateralUSD = :collateralUSD, ' +
-        'stimulus = :stimulus, ' +
-        'stimulusUSD = :stimulusUSD, ' +
-        'stimulusPositions = :stimulusPositions, ' +
-        'stimulusPositionsAPY = :stimulusPositionsAPY, ' +
-        'stimulusPositionsUSD = :stimulusPositionsUSD, ' +
-        'withdrawFee = :withdrawFee, ' + 
-        'mintFee = :mintFee, ' + 
-        'mintingRatio = :mintingRatio, ' + 
-        'treasuryBacked = :treasuryBacked, ' + 
-        'chainId = :chainId, ' +
-        'tradeUrl = :tradeUrl, ' +
-        'isLegacy = :isLegacy, ' + 
-        'oneTokenVersion = :oneTokenVersion, ' +
-        'reserveRatio = :reserveRatio',
-      ExpressionAttributeValues: {
-        ':baseName': { S: baseName },
-        ':address': { S: oneTokenAddress },
-        ':strategy': { S: strategyAddress },
-        ':displayName': { S: displayName },
-        ':usdc': { N: Number(totalUSDC).toString() },
-        ':circulation': { N: (Number(oneToken_SUPPLY) / 10 ** decimals).toString() },
-        ':collateral' : { L: oneToken_collateral_list },
-        ':collateralPositions' : { L: oneTokenCollateralPostions },
-        ':collateralPositionsAPY' : { N: collateralPositionsAPY.toString() },
-        ':collateralPositionsUSD' : { N: Number(collateralPositionsUSDValue).toString() },
-        ':collateralUSD': { N: Number(oneToken_collateral_only).toString() },
-        ':stimulus' : { L: oneToken_stimulus_list },
-        ':stimulusUSD': { N: Number(oneToken_stimulus_usd).toString() },
-        ':stimulusPositions' : { L: oneTokenStimulusPostions },
-        ':stimulusPositionsAPY' : { N: stimulusPositionsAPY.toString() },
-        ':stimulusPositionsUSD' : { N: Number(stimulusPositionsUSDValue).toString() },
-        ':withdrawFee': { N: oneToken_withdrawFee.toString() },
-        ':mintFee': { N: oneToken_mintFee.toString() },
-        ':mintingRatio': { N: oneToken_mintingRatio.toString() },
-        ':treasuryBacked': { N: Number(oneToken_treasury_backed).toString() },
-        ':chainId': { N: Number(CHAIN_ID).toString() },
-        ':tradeUrl': { S: tradeUrl },
-        ':isLegacy': { BOOL: isLegacy },
-        ':oneTokenVersion': { N: Number(oneTokenVersion).toString() },
-        ':reserveRatio': { N: Number(reserveRatio).toString() }
-      },
-      ReturnValues: 'UPDATED_NEW'
-    };
-
-    try {
-      // https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_UpdateItem.html#API_UpdateItem_Examples
-      const result = await dbClient.updateItem(params).promise();
-      console.log(`Successfully updated table: ${tableName}`);
-      console.log(JSON.stringify(result));
-      return {
-        statusCode: 200,
-        body: JSON.stringify(result)
-      };
-    } catch (error) {
-      throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
+      });
     }
+    if (strategy_balance_onetoken > 0) {
+      assets.push({
+        M: {
+          name: { S: TOKENS[itemName.toLowerCase()]['displayName'] },
+          balance: { N: Number(strategy_balance_onetoken / 10 ** 18).toString() }
+        }
+      });
+    }
+    oneTokenCollateralPostions.push({
+      M: {
+        name: { S: 'Vault' },
+        assets: { L: assets }
+      }
+    });
+  }
 
+  let oneToken_stimulus_list = [];
+  oneToken_stimulus_list.push({
+    M: {
+      name: { S: stimulusDisplayName },
+      balance: { N: Number(oneToken_stimulus / 10 ** stimulusDecimals).toString() }
+    }
+  });
+  if (oneToken_ichi > 0) {
+    oneToken_stimulus_list.push({
+      M: {
+        name: { S: 'ICHI' },
+        balance: { N: Number(oneToken_ichi / 10 ** 18).toString() }
+      }
+    });
+  }
+
+  if (strategy_balance_stimulus > 0 || strategy_balance_ichi > 0 || strategy_balance_usdc_treasury > 0) {
+    const assets = [];
+    if (strategy_balance_stimulus > 0) {
+      assets.push({
+        M: {
+          name: { S: stimulusDisplayName },
+          balance: { N: Number(strategy_balance_stimulus / 10 ** stimulusDecimals).toString() }
+        }
+      });
+    }
+    if (strategy_balance_ichi > 0) {
+      assets.push({
+        M: {
+          name: { S: 'ICHI' },
+          balance: { N: Number(strategy_balance_ichi / 10 ** 18).toString() }
+        }
+      });
+    }
+    if (strategy_balance_usdc_treasury > 0) {
+      assets.push({
+        M: {
+          name: { S: 'USDC' },
+          balance: { N: Number(strategy_balance_usdc_treasury / 10 ** 6).toString() }
+        }
+      });
+    }
+    oneTokenStimulusPostions.push({
+      M: {
+        name: { S: 'Vault' },
+        assets: { L: assets }
+      }
+    });
+  }
+
+  const oneTokenVersion = isV2 ? 2 : 1;
+
+  let reserveRatio = 0;
+  if (oneToken_treasury_backed > 0) {
+    reserveRatio = oneToken_stimulus_usd / oneToken_treasury_backed;
+  } else {
+    reserveRatio = 100; // 10000%
+  }
+
+  let totalUSDC = (oneToken_USDC + strategy_balance_usdc) / 10 ** 6;
+
+  let res = {
+    name: itemName.toLowerCase(),
+    displayName: displayName,
+    base: baseName,
+    usdc: totalUSDC,
+    circulation: Number(oneToken_SUPPLY) / 10 ** decimals,
+    collateral: oneToken_collateral_list,
+    collateralPositions: oneTokenCollateralPostions,
+    collateralPositionsUSD: collateralPositionsUSDValue,
+    collateralUSD: oneToken_collateral_only,
+    stimulus: oneToken_stimulus_list,
+    stimulusUSD: oneToken_stimulus_usd,
+    stimulusPositions: oneTokenStimulusPostions,
+    stimulusPositionsUSD: stimulusPositionsUSDValue,
+    withdrawFee: oneToken_withdrawFee,
+    mintFee: oneToken_mintFee,
+    mintingRatio: oneToken_mintingRatio,
+    treasuryBacked: oneToken_treasury_backed,
+    oneTokenVersion: oneTokenVersion,
+    reserveRatio: reserveRatio
+  };
+
+  console.log(res);
+
+  const isLegacy = false;
+
+  // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
+  console.log(`Attempting to update table: ${tableName}, token: ${itemName}`);
+  const params: AWS.DynamoDB.UpdateItemInput = {
+    TableName: tableName,
+    Key: {
+      name: {
+        S: itemName.toLowerCase()
+      }
+    },
+    UpdateExpression:
+      'set ' +
+      'baseName = :baseName, ' +
+      'address = :address, ' +
+      'strategy = :strategy, ' +
+      'displayName = :displayName, ' +
+      'usdc = :usdc, ' +
+      'circulation = :circulation, ' +
+      'collateral = :collateral, ' +
+      'collateralPositions = :collateralPositions, ' +
+      'collateralPositionsAPY = :collateralPositionsAPY, ' +
+      'collateralPositionsUSD = :collateralPositionsUSD, ' +
+      'collateralUSD = :collateralUSD, ' +
+      'stimulus = :stimulus, ' +
+      'stimulusUSD = :stimulusUSD, ' +
+      'stimulusPositions = :stimulusPositions, ' +
+      'stimulusPositionsAPY = :stimulusPositionsAPY, ' +
+      'stimulusPositionsUSD = :stimulusPositionsUSD, ' +
+      'withdrawFee = :withdrawFee, ' +
+      'mintFee = :mintFee, ' +
+      'mintingRatio = :mintingRatio, ' +
+      'treasuryBacked = :treasuryBacked, ' +
+      'chainId = :chainId, ' +
+      'tradeUrl = :tradeUrl, ' +
+      'isLegacy = :isLegacy, ' +
+      'oneTokenVersion = :oneTokenVersion, ' +
+      'reserveRatio = :reserveRatio',
+    ExpressionAttributeValues: {
+      ':baseName': { S: baseName },
+      ':address': { S: oneTokenAddress },
+      ':strategy': { S: strategyAddress },
+      ':displayName': { S: displayName },
+      ':usdc': { N: Number(totalUSDC).toString() },
+      ':circulation': { N: (Number(oneToken_SUPPLY) / 10 ** decimals).toString() },
+      ':collateral': { L: oneToken_collateral_list },
+      ':collateralPositions': { L: oneTokenCollateralPostions },
+      ':collateralPositionsAPY': { N: collateralPositionsAPY.toString() },
+      ':collateralPositionsUSD': { N: Number(collateralPositionsUSDValue).toString() },
+      ':collateralUSD': { N: Number(oneToken_collateral_only).toString() },
+      ':stimulus': { L: oneToken_stimulus_list },
+      ':stimulusUSD': { N: Number(oneToken_stimulus_usd).toString() },
+      ':stimulusPositions': { L: oneTokenStimulusPostions },
+      ':stimulusPositionsAPY': { N: stimulusPositionsAPY.toString() },
+      ':stimulusPositionsUSD': { N: Number(stimulusPositionsUSDValue).toString() },
+      ':withdrawFee': { N: oneToken_withdrawFee.toString() },
+      ':mintFee': { N: oneToken_mintFee.toString() },
+      ':mintingRatio': { N: oneToken_mintingRatio.toString() },
+      ':treasuryBacked': { N: Number(oneToken_treasury_backed).toString() },
+      ':chainId': { N: Number(CHAIN_ID).toString() },
+      ':tradeUrl': { S: tradeUrl },
+      ':isLegacy': { BOOL: isLegacy },
+      ':oneTokenVersion': { N: Number(oneTokenVersion).toString() },
+      ':reserveRatio': { N: Number(reserveRatio).toString() }
+    },
+    ReturnValues: 'UPDATED_NEW'
+  };
+
+  try {
+    // https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_UpdateItem.html#API_UpdateItem_Examples
+    const result = await dbClient.updateItem(params).promise();
+    console.log(`Successfully updated table: ${tableName}`);
+    console.log(JSON.stringify(result));
+    return {
+      statusCode: 200,
+      body: JSON.stringify(result)
+    };
+  } catch (error) {
+    throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
+  }
 };

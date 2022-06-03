@@ -92,15 +92,15 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       # Update the new function
-      # - name: Deploy function ${{env.function-name}}-${{env.env-name}}
-      #   uses: appleboy/lambda-action@master
-      #   with:
-      #     aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #     aws_region: us-east-1
-      #     function_name: ${{env.function-name}}-${{env.env-name}}
-      #     s3_bucket: ${{env.s3-bucket-name}}
-      #     s3_key: ${{env.zip-name}}.zip
+      - name: Deploy function ${{env.function-name}}-${{env.env-name}}
+        uses: appleboy/lambda-action@master
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: us-east-1
+          function_name: ${{env.function-name}}-${{env.env-name}}
+          s3_bucket: ${{env.s3-bucket-name}}
+          s3_key: ${{env.zip-name}}.zip
   prod:
     name: build-deploy-prod
     runs-on: ubuntu-latest
@@ -175,12 +175,12 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       # Update the new function
-      # - name: Deploy function ${{env.function-name}}-${{env.env-name}}
-      #   uses: appleboy/lambda-action@master
-      #   with:
-      #     aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #     aws_region: us-east-1
-      #     function_name: ${{env.function-name}}-${{env.env-name}}
-      #     s3_bucket: ${{env.s3-bucket-name}}
-      #     s3_key: ${{env.zip-name}}.zip
+      - name: Deploy function ${{env.function-name}}-${{env.env-name}}
+        uses: appleboy/lambda-action@master
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: us-east-1
+          function_name: ${{env.function-name}}-${{env.env-name}}
+          s3_bucket: ${{env.s3-bucket-name}}
+          s3_key: ${{env.zip-name}}.zip

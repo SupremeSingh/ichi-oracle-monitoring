@@ -1,9 +1,9 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { ethers, utils } from 'ethers';
-import { ADDRESSES, TOKENS, CHAIN_ID, APIS, DEBUNK_PROTOCOLS, TREASURIES, LABELS } from './configMainnet';
+import { ethers } from 'ethers';
+import { ADDRESSES, TOKENS, CHAIN_ID, APIS, DEBUNK_PROTOCOLS, TREASURIES, LABELS, dbClient } from './configMainnet';
 import { BSC_ADDRESSES, BSC_APIS } from './configBSC';
-import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
+// import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import GENERIC_FARMING_V2_ABI from './abis/GENERIC_FARMING_V2_ABI.json';
 import ERC20_ABI from './abis/ERC20_ABI.json';
@@ -15,38 +15,23 @@ import ONETOKEN_ABI from './abis/ONETOKEN_ABI.json';
 import ONELINK_ABI from './abis/oneLINK_ABI.json';
 import ONEETH_ABI from './abis/oneETH_ABI.json';
 import UNISWAP_V3_POSITIONS from './abis/UNISWAP_V3_POSITIONS_ABI.json';
-import UNI_V3_POOL from './abis/UNI_V3_POOL_ABI.json';
+// import UNI_V3_POOL from './abis/UNI_V3_POOL_ABI.json';
 import { getPoolRecord } from './getPoolRecord';
 import axios from 'axios';
 import { GraphData } from './subgraph/model';
 import { risk_harbor_graph_query, RiskHarborPosition } from './subgraph/risk_harbor';
-
-const infuraId = process.env.INFURA_ID;
-if (!infuraId) {
-  console.error('Please export INFURA_ID=*** which is used for https://mainnet.infura.io/v3/***');
-  process.exit();
-}
-
-AWS.config.update({
-  region: process.env.AWS_REGION || 'us-east-1',
-});
-const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
-
-const RPC_HOST = `https://mainnet.infura.io/v3/${infuraId}`;
+import { ChainId, getProvider } from './providers';
 
 const BSC_RPC_HOST = BSC_APIS.rpcHost;
 
-const getABI = async function(abiType) {
-  if (abiType == 'ONELINK')
-    return ONELINK_ABI
-  if (abiType == 'ONEETH')
-    return ONEETH_ABI
-  if (abiType == 'ONETOKEN')
-    return ONETOKEN_ABI
+const getABI = async function (abiType: string) {
+  if (abiType == 'ONELINK') return ONELINK_ABI;
+  if (abiType == 'ONEETH') return ONEETH_ABI;
+  if (abiType == 'ONETOKEN') return ONETOKEN_ABI;
   return ONETOKEN_ABI;
 };
 
-const getOneTokenAttributes = async function(tokenName) {
+const getOneTokenAttributes = async function (tokenName: string) {
   let template = {
     address: TOKENS[tokenName]['address'],
     decimals: TOKENS[tokenName]['decimals'],
@@ -69,25 +54,22 @@ const getOneTokenAttributes = async function(tokenName) {
       scarceTokenDecimals: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['scarceTokenDecimals'] : 18,
       scarceToken: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['scarceToken'] : ''
     }
-  }
+  };
 
   if (tokenName == 'onebtc') {
-    template.stimulus_decimals = 8
+    template.stimulus_decimals = 8;
   }
   if (tokenName == 'onevbtc') {
-    template.abi_type = 'ONEETH',
-    template.base_name = 'vbtc'
+    (template.abi_type = 'ONEETH'), (template.base_name = 'vbtc');
   }
   if (tokenName == 'onewing') {
-    template.stimulus_decimals = 9
+    template.stimulus_decimals = 9;
   }
   if (tokenName == 'oneeth') {
-    template.abi_type = 'ONEETH',
-    template.base_name = 'eth'
+    (template.abi_type = 'ONEETH'), (template.base_name = 'eth');
   }
   if (tokenName == 'onelink') {
-    template.abi_type = 'ONELINK',
-    template.base_name = 'link'
+    (template.abi_type = 'ONELINK'), (template.base_name = 'link');
   }
 
   template.stimulus_address = TOKENS[template.stimulus_name]['address'];
@@ -95,35 +77,23 @@ const getOneTokenAttributes = async function(tokenName) {
   return template;
 };
 
-const callDebunkOpenAPI = async function(address, protocol) {
-  let url = APIS.debunk_openapi + "?id=" + address + "&protocol_id=" + protocol;
+const callDebunkOpenAPI = async function (address: string, protocol: string) {
+  let url = APIS.debunk_openapi + '?id=' + address + '&protocol_id=' + protocol;
   //console.log(url);
   return await axios.get(url);
 };
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
-export const updateTreasuryItem = async (tableName: string, itemName: string, tokenPrices: {[name: string]: number}, 
-      tokenNames: {[name: string]: string}): Promise<APIGatewayProxyResult> => {
-  const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
-
-  const farming_V1 = new ethers.Contract(
-    ADDRESSES.farming_V1,
-    FARMING_V1_ABI,
-    provider
-  );
-
-  const farming_V2 = new ethers.Contract(
-    ADDRESSES.farming_V2,
-    FARMING_V2_ABI,
-    provider
-  );
-
-  const uniswap_V3_positions = new ethers.Contract(
-    ADDRESSES.uniswap_V3_positions,
-    UNISWAP_V3_POSITIONS,
-    provider
-  );
+export const updateTreasuryItem = async (
+  tableName: string,
+  itemName: string,
+  tokenPrices: { [name: string]: number },
+  tokenNames: { [name: string]: string }
+): Promise<APIGatewayProxyResult> => {
+  const provider = await getProvider(ChainId.mainnet);
+  const farming_V2 = new ethers.Contract(ADDRESSES.farming_V2, FARMING_V2_ABI, provider);
+  const uniswap_V3_positions = new ethers.Contract(ADDRESSES.uniswap_V3_positions, UNISWAP_V3_POSITIONS, provider);
 
   const attr = await getOneTokenAttributes(itemName.toLowerCase());
   const oneTokenAddress = attr.address;
@@ -178,7 +148,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let aux_strategy_balance_riskharbor_usdc = 0;
   let aux_strategy_balance_usdc = 0;
 
-  if (strategyAddress !== "") {
+  if (strategyAddress !== '') {
     strategy_balance_usdc += Number(await USDC.balanceOf(strategyAddress));
 
     strategy_balance_stimulus += Number(await stimulusToken.balanceOf(strategyAddress));
@@ -196,12 +166,8 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       const userInfo = await farming_V2.userInfo(attr.ichiVault.farm, strategyAddress);
       strategy_balance_vault_lp += Number(userInfo.amount);
     }
-    if (attr.ichiVault.externalFarm !== '' && attr.ichiVault.externalFarm.length > 0 ) {
-      const generic_farming_V2 = new ethers.Contract(
-        attr.ichiVault.externalFarm,
-        GENERIC_FARMING_V2_ABI,
-        provider
-      );
+    if (attr.ichiVault.externalFarm !== '' && attr.ichiVault.externalFarm.length > 0) {
+      const generic_farming_V2 = new ethers.Contract(attr.ichiVault.externalFarm, GENERIC_FARMING_V2_ABI, provider);
       const userInfo = await generic_farming_V2.userInfo(attr.ichiVault.farm, strategyAddress);
       strategy_balance_vault_lp += Number(userInfo.amount);
     }
@@ -238,7 +204,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     }
   }
 
-  if (allySwapAddress !== "") {
+  if (allySwapAddress !== '') {
     strategy_balance_onetoken += Number(await oneToken.balanceOf(allySwapAddress));
     strategy_balance_ally += Number(await ally.balanceOf(allySwapAddress));
   }
@@ -259,7 +225,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
       let rh_total_premiums = 0;
       let rawData: boolean | GraphData = await risk_harbor_graph_query(APIS.subgraph_risk_harbor, auxStrategyAddress);
       if (rawData && rawData['data']) {
-        let rhData = rawData['data']['underwriterPositions'] as RiskHarborPosition[]
+        let rhData = rawData['data']['underwriterPositions'] as RiskHarborPosition[];
         for (let i = 0; i < rhData.length; i++) {
           let rh_position = rhData[i];
           rh_strategy_shares += Number(rh_position.shares);
@@ -272,12 +238,11 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
           aux_strategy_balance_riskharbor_usdc = rh_strategy_shares * rh_price;
         }
       } else {
-        console.log('no risk harbor data')
+        console.log('no risk harbor data');
       }
-  
     }
   }
-  
+
   //console.log(aux_strategy_balance_usdc);
   //console.log(aux_strategy_balance_riskharbor_usdc);
 
@@ -330,17 +295,20 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     strategy_balance_usdc += Number(17880) * 10**6;
   }
 ` */
-  
+
   if (uni_v3_positions > 0) {
     let all_v3_positions = await callDebunkOpenAPI(strategyAddress, DEBUNK_PROTOCOLS.UNI_V3);
-    if (all_v3_positions.data && all_v3_positions.data.portfolio_item_list && 
-      all_v3_positions.data.portfolio_item_list.length > 0) {
-      for (let i = 0; i < all_v3_positions.data.portfolio_item_list.length; i++ ) {
+    if (
+      all_v3_positions.data &&
+      all_v3_positions.data.portfolio_item_list &&
+      all_v3_positions.data.portfolio_item_list.length > 0
+    ) {
+      for (let i = 0; i < all_v3_positions.data.portfolio_item_list.length; i++) {
         let detail = all_v3_positions.data.portfolio_item_list[i].detail;
         if (detail.supply_token_list && detail.supply_token_list.length > 0) {
           let usdc_in_position = 0;
           let isCollateral = false;
-          for (let k = 0; k < detail.supply_token_list.length; k++ ) {
+          for (let k = 0; k < detail.supply_token_list.length; k++) {
             let supply_token = detail.supply_token_list[k];
             if (supply_token.id.toLowerCase() === oneTokenAddress.toLowerCase()) {
               isCollateral = true;
@@ -351,7 +319,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
               } else {
                 strategy_balance_onetoken += Number(supply_token.amount) * 10 ** 18;
               }
-            } else if (supply_token.id.toLowerCase() === TOKENS['ichi']['address'].toLowerCase()){
+            } else if (supply_token.id.toLowerCase() === TOKENS['ichi']['address'].toLowerCase()) {
               strategy_balance_ichi += Number(supply_token.amount) * 10 ** TOKENS.ichi.decimals;
             } else if (supply_token.id.toLowerCase() === TOKENS['usdc']['address'].toLowerCase()) {
               usdc_in_position += Number(supply_token.amount) * 10 ** TOKENS.usdc.decimals;
@@ -359,7 +327,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
               strategy_balance_one_btc += Number(supply_token.amount) * 10 ** TOKENS.onebtc.decimals;
             } else if (supply_token.id.toLowerCase() === stimulusTokenAddress.toLowerCase()) {
               strategy_balance_stimulus += Number(supply_token.amount) * 10 ** stimulusDecimals;
-            } else if (supply_token.id.toLowerCase() === TOKENS['wbtc']['address'].toLowerCase()){
+            } else if (supply_token.id.toLowerCase() === TOKENS['wbtc']['address'].toLowerCase()) {
               strategy_balance_wbtc += Number(supply_token.amount) * 10 ** TOKENS.wbtc.decimals;
             }
           }
@@ -371,7 +339,6 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
         }
       }
     }
-
   }
 
   strategy_balance_usdc += strategy_balance_usdc_treasury;
@@ -386,12 +353,16 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   if (itemName == 'oneUNI') {
     const OJA = new ethers.Contract(TOKENS['oja']['address'], ERC20_ABI, provider);
     const oneOJA = new ethers.Contract(TOKENS['oneoja']['address'], oneTokenABI, provider);
-    const ojaFarm = new ethers.Contract(TOKENS['oneoja']['ichiVault']['externalFarm'], GENERIC_FARMING_V2_ABI, provider);
+    const ojaFarm = new ethers.Contract(
+      TOKENS['oneoja']['ichiVault']['externalFarm'],
+      GENERIC_FARMING_V2_ABI,
+      provider
+    );
     const ojaVault = new ethers.Contract(TOKENS['oneoja']['ichiVault']['address'], VAULT_ABI, provider);
 
     strategy_balance_one_oja += Number(await oneOJA.balanceOf(strategyAddress));
     strategy_balance_oja += Number(await OJA.balanceOf(strategyAddress));
-    
+
     const userInfo = await ojaFarm.userInfo(TOKENS['oneoja']['ichiVault']['farm'], strategyAddress);
     let strategy_balance_vault_lp_in_farm = Number(userInfo.amount);
     let strategy_balance_vault_lp = Number(await ojaVault.balanceOf(strategyAddress));
@@ -416,7 +387,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
 
     strategy_balance_one_btc += Number(await oneBTC.balanceOf(strategyAddress));
     strategy_balance_wbtc += Number(await wBTC.balanceOf(strategyAddress));
-    
+
     let strategy_balance_vault_lp = Number(await oneBTCVault.balanceOf(strategyAddress));
 
     const vault_total_lp = Number(await oneBTCVault.totalSupply());
@@ -467,14 +438,13 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     if (dlp_total_supply > 0) {
       const pct_dlp_in_gnosis = dlp_in_gnosis / dlp_total_supply;
       usdc_in_gnosis += pct_dlp_in_gnosis * usdc_in_dlp;
-      oneDodo_in_gnosis += pct_dlp_in_gnosis * oneDODO_in_dlp;    
+      oneDodo_in_gnosis += pct_dlp_in_gnosis * oneDODO_in_dlp;
     }
 
     usdc_in_gnosis = usdc_in_gnosis / 10 ** 12; // from 18 dec to 6 dec USDC
 
     strategy_balance_usdc += usdc_in_gnosis;
     strategy_balance_onetoken += oneDodo_in_gnosis;
-
   }
 
   let oneToken_stimulus_price = tokenPrices[stimulusTokenName.toLowerCase()];
@@ -491,8 +461,7 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   let oneToken_burned_tokens = 0;
 
   if (collateralPositionsUSDValue > 0) {
-    collateralPositionsAPY = (collateralPositionsUSDValue * collateralPositionsAPY) / 
-      (collateralPositionsUSDValue);
+    collateralPositionsAPY = (collateralPositionsUSDValue * collateralPositionsAPY) / collateralPositionsUSDValue;
   }
 
   const oneToken_SUPPLY = await oneToken.totalSupply();
@@ -544,10 +513,10 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     if (strategyLPs > 0) {
       const lp_stimulus = Number(await stimulusToken.balanceOf(ADDRESSES._1inch_ICHI_LP));
       const lp_ichi = Number(await ICHI.balanceOf(ADDRESSES._1inch_ICHI_LP));
-      const lpTotal  = Number(await lpContract.totalSupply());
+      const lpTotal = Number(await lpContract.totalSupply());
       const ratio = strategyLPs / lpTotal;
-      const strategy_lp_ichi = lp_ichi * ratio;  
-      const strategy_lp_stimulus = lp_stimulus * ratio;  
+      const strategy_lp_ichi = lp_ichi * ratio;
+      const strategy_lp_stimulus = lp_stimulus * ratio;
       strategy_balance_ichi += strategy_lp_ichi;
       strategy_balance_stimulus += strategy_lp_stimulus;
     }
@@ -562,15 +531,12 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     // temp fix for oneLINK (removing price of burned stablecoins for a specific address from the total)
     oneToken_burned_tokens = await oneToken.getBurnedStablecoin('0x549C0421c69Be943A2A60e76B19b4A801682cBD3');
     //let oneLINK_USDC_num = Number(oneLINK_USDC) / 10 ** 6 - Number(oneLINK_burned_tokens) / 10 ** 9;
-  
-    let oneLINK_67_33_Farming_Position = await farming_V2.userInfo(
-      8,
-      TOKENS['onelink']['address']
-    );
+
+    let oneLINK_67_33_Farming_Position = await farming_V2.userInfo(8, TOKENS['onelink']['address']);
     let oneLINK_67_33_LP = oneLINK_67_33_Farming_Position.amount;
 
     let oneLINK_67_33_PoolRecord = await getPoolRecord(1008, tokenPrices, null, false);
-    
+
     let totalOneLINKLP = oneLINK_67_33_PoolRecord['totalPoolLP'];
     let percentOwnership = Number(oneLINK_67_33_LP) / Number(totalOneLINKLP);
 
@@ -583,25 +549,29 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     let yAPY = oneLINK_67_33_PoolRecord['yearlyAPY'];
 
     let assets = [];
-    assets.push({ M: { 
-      name: { S: tokenNames[token0.toLowerCase()] }, 
-      balance: { N: (Number(reserve0) * percentOwnership).toString() } 
-    }});
-    assets.push({ M: { 
-      name: { S: tokenNames[token1.toLowerCase()] }, 
-      balance: { N: (Number(reserve1) * percentOwnership).toString() } 
-    }});
+    assets.push({
+      M: {
+        name: { S: tokenNames[token0.toLowerCase()] },
+        balance: { N: (Number(reserve0) * percentOwnership).toString() }
+      }
+    });
+    assets.push({
+      M: {
+        name: { S: tokenNames[token1.toLowerCase()] },
+        balance: { N: (Number(reserve1) * percentOwnership).toString() }
+      }
+    });
     let oneLINK_67_33_Position = {
-      name:  { S: "67/33 ICHI-LINK Farm" },
-      LP:  { N: (Number(oneLINK_67_33_LP) / 10 ** 18).toString() },
+      name: { S: '67/33 ICHI-LINK Farm' },
+      LP: { N: (Number(oneLINK_67_33_LP) / 10 ** 18).toString() },
       percentOwnership: { N: (percentOwnership * 100).toString() },
       usdValue: { N: usdValue.toString() },
       assets: { L: assets }
     };
 
     if (stimulusPositionsUSDValue + usdValue > 0) {
-      stimulusPositionsAPY = (stimulusPositionsUSDValue * stimulusPositionsAPY + usdValue * yAPY) / 
-        (stimulusPositionsUSDValue + usdValue);
+      stimulusPositionsAPY =
+        (stimulusPositionsUSDValue * stimulusPositionsAPY + usdValue * yAPY) / (stimulusPositionsUSDValue + usdValue);
     }
     stimulusPositionsUSDValue = stimulusPositionsUSDValue + usdValue;
     oneTokenStimulusPostions.push({ M: oneLINK_67_33_Position });
@@ -610,17 +580,19 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
   // =================================================================================
 
   let assets = [];
-  assets.push({ M: { 
-    name: { S: "USDC" }, 
-    balance: { N: (Number(oneToken_burned_tokens) / 10 ** decimals).toString() } 
-  }});
-  if (Number(oneToken_burned_tokens) > 0) {
-    let unredeemedCollateralPosition = {
-      name: { S: "unredeemed "+itemName },
-      assets: { L: assets }
-    };
-    //oneTokenCollateralPostions.push({ M: unredeemedCollateralPosition });
-  }
+  assets.push({
+    M: {
+      name: { S: 'USDC' },
+      balance: { N: (Number(oneToken_burned_tokens) / 10 ** decimals).toString() }
+    }
+  });
+  // if (Number(oneToken_burned_tokens) > 0) {
+  //   let unredeemedCollateralPosition = {
+  //     name: { S: "unredeemed "+itemName },
+  //     assets: { L: assets }
+  //   };
+  //   //oneTokenCollateralPostions.push({ M: unredeemedCollateralPosition });
+  // }
 
   let oneToken_withdrawFee = 0;
   if (isV2) {
@@ -660,17 +632,18 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     oneToken_price = onebtc_price;
   }*/
 
-  stimulusPositionsUSDValue = stimulusPositionsUSDValue +
+  stimulusPositionsUSDValue =
+    stimulusPositionsUSDValue +
     Number(oneToken_stimulus_price) * (strategy_balance_stimulus / 10 ** stimulusDecimals) +
-    //usdc_price * (strategy_balance_usdc_treasury / 10 ** TOKENS.usdc.decimals) +    
+    //usdc_price * (strategy_balance_usdc_treasury / 10 ** TOKENS.usdc.decimals) +
     wbtc_price * (strategy_balance_wbtc / 10 ** TOKENS.wbtc.decimals) +
     ichi_price * (strategy_balance_ichi / 10 ** TOKENS.ichi.decimals);
 
-  if (itemName == "one1INCH") {
+  if (itemName == 'one1INCH') {
     stimulusPositionsUSDValue += Number(oneToken_stimulus_price) * (strategy_balance_st1inch / 10 ** stimulusDecimals);
   }
 
-  if (itemName == "oneUNI") {
+  if (itemName == 'oneUNI') {
     stimulusPositionsUSDValue += oja_price * (strategy_balance_oja / 10 ** 18);
   }
 
@@ -686,270 +659,311 @@ export const updateTreasuryItem = async (tableName: string, itemName: string, to
     ichi_price * (oneToken_ichi / 10 ** TOKENS.ichi.decimals) +
     stimulusPositionsUSDValue;
 
-  let oneToken_collateral_USDC_only =
-    usdc_price * (oneToken_USDC / 10 ** TOKENS.usdc.decimals);
+  let oneToken_collateral_USDC_only = usdc_price * (oneToken_USDC / 10 ** TOKENS.usdc.decimals);
 
-  collateralPositionsUSDValue = collateralPositionsUSDValue +
-    strategy_balance_onetoken * oneToken_price / 10 ** 18 +
-    strategy_balance_one_uni * oneuni_price / 10 ** 18 +
-    strategy_balance_one_btc * onebtc_price / 10 ** 18 +
+  collateralPositionsUSDValue =
+    collateralPositionsUSDValue +
+    (strategy_balance_onetoken * oneToken_price) / 10 ** 18 +
+    (strategy_balance_one_uni * oneuni_price) / 10 ** 18 +
+    (strategy_balance_one_btc * onebtc_price) / 10 ** 18 +
     strategy_balance_one_oja / 10 ** 18 +
     usdc_price * (strategy_balance_usdc / 10 ** TOKENS.usdc.decimals) +
     usdc_price * (aux_strategy_balance_riskharbor_usdc / 10 ** TOKENS.usdc.decimals) +
     usdt_price * (strategy_balance_bmi_usdt / 10 ** 18);
 
-  let oneToken_collateral_only = oneToken_collateral_USDC_only +
-    collateralPositionsUSDValue;
+  let oneToken_collateral_only = oneToken_collateral_USDC_only + collateralPositionsUSDValue;
 
-  let oneToken_treasury_backed = 
-    ((Number(oneToken_SUPPLY) / 10 ** decimals) * (1 - oneToken_withdrawFee)) - 
+  let oneToken_treasury_backed =
+    (Number(oneToken_SUPPLY) / 10 ** decimals) * (1 - oneToken_withdrawFee) -
     oneToken_collateral_only +
     Number(oneToken_burned_tokens) / 10 ** decimals;
 
-    let oneToken_collateral_list = [];
-    oneToken_collateral_list.push({ M: { 
-      name: { S: "USDC" }, 
-      balance: { N: oneToken_collateral_USDC_only.toString() } 
-    }});
+  let oneToken_collateral_list = [];
+  oneToken_collateral_list.push({
+    M: {
+      name: { S: 'USDC' },
+      balance: { N: oneToken_collateral_USDC_only.toString() }
+    }
+  });
 
-    if (strategy_balance_usdc > 0 
-      || strategy_balance_onetoken > 0
-      || strategy_balance_one_uni > 0
-      || strategy_balance_one_btc > 0
-      || strategy_balance_one_oja > 0
-      || aux_strategy_balance_riskharbor_usdc > 0
-      || strategy_balance_bmi_usdt > 0) {
-          const assets = [];
-      if (strategy_balance_usdc > 0) {
-        assets.push({ M: { 
-          name: { S: "USDC" }, 
-          // balance: { N: Number(strategy_balance_usdc / 10 ** 6).toString() } 
-          balance: { N: Number((strategy_balance_usdc + aux_strategy_balance_riskharbor_usdc) / 10 ** TOKENS.usdc.decimals).toString() } 
-        }});
-      }
-      if (strategy_balance_onetoken > 0) {
-        assets.push({ M: { 
-          name: { S: TOKENS[itemName.toLowerCase()]['displayName'] }, 
-          balance: { N: (Number(strategy_balance_onetoken / 10 ** 18)).toString() } 
-        }});
-      }
-      if (strategy_balance_one_uni > 0) {
-        assets.push({ M: { 
-          name: { S: "oneUNI" }, 
-          balance: { N: (Number(strategy_balance_one_uni / 10 ** 18)).toString() } 
-        }});
-      }
-      if (strategy_balance_one_btc > 0) {
-        assets.push({ M: { 
-          name: { S: "oneBTC" }, 
-          balance: { N: (Number(strategy_balance_one_btc / 10 ** 18)).toString() } 
-        }});
-      }
-      if (strategy_balance_one_oja > 0) {
-        assets.push({ M: { 
-          name: { S: "oneOJA" }, 
-          balance: { N: (Number(strategy_balance_one_oja / 10 ** 18)).toString() } 
-        }});
-      }
-      if (strategy_balance_bmi_usdt > 0) {
-        assets.push({ M: { 
-          name: { S: "bmiICHICover" }, 
-          balance: { N: Number(strategy_balance_bmi_usdt / 10 ** 18).toString() } 
-        }});
-      }
-      /* if (aux_strategy_balance_riskharbor_usdc > 0) {
+  if (
+    strategy_balance_usdc > 0 ||
+    strategy_balance_onetoken > 0 ||
+    strategy_balance_one_uni > 0 ||
+    strategy_balance_one_btc > 0 ||
+    strategy_balance_one_oja > 0 ||
+    aux_strategy_balance_riskharbor_usdc > 0 ||
+    strategy_balance_bmi_usdt > 0
+  ) {
+    const assets = [];
+    if (strategy_balance_usdc > 0) {
+      assets.push({
+        M: {
+          name: { S: 'USDC' },
+          // balance: { N: Number(strategy_balance_usdc / 10 ** 6).toString() }
+          balance: {
+            N: Number(
+              (strategy_balance_usdc + aux_strategy_balance_riskharbor_usdc) / 10 ** TOKENS.usdc.decimals
+            ).toString()
+          }
+        }
+      });
+    }
+    if (strategy_balance_onetoken > 0) {
+      assets.push({
+        M: {
+          name: { S: TOKENS[itemName.toLowerCase()]['displayName'] },
+          balance: { N: Number(strategy_balance_onetoken / 10 ** 18).toString() }
+        }
+      });
+    }
+    if (strategy_balance_one_uni > 0) {
+      assets.push({
+        M: {
+          name: { S: 'oneUNI' },
+          balance: { N: Number(strategy_balance_one_uni / 10 ** 18).toString() }
+        }
+      });
+    }
+    if (strategy_balance_one_btc > 0) {
+      assets.push({
+        M: {
+          name: { S: 'oneBTC' },
+          balance: { N: Number(strategy_balance_one_btc / 10 ** 18).toString() }
+        }
+      });
+    }
+    if (strategy_balance_one_oja > 0) {
+      assets.push({
+        M: {
+          name: { S: 'oneOJA' },
+          balance: { N: Number(strategy_balance_one_oja / 10 ** 18).toString() }
+        }
+      });
+    }
+    if (strategy_balance_bmi_usdt > 0) {
+      assets.push({
+        M: {
+          name: { S: 'bmiICHICover' },
+          balance: { N: Number(strategy_balance_bmi_usdt / 10 ** 18).toString() }
+        }
+      });
+    }
+    /* if (aux_strategy_balance_riskharbor_usdc > 0) {
         assets.push({ M: { 
           name: { S: "Risk Harbor" }, 
           balance: { N: Number(aux_strategy_balance_riskharbor_usdc / 10 ** TOKENS.usdc.decimals).toString() } 
         }});
       } */
-      oneTokenCollateralPostions.push({ M: { 
-        name: { S: 'Vault' }, 
-        assets: { L: assets },
-      }});
+    oneTokenCollateralPostions.push({
+      M: {
+        name: { S: 'Vault' },
+        assets: { L: assets }
+      }
+    });
+  }
+
+  let oneToken_stimulus_list = [];
+  oneToken_stimulus_list.push({
+    M: {
+      name: { S: stimulusDisplayName },
+      balance: { N: Number(oneToken_stimulus / 10 ** stimulusDecimals).toString() }
     }
-  
-    let oneToken_stimulus_list = [];
-    oneToken_stimulus_list.push({ M: { 
-      name: { S: stimulusDisplayName }, 
-      balance: { N: Number(oneToken_stimulus / 10 ** stimulusDecimals).toString() } 
-    }});
-    if (oneToken_ichi > 0) {
-      oneToken_stimulus_list.push({ M: { 
-        name: { S: "ICHI" }, 
-        balance: { N: Number(oneToken_ichi / 10 ** TOKENS.ichi.decimals).toString() } 
-      }});
+  });
+  if (oneToken_ichi > 0) {
+    oneToken_stimulus_list.push({
+      M: {
+        name: { S: 'ICHI' },
+        balance: { N: Number(oneToken_ichi / 10 ** TOKENS.ichi.decimals).toString() }
+      }
+    });
+  }
+
+  if (
+    strategy_balance_stimulus > 0 ||
+    strategy_balance_ichi > 0 ||
+    strategy_balance_wbtc > 0 ||
+    strategy_balance_ally > 0 ||
+    strategy_balance_oja > 0 ||
+    //strategy_balance_usdc_treasury > 0 ||
+    strategy_balance_st1inch > 0
+  ) {
+    const assets = [];
+    if (strategy_balance_stimulus > 0) {
+      assets.push({
+        M: {
+          name: { S: stimulusDisplayName },
+          balance: { N: Number(strategy_balance_stimulus / 10 ** stimulusDecimals).toString() }
+        }
+      });
     }
-  
-    if (strategy_balance_stimulus > 0 || 
-        strategy_balance_ichi > 0 || 
-        strategy_balance_wbtc > 0 || 
-        strategy_balance_ally > 0 || 
-        strategy_balance_oja > 0 || 
-        //strategy_balance_usdc_treasury > 0 ||
-        strategy_balance_st1inch > 0) {
-      const assets = [];
-      if (strategy_balance_stimulus > 0) {
-        assets.push({ M: { 
-          name: { S: stimulusDisplayName }, 
-          balance: { N: Number(strategy_balance_stimulus / 10 ** stimulusDecimals).toString() } 
-        }});
-      }
-      if (strategy_balance_ichi > 0) {
-        assets.push({ M: { 
-          name: { S: "ICHI" }, 
-          balance: { N: Number(strategy_balance_ichi / 10 ** TOKENS.ichi.decimals).toString() } 
-        }});
-      }
-      if (strategy_balance_ally > 0) {
-        assets.push({ M: { 
-          name: { S: "ALLY" }, 
-          balance: { N: Number(strategy_balance_ally / 10 ** 18).toString() } 
-        }});
-      }
-      if (strategy_balance_wbtc > 0) {
-        assets.push({ M: { 
-          name: { S: "wBTC" }, 
-          balance: { N: Number(strategy_balance_wbtc / 10 ** TOKENS.wbtc.decimals).toString() } 
-        }});
-      }
-      /*if (strategy_balance_usdc_treasury > 0) {
+    if (strategy_balance_ichi > 0) {
+      assets.push({
+        M: {
+          name: { S: 'ICHI' },
+          balance: { N: Number(strategy_balance_ichi / 10 ** TOKENS.ichi.decimals).toString() }
+        }
+      });
+    }
+    if (strategy_balance_ally > 0) {
+      assets.push({
+        M: {
+          name: { S: 'ALLY' },
+          balance: { N: Number(strategy_balance_ally / 10 ** 18).toString() }
+        }
+      });
+    }
+    if (strategy_balance_wbtc > 0) {
+      assets.push({
+        M: {
+          name: { S: 'wBTC' },
+          balance: { N: Number(strategy_balance_wbtc / 10 ** TOKENS.wbtc.decimals).toString() }
+        }
+      });
+    }
+    /*if (strategy_balance_usdc_treasury > 0) {
         assets.push({ M: { 
           name: { S: "USDC" }, 
           balance: { N: Number(strategy_balance_usdc_treasury / 10 ** TOKENS.usdc.decimals).toString() } 
         }});
       }*/
-      if (strategy_balance_oja > 0) {
-        assets.push({ M: { 
-          name: { S: "OJA" }, 
-          balance: { N: Number(strategy_balance_oja / 10 ** 18).toString() } 
-        }});
-      }
-      if (itemName === "one1INCH" && Number(strategy_balance_st1inch) > 0) {
-        assets.push({ M: { 
-          name: { S: "st1INCH" }, 
-          balance: { N: Number(strategy_balance_st1inch / 10 ** stimulusDecimals).toString() } 
-        }});
-      }
-      oneTokenStimulusPostions.push({ M: { 
-        name: { S: 'Vault' }, 
-        assets: { L: assets },
-      }});
-    }
-
-    const oneTokenVersion = isV2 ? 2 : 1;
-
-    let reserveRatio = 0;
-    if (oneToken_treasury_backed > 0) {
-      reserveRatio = oneToken_stimulus_usd / oneToken_treasury_backed;
-    } else {
-      reserveRatio = 100; // 10000%
-    }
-
-    let totalUSDC = (oneToken_USDC + strategy_balance_usdc + 
-      aux_strategy_balance_riskharbor_usdc) / 10 ** TOKENS.usdc.decimals +
-      strategy_balance_bmi_usdt / 10 ** 18;
-
-    let res = {
-      name: itemName.toLowerCase(),
-      displayName: itemName,
-      base: baseName,
-      usdc: totalUSDC,
-      circulation: Number(oneToken_SUPPLY) / 10 ** decimals,
-      collateral: oneToken_collateral_list,
-      collateralPositions: oneTokenCollateralPostions,
-      collateralPositionsUSD: collateralPositionsUSDValue,
-      collateralUSD: oneToken_collateral_only,
-      stimulus: oneToken_stimulus_list,
-      stimulusUSD: oneToken_stimulus_usd,
-      stimulusPositions: oneTokenStimulusPostions,
-      stimulusPositionsUSD: stimulusPositionsUSDValue,
-      withdrawFee: oneToken_withdrawFee,
-      mintFee: oneToken_mintFee,
-      mintingRatio: oneToken_mintingRatio,
-      treasuryBacked: oneToken_treasury_backed,
-      oneTokenVersion: oneTokenVersion,
-      reserveRatio: reserveRatio
-    }
-
-    console.log(res);
-
-    // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
-    console.log(`Attempting to update table: ${tableName}, token: ${itemName}`);
-    const params: AWS.DynamoDB.UpdateItemInput = {
-      TableName: tableName,
-      Key: {
-        name: {
-          S: itemName.toLowerCase()
+    if (strategy_balance_oja > 0) {
+      assets.push({
+        M: {
+          name: { S: 'OJA' },
+          balance: { N: Number(strategy_balance_oja / 10 ** 18).toString() }
         }
-      },
-      UpdateExpression: 'set ' + 
-        'baseName = :baseName, ' + 
-        'address = :address, ' + 
-        'strategy = :strategy, ' + 
-        'displayName = :displayName, ' + 
-        'usdc = :usdc, ' + 
-        'circulation = :circulation, ' + 
-        'collateral = :collateral, ' +
-        'collateralPositions = :collateralPositions, ' +
-        'collateralPositionsAPY = :collateralPositionsAPY, ' +
-        'collateralPositionsUSD = :collateralPositionsUSD, ' +
-        'collateralUSD = :collateralUSD, ' +
-        'stimulus = :stimulus, ' +
-        'stimulusUSD = :stimulusUSD, ' +
-        'stimulusPositions = :stimulusPositions, ' +
-        'stimulusPositionsAPY = :stimulusPositionsAPY, ' +
-        'stimulusPositionsUSD = :stimulusPositionsUSD, ' +
-        'withdrawFee = :withdrawFee, ' + 
-        'mintFee = :mintFee, ' + 
-        'mintingRatio = :mintingRatio, ' + 
-        'treasuryBacked = :treasuryBacked, ' + 
-        'chainId = :chainId, ' +
-        'tradeUrl = :tradeUrl, ' +
-        'isLegacy = :isLegacy, ' + 
-        'oneTokenVersion = :oneTokenVersion, ' +
-        'reserveRatio = :reserveRatio',
-      ExpressionAttributeValues: {
-        ':baseName': { S: baseName },
-        ':address': { S: oneTokenAddress },
-        ':strategy': { S: strategyAddress },
-        ':displayName': { S: itemName },
-        ':usdc': { N: Number(totalUSDC).toString() },
-        ':circulation': { N: (Number(oneToken_SUPPLY) / 10 ** decimals).toString() },
-        ':collateral' : { L: oneToken_collateral_list },
-        ':collateralPositions' : { L: oneTokenCollateralPostions },
-        ':collateralPositionsAPY' : { N: collateralPositionsAPY.toString() },
-        ':collateralPositionsUSD' : { N: Number(collateralPositionsUSDValue).toString() },
-        ':collateralUSD': { N: Number(oneToken_collateral_only).toString() },
-        ':stimulus' : { L: oneToken_stimulus_list },
-        ':stimulusUSD': { N: Number(oneToken_stimulus_usd).toString() },
-        ':stimulusPositions' : { L: oneTokenStimulusPostions },
-        ':stimulusPositionsAPY' : { N: stimulusPositionsAPY.toString() },
-        ':stimulusPositionsUSD' : { N: Number(stimulusPositionsUSDValue).toString() },
-        ':withdrawFee': { N: oneToken_withdrawFee.toString() },
-        ':mintFee': { N: oneToken_mintFee.toString() },
-        ':mintingRatio': { N: oneToken_mintingRatio.toString() },
-        ':treasuryBacked': { N: Number(oneToken_treasury_backed).toString() },
-        ':chainId': { N: Number(CHAIN_ID).toString() },
-        ':tradeUrl': { S: tradeUrl },
-        ':isLegacy': { BOOL: isLegacy },
-        ':oneTokenVersion': { N: Number(oneTokenVersion).toString() },
-        ':reserveRatio': { N: Number(reserveRatio).toString() }
-      },
-      ReturnValues: 'UPDATED_NEW'
-    };
-
-    try {
-      // https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_UpdateItem.html#API_UpdateItem_Examples
-      const result = await dbClient.updateItem(params).promise();
-      console.log(`Successfully updated table: ${tableName}`);
-      console.log(JSON.stringify(result));
-      return {
-        statusCode: 200,
-        body: JSON.stringify(result)
-      };
-    } catch (error) {
-      throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
+      });
     }
+    if (itemName === 'one1INCH' && Number(strategy_balance_st1inch) > 0) {
+      assets.push({
+        M: {
+          name: { S: 'st1INCH' },
+          balance: { N: Number(strategy_balance_st1inch / 10 ** stimulusDecimals).toString() }
+        }
+      });
+    }
+    oneTokenStimulusPostions.push({
+      M: {
+        name: { S: 'Vault' },
+        assets: { L: assets }
+      }
+    });
+  }
 
+  const oneTokenVersion = isV2 ? 2 : 1;
+
+  let reserveRatio = 0;
+  if (oneToken_treasury_backed > 0) {
+    reserveRatio = oneToken_stimulus_usd / oneToken_treasury_backed;
+  } else {
+    reserveRatio = 100; // 10000%
+  }
+
+  let totalUSDC =
+    (oneToken_USDC + strategy_balance_usdc + aux_strategy_balance_riskharbor_usdc) / 10 ** TOKENS.usdc.decimals +
+    strategy_balance_bmi_usdt / 10 ** 18;
+
+  let res = {
+    name: itemName.toLowerCase(),
+    displayName: itemName,
+    base: baseName,
+    usdc: totalUSDC,
+    circulation: Number(oneToken_SUPPLY) / 10 ** decimals,
+    collateral: oneToken_collateral_list,
+    collateralPositions: oneTokenCollateralPostions,
+    collateralPositionsUSD: collateralPositionsUSDValue,
+    collateralUSD: oneToken_collateral_only,
+    stimulus: oneToken_stimulus_list,
+    stimulusUSD: oneToken_stimulus_usd,
+    stimulusPositions: oneTokenStimulusPostions,
+    stimulusPositionsUSD: stimulusPositionsUSDValue,
+    withdrawFee: oneToken_withdrawFee,
+    mintFee: oneToken_mintFee,
+    mintingRatio: oneToken_mintingRatio,
+    treasuryBacked: oneToken_treasury_backed,
+    oneTokenVersion: oneTokenVersion,
+    reserveRatio: reserveRatio
+  };
+
+  console.log(res);
+
+  // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
+  console.log(`Attempting to update table: ${tableName}, token: ${itemName}`);
+  const params: AWS.DynamoDB.UpdateItemInput = {
+    TableName: tableName,
+    Key: {
+      name: {
+        S: itemName.toLowerCase()
+      }
+    },
+    UpdateExpression:
+      'set ' +
+      'baseName = :baseName, ' +
+      'address = :address, ' +
+      'strategy = :strategy, ' +
+      'displayName = :displayName, ' +
+      'usdc = :usdc, ' +
+      'circulation = :circulation, ' +
+      'collateral = :collateral, ' +
+      'collateralPositions = :collateralPositions, ' +
+      'collateralPositionsAPY = :collateralPositionsAPY, ' +
+      'collateralPositionsUSD = :collateralPositionsUSD, ' +
+      'collateralUSD = :collateralUSD, ' +
+      'stimulus = :stimulus, ' +
+      'stimulusUSD = :stimulusUSD, ' +
+      'stimulusPositions = :stimulusPositions, ' +
+      'stimulusPositionsAPY = :stimulusPositionsAPY, ' +
+      'stimulusPositionsUSD = :stimulusPositionsUSD, ' +
+      'withdrawFee = :withdrawFee, ' +
+      'mintFee = :mintFee, ' +
+      'mintingRatio = :mintingRatio, ' +
+      'treasuryBacked = :treasuryBacked, ' +
+      'chainId = :chainId, ' +
+      'tradeUrl = :tradeUrl, ' +
+      'isLegacy = :isLegacy, ' +
+      'oneTokenVersion = :oneTokenVersion, ' +
+      'reserveRatio = :reserveRatio',
+    ExpressionAttributeValues: {
+      ':baseName': { S: baseName },
+      ':address': { S: oneTokenAddress },
+      ':strategy': { S: strategyAddress },
+      ':displayName': { S: itemName },
+      ':usdc': { N: Number(totalUSDC).toString() },
+      ':circulation': { N: (Number(oneToken_SUPPLY) / 10 ** decimals).toString() },
+      ':collateral': { L: oneToken_collateral_list },
+      ':collateralPositions': { L: oneTokenCollateralPostions },
+      ':collateralPositionsAPY': { N: collateralPositionsAPY.toString() },
+      ':collateralPositionsUSD': { N: Number(collateralPositionsUSDValue).toString() },
+      ':collateralUSD': { N: Number(oneToken_collateral_only).toString() },
+      ':stimulus': { L: oneToken_stimulus_list },
+      ':stimulusUSD': { N: Number(oneToken_stimulus_usd).toString() },
+      ':stimulusPositions': { L: oneTokenStimulusPostions },
+      ':stimulusPositionsAPY': { N: stimulusPositionsAPY.toString() },
+      ':stimulusPositionsUSD': { N: Number(stimulusPositionsUSDValue).toString() },
+      ':withdrawFee': { N: oneToken_withdrawFee.toString() },
+      ':mintFee': { N: oneToken_mintFee.toString() },
+      ':mintingRatio': { N: oneToken_mintingRatio.toString() },
+      ':treasuryBacked': { N: Number(oneToken_treasury_backed).toString() },
+      ':chainId': { N: Number(CHAIN_ID).toString() },
+      ':tradeUrl': { S: tradeUrl },
+      ':isLegacy': { BOOL: isLegacy },
+      ':oneTokenVersion': { N: Number(oneTokenVersion).toString() },
+      ':reserveRatio': { N: Number(reserveRatio).toString() }
+    },
+    ReturnValues: 'UPDATED_NEW'
+  };
+
+  try {
+    // https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_UpdateItem.html#API_UpdateItem_Examples
+    const result = await dbClient.updateItem(params).promise();
+    console.log(`Successfully updated table: ${tableName}`);
+    console.log(JSON.stringify(result));
+    return {
+      statusCode: 200,
+      body: JSON.stringify(result)
+    };
+  } catch (error) {
+    throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
+  }
 };

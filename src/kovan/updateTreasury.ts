@@ -1,13 +1,15 @@
 import { updateTreasuryItem } from './updateTreasuryItem';
+import { APIGatewayProxyResult } from 'aws-lambda';
 
-export const updateTreasury = async (tableName: string, tokenPrices: {[name: string]: number}, 
-      tokenNames: {[name: string]: string}) => {
-  let treasuryPositions = ['OTI','test_oneUNI','test_oneFIL'];
+// , tokenNames: {[name: string]: string}
+export const updateTreasury = async (tableName: string, tokenPrices: { [name: string]: number }) => {
+  let treasuryPositions = ['OTI', 'test_oneUNI', 'test_oneFIL'];
 
-  for (let i = 0; i < treasuryPositions.length; i++) {
-    let res = await updateTreasuryItem(tableName, treasuryPositions[i], tokenPrices, tokenNames);
-
-    console.log("update " + treasuryPositions[i] + " results:");
-    console.log(res);
+  const promises: Promise<APIGatewayProxyResult>[] = [];
+  for (let treasuryPosition of treasuryPositions) {
+    promises.push(updateTreasuryItem(tableName, treasuryPosition, tokenPrices));
   }
+
+  const results = await Promise.all(promises);
+  console.log(results);
 };

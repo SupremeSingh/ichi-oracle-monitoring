@@ -1,18 +1,13 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
+import { dbClient } from '../configMainnet';
 import { BANNERS } from './configBanner';
 
-AWS.config.update({
-  region: process.env.AWS_REGION || 'us-east-1',
-});
-const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
-
 export const updateBanner = async (tableName: string, bannerName: string): Promise<APIGatewayProxyResult> => {
-
   let buttons = [];
 
   for (let i = 0; i < Object.keys(BANNERS[bannerName].buttons).length; i++) {
-    let button = BANNERS[bannerName].buttons[i];  
+    let button = BANNERS[bannerName].buttons[i];
     let b = {
       label: { S: button['label'] },
       link: { S: button['link'] }
@@ -28,7 +23,8 @@ export const updateBanner = async (tableName: string, bannerName: string): Promi
         S: bannerName
       }
     },
-    UpdateExpression: 'set ' + 
+    UpdateExpression:
+      'set ' +
       'image = :image, ' +
       'countdown = :countdown, ' +
       'textBase = :textBase, ' +
@@ -47,7 +43,7 @@ export const updateBanner = async (tableName: string, bannerName: string): Promi
       ':baseColor': { S: BANNERS[bannerName]['baseColor'] },
       ':gradientDirection': { S: BANNERS[bannerName]['gradientDirection'] },
       ':gradientColor0': { S: BANNERS[bannerName]['gradientColor0'] },
-      ':gradientColor1': { S: BANNERS[bannerName]['gradientColor1'] },
+      ':gradientColor1': { S: BANNERS[bannerName]['gradientColor1'] }
     },
     ReturnValues: 'UPDATED_NEW'
   };

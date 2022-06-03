@@ -1,22 +1,10 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { ContractInterface, ethers } from 'ethers';
+import { dbClient } from '../configMainnet';
+import { ChainId, getProvider } from '../providers';
 import ERC20_ABI from '../abis/ERC20_ABI.json';
 import { TOKENS, CHAIN_ID } from './configMumbai';
-
-const alchemyId = process.env.ALCHEMY_ID;
-if (!alchemyId) {
-  console.error('Please export ALCHEMY_ID=*** which is used for https://polygon-mumbai.g.alchemy.com/v2/***');
-  process.exit();
-}
-
-AWS.config.update({
-  region: process.env.AWS_REGION || 'us-east-1',
-});
-const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
-
-const RPC_HOST = `https://polygon-mumbai.g.alchemy.com/v2/${alchemyId}`;
-const provider = new ethers.providers.JsonRpcProvider(RPC_HOST, CHAIN_ID);
 
 export const updateToken = async (tableName: string, tokenName: string): Promise<APIGatewayProxyResult> => {
   const address = TOKENS[tokenName]['address'];
@@ -26,6 +14,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
   let price = 0;
   let priceChange = 0;
 
+  const provider = await getProvider(ChainId.mumbai);
   const tokenContract = new ethers.Contract(address, ERC20_ABI as ContractInterface, provider);
 
   let totalSupply = await tokenContract.totalSupply();
@@ -36,7 +25,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
   if (isOneToken) {
     price = 1;
   } else {
-    switch(tokenName) {
+    switch (tokenName) {
       case 'mum_token6':
         price = 25;
         break;
@@ -49,7 +38,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
       default:
         price = 1;
         break;
-    }    
+    }
   }
 
   // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
@@ -61,7 +50,8 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
         S: tokenName
       }
     },
-    UpdateExpression: 'set ' + 
+    UpdateExpression:
+      'set ' +
       'circulating = :circulating, ' +
       'address = :address, ' +
       'decimals = :decimals, ' +

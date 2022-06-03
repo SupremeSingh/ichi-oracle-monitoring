@@ -2,15 +2,16 @@ import { APIGatewayProxyEvent } from 'aws-lambda';
 import { updateTokens } from './updateTokens';
 import { updateTreasury } from './updateTreasury';
 import { updateFarms } from './updateFarms';
-import { updateTokens as updateTokensPolygon} from './polygon/updateTokens';
+import { updateTokens as updateTokensPolygon } from './polygon/updateTokens';
 import { updateTreasury as updateTreasuryPolygon } from './polygon/updateTreasury';
-import { updateFarms as updateFarmsPolygon} from './polygon/updateFarms';
+import { updateFarms as updateFarmsPolygon } from './polygon/updateFarms';
 import AWS from 'aws-sdk';
 import { updateFarm } from './updateFarm';
 import { updateFarm as updateFarmKovan } from './kovan/updateFarm';
 import { updateFarm as updateFarmMumbai } from './mumbai/updateFarm';
 import { updateFarm as updateFarmPolygon } from './polygon/updateFarm';
 import { isFarmV2Kovan, isFarmV2Mumbai, isFarmV2Polygon } from './utils/pids';
+import { dbClient } from './configMainnet';
 
 const token_tableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
 const treasury_tableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
@@ -18,36 +19,34 @@ const farms_tableName = process.env.FARMS_TABLE_NAME || 'farms-dev';
 const ichiPerBlock_tableName = process.env.ICHI_PER_BLOCK_TABLE_NAME || 'ichi-per-block';
 
 AWS.config.update({
-  region: process.env.AWS_REGION || 'us-east-1',
+  region: process.env.AWS_REGION || 'us-east-1'
 });
-const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
 
 const getAllData = async (params) => {
-  
   const _getAllData = async (params, startKey) => {
     if (startKey) {
-      params.ExclusiveStartKey = startKey
+      params.ExclusiveStartKey = startKey;
     }
-    return dbClient.scan(params).promise()
-  }
+    return dbClient.scan(params).promise();
+  };
 
-  let lastEvaluatedKey = null
-  let rows = []
-  
+  let lastEvaluatedKey = null;
+  let rows = [];
+
   do {
-    const result = await _getAllData(params, lastEvaluatedKey)
-    rows = rows.concat(result.Items)
-    lastEvaluatedKey = result.LastEvaluatedKey
-  } while (lastEvaluatedKey)
-  
-  return rows
-}
+    const result = await _getAllData(params, lastEvaluatedKey);
+    rows = rows.concat(result.Items);
+    lastEvaluatedKey = result.LastEvaluatedKey;
+  } while (lastEvaluatedKey);
+
+  return rows;
+};
 
 export const handler = async (event: APIGatewayProxyEvent) => {
   let poolId = -1;
 
   if (event.queryStringParameters && event.queryStringParameters.poolId) {
-    console.log("Received poolId from pathParameters: " + event.queryStringParameters.poolId);
+    console.log('Received poolId from pathParameters: ' + event.queryStringParameters.poolId);
     poolId = Number(event.queryStringParameters.poolId);
   }
 
@@ -62,19 +61,19 @@ export const handler = async (event: APIGatewayProxyEvent) => {
 
   let params = {
     TableName: token_tableName,
-    FilterExpression: "#isOneToken = :is_one_token",
+    FilterExpression: '#isOneToken = :is_one_token',
     ExpressionAttributeNames: {
-        "#isOneToken": "isOneToken",
+      '#isOneToken': 'isOneToken'
     },
-    ExpressionAttributeValues: { ":is_one_token": { BOOL: false } }
+    ExpressionAttributeValues: { ':is_one_token': { BOOL: false } }
   };
   try {
     const result = await getAllData(params);
     for (let i = 0; i < result.length; i++) {
       let item = result[i];
       let name = item['name']['S'].toLowerCase();
-      tokenPrices[name] = Number(item['price']['N'])
-      tokenNames[name] = item['displayName']['S']
+      tokenPrices[name] = Number(item['price']['N']);
+      tokenNames[name] = item['displayName']['S'];
     }
   } catch (error) {
     throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
@@ -82,19 +81,19 @@ export const handler = async (event: APIGatewayProxyEvent) => {
 
   params = {
     TableName: token_tableName,
-    FilterExpression: "#isOneToken = :is_one_token",
+    FilterExpression: '#isOneToken = :is_one_token',
     ExpressionAttributeNames: {
-        "#isOneToken": "isOneToken",
+      '#isOneToken': 'isOneToken'
     },
-    ExpressionAttributeValues: { ":is_one_token": { BOOL: true } }
+    ExpressionAttributeValues: { ':is_one_token': { BOOL: true } }
   };
   try {
     const result = await getAllData(params);
     for (let i = 0; i < result.length; i++) {
       let item = result[i];
       let name = item['name']['S'].toLowerCase();
-      tokenPrices[name] = Number(item['price']['N'])
-      tokenNames[name] = item['displayName']['S']
+      tokenPrices[name] = Number(item['price']['N']);
+      tokenNames[name] = item['displayName']['S'];
     }
   } catch (error) {
     throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
@@ -110,7 +109,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
     for (let i = 0; i < result.length; i++) {
       let item = result[i];
       let poolId = item['poolId']['N'];
-      knownIchiPerBlock[poolId] = item['ichiPerBlock']['N']
+      knownIchiPerBlock[poolId] = item['ichiPerBlock']['N'];
     }
   } catch (error) {
     throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
@@ -122,7 +121,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
 
   if (poolId === -1) {
     await updateFarmsPolygon(farms_tableName, tokenPrices, tokenNames, knownIchiPerBlock);
-    await updateTreasuryPolygon(treasury_tableName, tokenPrices, tokenNames);
+    await updateTreasuryPolygon(treasury_tableName, tokenPrices);
     await updateFarms(farms_tableName, tokenPrices, tokenNames, knownIchiPerBlock);
     await updateTreasury(treasury_tableName, tokenPrices, tokenNames);
   } else {
@@ -144,10 +143,9 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   return {
     statusCode: 200,
     headers: {
-      "Access-Control-Allow-Headers" : "Content-Type",
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "OPTIONS,GET"
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'OPTIONS,GET'
     }
   };
-
 };

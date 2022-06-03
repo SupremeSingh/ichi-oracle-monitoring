@@ -3,25 +3,12 @@ import AWS from 'aws-sdk';
 import { ContractInterface, ethers } from 'ethers';
 import ERC20_ABI from '../abis/ERC20_ABI.json';
 import { TOKENS, CHAIN_ID } from './configPolygon';
-import { TOKENS as MAINNET_TOKENS } from '../configMainnet';
+import { dbClient, TOKENS as MAINNET_TOKENS } from '../configMainnet';
 import axios from 'axios';
+import { ChainId, getProvider } from '../providers';
 
-const infuraId = process.env.INFURA_ID;
-if (!infuraId) {
-  console.error('Please export INFURA_ID=*** which is used for https://polygon-mainnet.infura.io/v3/***');
-  process.exit();
-}
-
-AWS.config.update({
-  region: process.env.AWS_REGION || 'us-east-1',
-});
-const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
-
-const RPC_HOST = `https://polygon-mainnet.infura.io/v3/${infuraId}`;
-const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
-
-const lookUpTokenPrices = async function(id_array) {
-  let ids = id_array.join("%2C");
+const lookUpTokenPrices = async function (id_array) {
+  let ids = id_array.join('%2C');
   return await axios.get(
     `https://api.coingecko.com/api/v3/simple/token_price/ethereum?contract_addresses=${ids}&vs_currencies=usd&include_24hr_change=true`
   );
@@ -30,6 +17,7 @@ const lookUpTokenPrices = async function(id_array) {
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
 export const updateToken = async (tableName: string, tokenName: string): Promise<APIGatewayProxyResult> => {
+  const provider = await getProvider(ChainId.polygon);
   const address = TOKENS[tokenName]['address'];
   const decimals = TOKENS[tokenName]['decimals'];
   const isOneToken = TOKENS[tokenName]['isOneToken'];
@@ -47,7 +35,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
   if (isOneToken) {
     price = 1;
   } else {
-    switch(tokenName) {
+    switch (tokenName) {
       case 'pol_usdc':
         price = 1;
         break;
@@ -67,7 +55,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
         let lookup_price = await lookUpTokenPrices([address.toLowerCase()]);
         price = lookup_price.data[address.toLowerCase()].usd;
         priceChange = lookup_price.data[address.toLowerCase()].usd_24h_change;
-    }    
+    }
   }
 
   // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
@@ -79,7 +67,8 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
         S: tokenName
       }
     },
-    UpdateExpression: 'set ' + 
+    UpdateExpression:
+      'set ' +
       'circulating = :circulating, ' +
       'address = :address, ' +
       'decimals = :decimals, ' +

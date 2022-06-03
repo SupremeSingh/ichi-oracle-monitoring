@@ -1,53 +1,38 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { ethers } from 'ethers';
+import { dbClient } from '../configMainnet';
 import { isFarmExternal, isFarmGeneric, isUnretired } from '../utils/pids';
 import { POOLS, LABELS, CHAIN_ID, TOKENS } from './configKovan';
 import { getPoolRecord } from './getPoolRecord';
 
-const infuraId = process.env.INFURA_ID;
-if (!infuraId) {
-  console.error('Please export INFURA_ID=*** which is used for https://kovan.infura.io/v3/***');
-  process.exit();
-}
-
-AWS.config.update({
-  region: process.env.AWS_REGION || 'us-east-1',
-});
-const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
-
-const RPC_HOST = `https://kovan.infura.io/v3/${infuraId}`;
-
-const getExchangeName = async function(poolId: number) {
-  if (POOLS.depositPools.includes(poolId))
-    return "";
-  return "test exchange";
+const getExchangeName = async function (poolId: number) {
+  if (POOLS.depositPools.includes(poolId)) return '';
+  return 'test exchange';
 };
 
-const getTradeUrl = function(poolId: number) {
+const getTradeUrl = function (poolId: number) {
   let isDeposit = POOLS.depositPools.includes(poolId);
   if (isDeposit) {
     let token_name = LABELS[poolId]['lpName'].toLowerCase();
     if (!TOKENS[token_name]) {
-      token_name = "test_" + LABELS[poolId]['lpName'].toLowerCase();
+      token_name = 'test_' + LABELS[poolId]['lpName'].toLowerCase();
     }
-    if (TOKENS[token_name]['tradeUrl'])
-      return TOKENS[token_name]['tradeUrl'];
+    if (TOKENS[token_name]['tradeUrl']) return TOKENS[token_name]['tradeUrl'];
   } else {
-    if (LABELS[poolId]['tradeUrl'])
-      return LABELS[poolId]['tradeUrl'];
+    if (LABELS[poolId]['tradeUrl']) return LABELS[poolId]['tradeUrl'];
   }
   return '';
-}
+};
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
-export const updateFarm = async (tableName: string, poolId: number, 
-    tokenPrices: {[name: string]: number}, 
-    tokenNames: {[name: string]: string},
-    knownIchiPerBlock: {[poolId: string]: string}): Promise<APIGatewayProxyResult> => {
-  const provider = new ethers.providers.JsonRpcProvider(RPC_HOST);
-
+export const updateFarm = async (
+  tableName: string,
+  poolId: number,
+  tokenPrices: { [name: string]: number },
+  tokenNames: { [name: string]: string },
+  knownIchiPerBlock: { [poolId: string]: string }
+): Promise<APIGatewayProxyResult> => {
   let pool = await getPoolRecord(poolId, tokenPrices, knownIchiPerBlock);
 
   let farmPoolId = poolId;
@@ -57,24 +42,30 @@ export const updateFarm = async (tableName: string, poolId: number,
   let tokens = [];
 
   if (pool['token0'] == '') {
-    searchName = farmName.toLowerCase()+'-multi-'+farmPoolId;
+    searchName = farmName.toLowerCase() + '-multi-' + farmPoolId;
   } else {
-
     let token0 = {
       name: { S: pool['token0'].toLowerCase() },
       displayName: { S: tokenNames[pool['token0'].toLowerCase()] },
       isOneToken: { BOOL: TOKENS[pool['token0']] ? TOKENS[pool['token0'].toLowerCase()]['isOneToken'] : false },
       price: { N: tokenPrices[pool['token0'].toLowerCase()].toString() },
       address: { S: pool['address0'] },
-      reserve: { N: (Number(pool['reserve0Raw'])).toString() },
-      decimals: { N: (Number(pool['decimals0'])).toString() }
+      reserve: { N: Number(pool['reserve0Raw']).toString() },
+      decimals: { N: Number(pool['decimals0']).toString() }
     };
     tokens.push({ M: token0 });
 
     if (pool['token1'] == '') {
-      searchName = farmName.toLowerCase()+'-'+pool['token0'].toLowerCase()+'-'+farmPoolId;
+      searchName = farmName.toLowerCase() + '-' + pool['token0'].toLowerCase() + '-' + farmPoolId;
     } else {
-      searchName = farmName.toLowerCase()+'-'+pool['token0'].toLowerCase()+'-'+pool['token1'].toLowerCase()+'-'+farmPoolId;
+      searchName =
+        farmName.toLowerCase() +
+        '-' +
+        pool['token0'].toLowerCase() +
+        '-' +
+        pool['token1'].toLowerCase() +
+        '-' +
+        farmPoolId;
 
       let token1 = {
         name: { S: pool['token1'].toLowerCase() },
@@ -82,8 +73,8 @@ export const updateFarm = async (tableName: string, poolId: number,
         isOneToken: { BOOL: TOKENS[pool['token1'].toLowerCase()]['isOneToken'] },
         price: { N: tokenPrices[pool['token1'].toLowerCase()].toString() },
         address: { S: pool['address1'] },
-        reserve: { N: (Number(pool['reserve1Raw'])).toString() },
-        decimals: { N: (Number(pool['decimals1'])).toString() }
+        reserve: { N: Number(pool['reserve1Raw']).toString() },
+        decimals: { N: Number(pool['decimals1']).toString() }
       };
       tokens.push({ M: token1 });
     }
@@ -91,9 +82,10 @@ export const updateFarm = async (tableName: string, poolId: number,
 
   let isExternal = isFarmExternal(poolId);
   let isGeneric = isFarmGeneric(poolId);
-  let isIchiPool = pool['token0'].toLowerCase() == 'ichi' || 
-                    pool['token1'].toLowerCase() == 'ichi' ||
-                    pool['token0'].toLowerCase() == 'weenus'; // treat WEENUS-ETH as ichi pool
+  let isIchiPool =
+    pool['token0'].toLowerCase() == 'ichi' ||
+    pool['token1'].toLowerCase() == 'ichi' ||
+    pool['token0'].toLowerCase() == 'weenus'; // treat WEENUS-ETH as ichi pool
   let isUpcoming = POOLS.upcomingPools.includes(poolId);
   let isMigrating = POOLS.migratingPools.includes(poolId);
   let isRetired = POOLS.retiredPools.includes(poolId);
@@ -107,52 +99,49 @@ export const updateFarm = async (tableName: string, poolId: number,
   let shortLpName = LABELS[poolId]['shortLpName'];
 
   let lpPrice = 0;
-  if (pool['totalPoolLP'] && Number(pool['totalPoolLP']) > 0 &&
-      pool['tvl'] && Number(pool['tvl']) > 0) {
-        lpPrice = Number(pool['tvl']) * 10 ** 18 / Number(pool['totalPoolLP']);
-        lpPrice = Math.round(lpPrice * 100) / 100;
+  if (pool['totalPoolLP'] && Number(pool['totalPoolLP']) > 0 && pool['tvl'] && Number(pool['tvl']) > 0) {
+    lpPrice = (Number(pool['tvl']) * 10 ** 18) / Number(pool['totalPoolLP']);
+    lpPrice = Math.round(lpPrice * 100) / 100;
   }
 
   let extras = {};
   if (LABELS[poolId]) {
     if (LABELS[poolId]['externalUrl']) {
-      extras['externalUrl'] = { S: LABELS[poolId]['externalUrl'] }
+      extras['externalUrl'] = { S: LABELS[poolId]['externalUrl'] };
     }
     if (LABELS[poolId]['externalText']) {
-      extras['externalText'] = { S: LABELS[poolId]['externalText'] }
+      extras['externalText'] = { S: LABELS[poolId]['externalText'] };
     }
     if (LABELS[poolId]['externalButton']) {
-      extras['externalButton'] = { S: LABELS[poolId]['externalButton'] }
+      extras['externalButton'] = { S: LABELS[poolId]['externalButton'] };
     }
   }
   const tradeUrl = getTradeUrl(poolId);
   if (tradeUrl != '') {
-    extras['tradeUrl'] = { S: tradeUrl }
+    extras['tradeUrl'] = { S: tradeUrl };
   }
 
   let farm = {};
   if (LABELS[poolId]) {
     if (LABELS[poolId]['farmAddress']) {
-      farm['farmAddress'] = { S: LABELS[poolId]['farmAddress'] }
-      farm['farmId'] = { N: Number(LABELS[poolId]['farmId']).toString() }
+      farm['farmAddress'] = { S: LABELS[poolId]['farmAddress'] };
+      farm['farmId'] = { N: Number(LABELS[poolId]['farmId']).toString() };
     }
     if (LABELS[poolId]['farmRewardTokenName']) {
-      farm['farmRewardTokenName'] = { S: LABELS[poolId]['farmRewardTokenName'] }
+      farm['farmRewardTokenName'] = { S: LABELS[poolId]['farmRewardTokenName'] };
     }
     if (LABELS[poolId]['farmRewardTokenDecimals']) {
-      farm['farmRewardTokenDecimals'] = { N: Number(LABELS[poolId]['farmRewardTokenDecimals']).toString() }
+      farm['farmRewardTokenDecimals'] = { N: Number(LABELS[poolId]['farmRewardTokenDecimals']).toString() };
     }
     if (LABELS[poolId]['farmRewardTokenAddress']) {
-      farm['farmRewardTokenAddress'] = { S: LABELS[poolId]['farmRewardTokenAddress'] }
+      farm['farmRewardTokenAddress'] = { S: LABELS[poolId]['farmRewardTokenAddress'] };
     }
   }
 
   // pool is retired if no rewards are given in it
-  if (pool['yearlyAPY'] == 0)
-    isRetired = true;
+  if (pool['yearlyAPY'] == 0) isRetired = true;
 
-  if (isUnretired(poolId))
-    isRetired = false;
+  if (isUnretired(poolId)) isRetired = false;
 
   let baseTokenTVL = Number(pool['tvl']);
 
@@ -166,39 +155,40 @@ export const updateFarm = async (tableName: string, poolId: number,
       poolId: {
         N: Number(poolId).toString()
       }
-    }, 
-    UpdateExpression: 'set ' + 
-      'farmPoolId = :farmPoolId, ' + 
-      'searchName = :searchName, ' + 
-      'displayName = :displayName, ' + 
-      'lpName = :lpName, ' + 
-      'lpAddress = :lpAddress, ' + 
-      'lpPrice = :lpPrice, ' + 
-      'extras = :extras, ' + 
-      'farm = :farm, ' + 
-      'shortLpName = :shortLpName, ' + 
-      'tokens = :tokens, ' + 
-      'exchange = :exchange, ' + 
-      'tvl = :tvl, ' + 
-      'baseTokenTVL = :baseTokenTVL, ' + 
-      'farmTVL = :farmTVL, ' + 
-      'totalPoolLP = :totalPoolLP, ' + 
-      'totalFarmLP = :totalFarmLP, ' + 
-      'dailyAPY = :dailyAPY, ' + 
-      'weeklyAPY = :weeklyAPY, ' + 
-      'monthlyAPY = :monthlyAPY, ' + 
-      'yearlyAPY = :yearlyAPY, ' + 
-      'isExternal = :isExternal, ' + 
-      'isGeneric = :isGeneric, ' + 
-      'isUpcoming = :isUpcoming, ' + 
-      'isMigrating = :isMigrating, ' + 
-      'isRetired = :isRetired, ' + 
-      'isIchiPool = :isIchiPool, ' + 
-      'isDeposit = :isDeposit, ' + 
-      'isPosition = :isPosition, ' + 
-      'isLegacy = :isLegacy, ' + 
+    },
+    UpdateExpression:
+      'set ' +
+      'farmPoolId = :farmPoolId, ' +
+      'searchName = :searchName, ' +
+      'displayName = :displayName, ' +
+      'lpName = :lpName, ' +
+      'lpAddress = :lpAddress, ' +
+      'lpPrice = :lpPrice, ' +
+      'extras = :extras, ' +
+      'farm = :farm, ' +
+      'shortLpName = :shortLpName, ' +
+      'tokens = :tokens, ' +
+      'exchange = :exchange, ' +
+      'tvl = :tvl, ' +
+      'baseTokenTVL = :baseTokenTVL, ' +
+      'farmTVL = :farmTVL, ' +
+      'totalPoolLP = :totalPoolLP, ' +
+      'totalFarmLP = :totalFarmLP, ' +
+      'dailyAPY = :dailyAPY, ' +
+      'weeklyAPY = :weeklyAPY, ' +
+      'monthlyAPY = :monthlyAPY, ' +
+      'yearlyAPY = :yearlyAPY, ' +
+      'isExternal = :isExternal, ' +
+      'isGeneric = :isGeneric, ' +
+      'isUpcoming = :isUpcoming, ' +
+      'isMigrating = :isMigrating, ' +
+      'isRetired = :isRetired, ' +
+      'isIchiPool = :isIchiPool, ' +
+      'isDeposit = :isDeposit, ' +
+      'isPosition = :isPosition, ' +
+      'isLegacy = :isLegacy, ' +
       'chainId = :chainId, ' +
-      'farmName = :farmName', 
+      'farmName = :farmName',
     ExpressionAttributeValues: {
       ':farmPoolId': { N: Number(farmPoolId).toString() },
       ':searchName': { S: searchName },
@@ -246,5 +236,4 @@ export const updateFarm = async (tableName: string, poolId: number,
   } catch (error) {
     throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
   }
-
 };
