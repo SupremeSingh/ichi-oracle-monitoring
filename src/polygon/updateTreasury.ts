@@ -5,7 +5,7 @@ export const updateTreasury = async (tableName: string, tokenPrices: { [name: st
   let treasuryPositions = ['pol_oneBTC'];
 
   const promises: Promise<APIGatewayProxyResult>[] = [];
-  for (const treasury of treasuryPositions) {
+  for (let treasury of treasuryPositions) {
     promises.push(updateTreasuryItem(tableName, treasury, tokenPrices));
   }
 
