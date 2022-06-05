@@ -412,7 +412,7 @@ export const updateTreasuryItem = async (
     const vault_total_amounts = await wBTCVault.getTotalAmounts();
     if (strategy_balance_vault_lp > 0) {
       const vault_ratio = strategy_balance_vault_lp / vault_total_lp;
-      strategy_balance_ichi += Number(vault_total_amounts.total0) * vault_ratio;
+      strategy_balance_ichi += Number(vault_total_amounts.total0) * vault_ratio / 10 ** 9;
       strategy_balance_wbtc += Number(vault_total_amounts.total1) * vault_ratio;
     }
   }
