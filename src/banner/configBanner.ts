@@ -1,59 +1,83 @@
 const BANNERS = {
   '0': {
-    image: 'https://ichi-images.s3.amazonaws.com/banners/bg_purple.png',
-    countdown: '',
-    textBase: 'Add liquidity to Angel Vaults and stake your LP to earn ICHI rewards now!',
-    textCountdown: '',
+    image: 'https://ichi-images.s3.amazonaws.com/banners/bg_goal_reached.png',
+    countdown: '1654095600000',
+    textBase: 'Liquidity is back - deposit to vaults and earn!',
+    textCountdown: 'We have reached our goal! Commencing liquidity rebalance in:',
     buttons: [
       {
-        label: 'Stake',
-        link: '/vault?poolId=1016&back=vault'
+        label: 'Deposit',
+        link: '/vault'
       },
       {
         label: 'Learn More',
-        link: 'https://docs.ichi.farm/earn-yield/angel-vaults'
+        link: 'https://medium.com/ichifarm/ichi-stronger-crypto-economies-through-sustainable-liquidity-9b138887e523'
       }
     ],
-    baseColor: '#751F95',
-    gradientDirection: '',
-    gradientColor0: '#751F95',
-    gradientColor1: '#0676FF'
+    baseColor: '#333333',
+    gradientDirection: '120deg',
+    gradientColor0: '#555354',
+    gradientColor1: '#2c2c2c'
   },
   '1': {
-    image: 'https://ichi-images.s3.amazonaws.com/banners/bg_blue.png',
-    countdown: '1639497600000',
-    textBase: 'Rewards for oneWING (new) Deposits are now live!',
-    textCountdown: 'oneWING (new) is now live on ICHI v2! Deposit Rewards begin in:',
-    buttons: [
-      {
-        label: 'Mint',
-        link: '/mint?name=onewing&collateral=USDC'
-      },
-      {
-        label: 'Learn More',
-        link: 'https://docs.ichi.farm/earn-yield/deposit'
-      }
-    ],
-    baseColor: '#0676FF',
-    gradientDirection: '',
-    gradientColor0: '#751F95',
-    gradientColor1: '#0676FF'
-  },
-  '2': {
-    image: 'https://ichi-images.s3.amazonaws.com/banners/bg_olympus.png',
-    countdown: '',
-    textBase: 'Olympus bonds are now LIVE - get ICHI at a discount for your Angel Vault LP',
+    image: 'https://ichi-images.s3.amazonaws.com/banners/bg_ichi_relaunch.png',
+    countdown: '1646402400000',
+    textBase: 'The ICHI Launch is here with lots of new improvements!',
     textCountdown: '',
     buttons: [
       {
-        label: 'Bond',
-        link: 'https://pro.olympusdao.finance/#/bond/oneuni_ichi_ichi'
+        label: 'Deposit',
+        link: '/hodlvault'
+      },
+      {
+        label: 'Learn More',
+        link: 'https://medium.com/ichifarm/ichi-stronger-crypto-economies-through-sustainable-liquidity-9b138887e523'
       }
     ],
-    baseColor: '#0676FF',
+    baseColor: '#cd679e',
+    gradientDirection: 'to right',
+    gradientColor0: '#f0808b',
+    gradientColor1: '#550fe0'
+  },
+  '2': {
+    image: 'https://ichi-images.s3.amazonaws.com/banners/bg_vault_qredo.png',
+    countdown: '1646402400000',
+    textBase: 'QRDO Angel Vault is now live! Deposit USDC and earn.',
+    textCountdown: '',
+    buttons: [
+      {
+        label: 'Deposit',
+        link: '/vault?poolId=20005&back=vault'
+      },
+      {
+        label: 'Learn More',
+        link: 'https://medium.com/ichifarm/ichi-stronger-crypto-economies-through-sustainable-liquidity-9b138887e523'
+      }
+    ],
+    baseColor: '#0f0e2a',
+    gradientDirection: 'to right',
+    gradientColor0: '#0f0e2a',
+    gradientColor1: '#51144a'
+  },
+  '3': {
+    image: 'https://ichi-images.s3.amazonaws.com/banners/bg_polygon.png',
+    countdown: '1646402400000',
+    textBase: 'ICHI is going Multi-Chain! Bridge $ICHI and deposit to new Polygon Angel Vaults!',
+    textCountdown: '',
+    buttons: [
+      {
+        label: 'Deposit',
+        link: '/vault?poolId=4000&back=vault'
+      },
+      {
+        label: 'Learn More',
+        link: 'https://medium.com/ichifarm/ichi-goes-cross-chain-with-launch-on-polygon-756a84f412ef'
+      }
+    ],
+    baseColor: '#4c278b',
     gradientDirection: '',
-    gradientColor0: '#751F95',
-    gradientColor1: '#0676FF'
+    gradientColor0: '#8743ff',
+    gradientColor1: '#4c278b'
   }
 };
 

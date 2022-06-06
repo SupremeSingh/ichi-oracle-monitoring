@@ -16,7 +16,7 @@ export function isFarmV2Polygon(pid: number): boolean {
 }
 
 export function isFarmV2Kovan(pid: number): boolean {
-  return pid >= 5000 && pid < 6000;
+  return (pid >= 5000 && pid < 6000) || pid === 20000;
 }
 
 export function isFarmV2Mumbai(pid: number): boolean {
