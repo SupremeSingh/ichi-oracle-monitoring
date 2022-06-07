@@ -108,7 +108,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
     const communityGnosisBalance = Number(await tokenContract.balanceOf(ADDRESSES.ichi_community_gnosis)) / 10 ** 9;
     const ichiV2GnosisBalance = Number(await ichiV2Contract.balanceOf(ADDRESSES.ichi_v2_gnosis)) / 10 ** 18;
     const ichiAllyBalance = Number(await ichiV2Contract.balanceOf(ADDRESSES.ALLY)) / 10 ** 18;
-    const ichiInV2Balance = Number(await ichiV2Contract.balanceOf(TOKENS.ichi.address)) / 10 ** 9;
+    const ichiInV2Balance = Number(await tokenContract.balanceOf(TOKENS.ichi_v2.address)) / 10 ** 9;
     circulating =
       totalTokens +
       ichiV2TotalSupply -
@@ -131,7 +131,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
     const communityGnosisBalance = Number(await ichiContract.balanceOf(ADDRESSES.ichi_community_gnosis)) / 10 ** 9;
     const ichiV2GnosisBalance = Number(await tokenContract.balanceOf(ADDRESSES.ichi_v2_gnosis)) / 10 ** 18;
     const ichiAllyBalance = Number(await tokenContract.balanceOf(ADDRESSES.ALLY)) / 10 ** 18;
-    const ichiInV2Balance = Number(await tokenContract.balanceOf(TOKENS.ichi.address)) / 10 ** 9;
+    const ichiInV2Balance = Number(await ichiContract.balanceOf(TOKENS.ichi_v2.address)) / 10 ** 9;
     circulating =
       totalTokens +
       ichiTotalSupply -
