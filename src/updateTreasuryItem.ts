@@ -3,7 +3,6 @@ import AWS from 'aws-sdk';
 import { ethers } from 'ethers';
 import { ADDRESSES, TOKENS, CHAIN_ID, APIS, DEBUNK_PROTOCOLS, TREASURIES, LABELS, dbClient } from './configMainnet';
 import { BSC_ADDRESSES, BSC_APIS } from './configBSC';
-// import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
 import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
 import GENERIC_FARMING_V2_ABI from './abis/GENERIC_FARMING_V2_ABI.json';
 import ERC20_ABI from './abis/ERC20_ABI.json';
@@ -15,12 +14,11 @@ import ONETOKEN_ABI from './abis/ONETOKEN_ABI.json';
 import ONELINK_ABI from './abis/oneLINK_ABI.json';
 import ONEETH_ABI from './abis/oneETH_ABI.json';
 import UNISWAP_V3_POSITIONS from './abis/UNISWAP_V3_POSITIONS_ABI.json';
-// import UNI_V3_POOL from './abis/UNI_V3_POOL_ABI.json';
 import { getPoolRecord } from './getPoolRecord';
-import axios from 'axios';
 import { GraphData } from './subgraph/model';
 import { risk_harbor_graph_query, RiskHarborPosition } from './subgraph/risk_harbor';
 import { ChainId, getProvider } from './providers';
+import { callDebunkOpenAPI } from './utils/apis';
 
 const BSC_RPC_HOST = BSC_APIS.rpcHost;
 
@@ -75,12 +73,6 @@ const getOneTokenAttributes = async function (tokenName: string) {
   template.stimulus_address = TOKENS[template.stimulus_name]['address'];
 
   return template;
-};
-
-const callDebunkOpenAPI = async function (address: string, protocol: string) {
-  let url = APIS.debunk_openapi + '?id=' + address + '&protocol_id=' + protocol;
-  //console.log(url);
-  return await axios.get(url);
 };
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
@@ -245,56 +237,6 @@ export const updateTreasuryItem = async (
 
   //console.log(aux_strategy_balance_usdc);
   //console.log(aux_strategy_balance_riskharbor_usdc);
-
-  /*
-  // 217812, 212009, 194119, 188941
-  if (itemName == 'oneUNI') {
-    strategy_balance_onetoken += Number(6007000) * 10**18;
-    strategy_balance_ichi += Number(11550+13380) * 10**9;
-    strategy_balance_usdc += Number(1.1) * 10**6;
-    strategy_balance_one_btc += Number(7852000) * 10**18;
-  }
-  // 214077, 214019
-  if (itemName == 'oneBTC') {
-    strategy_balance_ichi += Number(19990 + 19990) * 10**9;
-  }
-  // 188159, 170022
-  if (itemName == 'oneFOX') {
-    strategy_balance_stimulus += Number(2499000) * 10**18;
-    strategy_balance_onetoken += Number(1927000) * 10**18;
-    strategy_balance_usdc += Number(388700) * 10**6;
-  }
-  // 186217, 109896
-  if (itemName == 'oneFUSE') {
-    strategy_balance_stimulus += Number(649900) * 10**18;
-    strategy_balance_onetoken += Number(298000) * 10**18;
-    strategy_balance_usdc += Number(202300) * 10**6;
-  }
-  // 186276
-  if (itemName == 'oneWING') {
-    strategy_balance_stimulus += Number(23990) * 10**9;
-  }
-  // 116806
-  if (itemName == 'onePERL') {
-    strategy_balance_onetoken += Number(382300) * 10**18;
-    strategy_balance_usdc += Number(112700) * 10**6;
-  }
-  // 200812
-  if (itemName == 'oneOJA') {
-    strategy_balance_onetoken += Number(204500) * 10**18;
-    strategy_balance_usdc += Number(43100) * 10**6;
-  }
-  // 109848
-  if (itemName == 'oneMPH') {
-    strategy_balance_onetoken += Number(233700) * 10**18;
-    strategy_balance_usdc += Number(22060) * 10**6;
-  }
-  // 108331
-  if (itemName == 'one1INCH') {
-    strategy_balance_onetoken += Number(129900) * 10**18;
-    strategy_balance_usdc += Number(17880) * 10**6;
-  }
-` */
 
   if (uni_v3_positions > 0) {
     let all_v3_positions = await callDebunkOpenAPI(strategyAddress, DEBUNK_PROTOCOLS.UNI_V3);

@@ -1,7 +1,7 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { ethers } from 'ethers';
-import { ADDRESSES, TOKENS, CHAIN_ID } from './configPolygon';
+import { ADDRESSES, TOKENS, CHAIN_ID, DEBUNK_PROTOCOLS } from './configPolygon';
 import FARMING_V2_ABI from '../abis/FARMING_V2_ABI.json';
 import ERC20_ABI from '../abis/ERC20_ABI.json';
 import VAULT_ABI from '../abis/ICHI_VAULT_ABI.json';
@@ -9,6 +9,7 @@ import ONETOKEN_ABI from '../abis/ONETOKEN_ABI.json';
 import UNISWAP_V3_POSITIONS from '../abis/UNISWAP_V3_POSITIONS_ABI.json';
 import { ChainId, getProvider } from '../providers';
 import { dbClient } from '../configMainnet';
+import { callDebunkOpenAPI } from '../utils/apis';
 
 const getABI = async function () {
   return ONETOKEN_ABI;
@@ -136,7 +137,7 @@ export const updateTreasuryItem = async (
 
   uni_v3_positions = Number(await uniswap_V3_positions.balanceOf(strategyAddress));
   if (uni_v3_positions > 0) {
-    /*let all_v3_positions = await callDebunkOpenAPI(strategyAddress, DEBUNK_PROTOCOLS.UNI_V3);
+    let all_v3_positions = await callDebunkOpenAPI(strategyAddress, DEBUNK_PROTOCOLS.UNI_V3);
     if (all_v3_positions.data && all_v3_positions.data.portfolio_item_list && 
       all_v3_positions.data.portfolio_item_list.length > 0) {
       for (let i = 0; i < all_v3_positions.data.portfolio_item_list.length; i++ ) {
@@ -149,17 +150,11 @@ export const updateTreasuryItem = async (
             if (supply_token.id.toLowerCase() === oneTokenAddress.toLowerCase()) {
               isCollateral = true;
               strategy_balance_onetoken += Number(supply_token.amount) * 10 ** 18;
-            } else if (supply_token.id.toLowerCase() === TOKENS['oneuni']['address'].toLowerCase()) {
-              if (itemName !== 'oneUNI') {
-                strategy_balance_one_uni += Number(supply_token.amount) * 10 ** 18;
-              } else {
-                strategy_balance_onetoken += Number(supply_token.amount) * 10 ** 18;
-              }
-            } else if (supply_token.id.toLowerCase() === TOKENS['ichi']['address'].toLowerCase()){
-              strategy_balance_ichi += Number(supply_token.amount) * 10 ** TOKENS.ichi.decimals;
+            } else if (supply_token.id.toLowerCase() === TOKENS.pol_ichi.address.toLowerCase()){
+              strategy_balance_ichi += Number(supply_token.amount) * 10 ** TOKENS.pol_ichi.decimals;
             }
-            if (supply_token.id.toLowerCase() === TOKENS['usdc']['address'].toLowerCase()) {
-              usdc_in_position += Number(supply_token.amount) * 10 ** 6;
+            if (supply_token.id.toLowerCase() === TOKENS.pol_usdc.address.toLowerCase()) {
+              usdc_in_position += Number(supply_token.amount) * 10 ** TOKENS.pol_usdc.decimals;
             }
             if (supply_token.id.toLowerCase() === stimulusTokenAddress.toLowerCase()) {
               strategy_balance_stimulus += Number(supply_token.amount) * 10 ** stimulusDecimals;
@@ -172,7 +167,7 @@ export const updateTreasuryItem = async (
           }
         }
       }
-    }*/
+    }
   }
 
   if (auxStrategies.length > 0) {
