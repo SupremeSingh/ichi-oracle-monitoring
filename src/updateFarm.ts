@@ -4,7 +4,7 @@ import { ADDRESSES, POOLS, LABELS, CHAIN_ID, TOKENS, dbClient } from './configMa
 import { getPoolRecord } from './getPoolRecord';
 import { GraphData } from './subgraph/model';
 import { GraphFarm } from './subgraph/farm_v2';
-import { vault_graph_query, Vault, DataPacket, getCurrentVaultValue } from './subgraph/ichi_vaults';
+import { vault_graph_query, Vault, DataPacket, getCurrentVaultValue, getVaultPoolAddress } from './subgraph/ichi_vaults';
 import {
   adjustedPid,
   adjustedPidString,
@@ -217,6 +217,7 @@ export const updateFarm = async (
   }
 
   let baseTokenTVL = Number(pool['tvl']);
+  pool['poolAddress'] = '';
   let vaultAPR = 0;
   let vaultIRR = 0;
   if (dub_vault) {
@@ -233,6 +234,8 @@ export const updateFarm = async (
     let irrStartDate: Date = LABELS[poolId].irrStartDate;
     let irrStartTxAmount: number = LABELS[poolId].irrStartTxAmount;
     const decimals = VAULT_DECIMAL_TRACKER[vaultName];
+
+    pool['poolAddress'] = (await getVaultPoolAddress(vaultAddress, provider)).toString();
 
     if (isHodl) {
       baseTokenTVL = Number(
@@ -317,6 +320,7 @@ export const updateFarm = async (
       'lpName = :lpName, ' +
       'lpAddress = :lpAddress, ' +
       'lpPrice = :lpPrice, ' +
+      'poolAddress = :poolAddress, ' +
       'extras = :extras, ' +
       'farm = :farm, ' +
       'shortLpName = :shortLpName, ' +
@@ -353,6 +357,7 @@ export const updateFarm = async (
       ':lpName': { S: lpName },
       ':lpAddress': { S: pool['lpAddress'] },
       ':lpPrice': { N: Number(lpPrice).toString() },
+      ':poolAddress': { S: pool['poolAddress'] },
       ':extras': { M: extras },
       ':farm': { M: farm },
       ':shortLpName': { S: shortLpName },

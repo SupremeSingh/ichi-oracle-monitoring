@@ -401,6 +401,15 @@ function compare(a, b) {
   }
 }
 
+export async function getVaultPoolAddress(
+  vaultAddress: string,
+  provider: ethers.providers.JsonRpcProvider
+): Promise<string> {
+  const vaultContract = new ethers.Contract(vaultAddress, vaultABI, provider);
+  const poolAddress: string = await vaultContract.pool();
+  return poolAddress;
+}
+
 export async function getCurrentVaultValue(
   vaultAddress: string,
   amountsInverted: boolean,

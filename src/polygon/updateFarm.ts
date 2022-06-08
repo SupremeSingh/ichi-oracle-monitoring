@@ -4,7 +4,7 @@ import { ADDRESSES, POOLS, LABELS, TOKENS, CHAIN_ID } from './configPolygon';
 import { getPoolRecord } from './getPoolRecord';
 import { GraphData } from '../subgraph/model';
 import { GraphFarm } from '../subgraph/farm_v2';
-import { vault_graph_query, Vault, DataPacket, getCurrentVaultValue } from '../subgraph/ichi_vaults';
+import { vault_graph_query, Vault, DataPacket, getCurrentVaultValue, getVaultPoolAddress } from '../subgraph/ichi_vaults';
 import {
   adjustedPid,
   adjustedPidString,
@@ -199,6 +199,8 @@ export const updateFarm = async (
     let irrStartTxAmount: number = LABELS[poolId].irrStartTxAmount;
     const decimals = VAULT_DECIMAL_TRACKER[vaultName];
 
+    pool['poolAddress'] = (await getVaultPoolAddress(vaultAddress, provider)).toString();
+
     if (isHodl) {
       baseTokenTVL = Number(
         await getCurrentVaultValue(vaultAddress, isInverted, decimals.baseToken, decimals.scarceToken, provider)
@@ -284,6 +286,7 @@ export const updateFarm = async (
       'lpName = :lpName, ' +
       'lpAddress = :lpAddress, ' +
       'lpPrice = :lpPrice, ' +
+      'poolAddress = :poolAddress, ' +
       'extras = :extras, ' +
       'farm = :farm, ' +
       'shortLpName = :shortLpName, ' +
@@ -320,6 +323,7 @@ export const updateFarm = async (
       ':lpName': { S: lpName },
       ':lpAddress': { S: pool['lpAddress'] },
       ':lpPrice': { N: Number(lpPrice).toString() },
+      ':poolAddress': { S: pool['poolAddress'] },
       ':extras': { M: extras },
       ':farm': { M: farm },
       ':shortLpName': { S: shortLpName },
