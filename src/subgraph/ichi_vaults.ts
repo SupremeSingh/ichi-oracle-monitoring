@@ -228,21 +228,23 @@ export class Vault {
 
     // Transactions earlier than irrStartDate are removed.
     // First big transaction amount (made on irrStartDate) is replaced with irrStartTxAmount.
-    if (irrStartTxAmount !== 0) {
+    if (irrStartDate.toDateString() !== (new Date(0)).toDateString()) {
       firstTxDate = irrStartDate;
       xirrObjArray = xirrObjArray.filter((tx) => {
         const currTxDate = new Date(tx.when);
         return currTxDate >= firstTxDate;
       });
       // replace first tx amount
-      xirrObjArray = xirrObjArray.map((tx) => {
-        const currTxDate = new Date(tx.when);
-        if (currTxDate.getTime() === firstTxDate.getTime()) {
-          return { amount: -irrStartTxAmount, when: tx.when };
-        } else {
-          return { amount: tx.amount, when: tx.when };
-        }
-      });
+      if (irrStartTxAmount !== 0) {
+          xirrObjArray = xirrObjArray.map((tx) => {
+          const currTxDate = new Date(tx.when);
+          if (currTxDate.getTime() === firstTxDate.getTime()) {
+            return { amount: -irrStartTxAmount, when: tx.when };
+          } else {
+            return { amount: tx.amount, when: tx.when };
+          }
+        });
+      }
     }
 
     xirrObjArray.push({ amount: this.currentVaultValue, when: new Date(Date.now()) });
