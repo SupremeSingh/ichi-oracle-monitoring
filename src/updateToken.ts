@@ -152,7 +152,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
     price = 1;
     if (tokenName == 'onebtc' || tokenName == 'oneuni') {
       // special case - get price from oneToken/ICHI vault's pool
-      let ichiAddress = TOKENS['ichi']['address'];
+      let ichiAddress = TOKENS['ichi_v2']['address'];
       let lookup_price = await lookUpTokenPrices([ichiAddress.toLowerCase()]);
       let ichi_price = lookup_price.data[ichiAddress.toLowerCase()].usd;
       price = await getOneTokenPriceFromVault(tokenName, ichi_price, provider);
