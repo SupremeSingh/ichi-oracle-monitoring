@@ -40,7 +40,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
         price = 1;
         break;
       case 'pol_ichi':
-        let ichiAddress = MAINNET_TOKENS['ichi']['address'];
+        let ichiAddress = MAINNET_TOKENS['ichi_v2']['address'];
         let lookup_price_ichi = await lookUpTokenPrices([ichiAddress.toLowerCase()]);
         price = lookup_price_ichi.data[ichiAddress.toLowerCase()].usd;
         priceChange = lookup_price_ichi.data[ichiAddress.toLowerCase()].usd_24h_change;
