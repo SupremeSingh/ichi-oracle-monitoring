@@ -46,8 +46,8 @@ async function lookUpXICHIPrice() {
 
   const xichiRatio = Number(xichiBalance) / Number(xichiSupply);
 
-  const lookup_price = await lookUpTokenPrices([TOKENS['ichi'].address.toLowerCase()]);
-  const ichiPrice = lookup_price.data[TOKENS['ichi'].address.toLowerCase()].usd;
+  const lookup_price = await lookUpTokenPrices([TOKENS['ichi_v2'].address.toLowerCase()]);
+  const ichiPrice = lookup_price.data[TOKENS['ichi_v2'].address.toLowerCase()].usd;
 
   return Number(ichiPrice) * xichiRatio;
 }
@@ -183,8 +183,8 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
       case 'link':
         price = await lookupStimulusOraclePrice(TOKENS['onelink']['address'], 9);
         break;
-      case 'ichi_v2':
-        let ichiAddress = TOKENS['ichi']['address'];
+      case 'ichi':
+        let ichiAddress = TOKENS['ichi_v2']['address'];
         let lookup_price1 = await lookUpTokenPrices([ichiAddress.toLowerCase()]);
         price = lookup_price1.data[ichiAddress.toLowerCase()].usd;
         priceChange = lookup_price1.data[ichiAddress.toLowerCase()].usd_24h_change;
