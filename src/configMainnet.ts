@@ -80,7 +80,7 @@ const POOLS = {
   //activePools : [],
   depositPools: [1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10005, 10009],
   activeVaults: [
-    1016, 1019, 1020, 1021, 1022, 1024, 1025, 1026, 1028, 20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008, 10006,
+    1016, 1019, 1020, 1021, 1022, 1024, 1025, 1026, 1028, 1029, 20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008, 10006,
     10008
   ],
   //activeVaults: [],
@@ -90,7 +90,7 @@ const POOLS = {
   retiredPools: [],
   unretiredPools: [
     10001, 10008, 10009, 20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008, 1001, 1005, 1009, 1010, 1012, 1013,
-    1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1028
+    1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1028, 1029
   ],
   oneInchPools: [15, 16, 10001],
   balancerPools: [18, 1001, 1002, 1008],
@@ -885,6 +885,20 @@ LABELS[1028] = {
   isHodl: true,
   vaultName: 'wbtc_v2',
   vaultAddress: '0x913b7D91e019402233d2f75863133925CE658CD9',
+  irrStartDate: new Date(0),
+  irrStartTxAmount: 0
+};
+LABELS[1029] = {
+  name: 'BNT Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  tradeUrl:
+    'https://app.bancor.network/trade?from=0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE&to=0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C',
+  subgraphEndpoint: '',
+  isInverted: true,
+  isHodl: true,
+  vaultName: 'bnt_v2',
+  vaultAddress: '0x4DFa8455658f4d6D2eeb91CbeFb0Ee94056bB3dC',
   irrStartDate: new Date(0),
   irrStartTxAmount: 0
 };
