@@ -316,59 +316,64 @@ export class Vault {
 function getUserStateInVault(dataPackets: DataPacket[]): UserStates {
   let isDeposit: boolean;
   const userStates:UserStates = {};
-  let packetData: any[];
+  let packetData: any[] = [];
   for (const packet of dataPackets) {
       if (packet.type == 'deposit') {
+          packetData = packetData.concat(packet.data.data['vaultDeposits']);
+      } else {
+          packetData = packetData.concat(packet.data.data['vaultWithdraws']);
+      }
+  }
+  packetData.sort((a,b) => (Number(a.createdAtTimestamp) - Number(b.createdAtTimestamp)));
+
+  //console.log(JSON.stringify(packetData1))
+  for (const transaction of packetData) {
+      if (transaction["__typename"] == 'VaultDeposit') {
           isDeposit = true;
-          packetData = packet.data.data['vaultDeposits'];
       } else {
           isDeposit = false;
-          packetData = packet.data.data['vaultWithdraws'];
       }
-      for (const transaction of packetData) {
-          const account = transaction["sender"];
-          const shares = BNtoNumberWithoutDecimals(transaction["shares"], 18);
+      const account = transaction["sender"];
+      const shares = BNtoNumberWithoutDecimals(transaction["shares"], 18);
 
-          if (userStates[account]) {
-            userStates[account].transactionsToKeep.push(transaction["id"]);
-            if (isDeposit) {
-                  userStates[account].sharesIn += shares;
-                  userStates[account].sharesCurrent += shares;
-              } else {
-                  userStates[account].sharesOut += shares;
-                  userStates[account].sharesCurrent -= shares;
-              }
-              userStates[account].isGone = (userStates[account].sharesIn == 0) ||
-                  (userStates[account].sharesCurrent / userStates[account].sharesIn < 0.001)
-
-              if (userStates[account].isGone) {
-                userStates[account].transactionsToSkip = userStates[account].transactionsToSkip.concat(userStates[account].transactionsToKeep);
-                userStates[account].transactionsToKeep = [];
-              }
+      if (userStates[account]) {
+          userStates[account].transactionsToKeep.push(transaction["id"]);
+          if (isDeposit) {
+              userStates[account].sharesIn += shares;
+              userStates[account].sharesCurrent += shares;
           } else {
-              if (isDeposit) {
-                  const userState:UserStateInVault = {
-                      sharesIn: shares,
-                      sharesOut: 0,
-                      sharesCurrent: shares,
-                      transactionsToSkip: [],
-                      transactionsToKeep: [transaction["id"]],
-                      isGone: false
-                  };
-                  userStates[account] = userState;
-              } else {
-                  const userState:UserStateInVault = {
-                      sharesIn: 0,
-                      sharesOut: shares,
-                      sharesCurrent: -shares,
-                      transactionsToSkip: [],
-                      transactionsToKeep: [transaction["id"]],
-                      isGone: false
-                  };
-                  userStates[account] = userState;
-              }
+              userStates[account].sharesOut += shares;
+              userStates[account].sharesCurrent -= shares;
           }
-          
+          userStates[account].isGone = (userStates[account].sharesIn == 0) ||
+              (userStates[account].sharesCurrent / userStates[account].sharesIn < 0.001)
+
+          if (userStates[account].isGone) {
+              userStates[account].transactionsToSkip = userStates[account].transactionsToSkip.concat(userStates[account].transactionsToKeep);
+              userStates[account].transactionsToKeep = [];
+          }
+      } else {
+          if (isDeposit) {
+              const userState:UserStateInVault = {
+                  sharesIn: shares,
+                  sharesOut: 0,
+                  sharesCurrent: shares,
+                  transactionsToSkip: [],
+                  transactionsToKeep: [transaction["id"]],
+                  isGone: false
+              };
+              userStates[account] = userState;
+          } else {
+              const userState:UserStateInVault = {
+                  sharesIn: 0,
+                  sharesOut: shares,
+                  sharesCurrent: -shares,
+                  transactionsToSkip: [],
+                  transactionsToKeep: [transaction["id"]],
+                  isGone: false
+              };
+              userStates[account] = userState;
+          }
       }
   }
 
