@@ -126,6 +126,7 @@ export type DataPacket = {
 };
 
 type VerboseTransaction = {
+  id: string;
   date: Date;
   oneTokenAmount: number;
   scarceTokenAmount: number;
@@ -152,6 +153,8 @@ type UserStateInVault = {
   sharesIn: number;
   sharesOut: number;
   sharesCurrent: number;
+  transactionsToSkip: string[];
+  transactionsToKeep: string[];
 };
 
 type DecimalsObject = {
@@ -327,7 +330,8 @@ function getUserStateInVault(dataPackets: DataPacket[]): UserStates {
           const shares = BNtoNumberWithoutDecimals(transaction["shares"], 18);
 
           if (userStates[account]) {
-              if (isDeposit) {
+            userStates[account].transactionsToKeep.push(transaction["id"]);
+            if (isDeposit) {
                   userStates[account].sharesIn += shares;
                   userStates[account].sharesCurrent += shares;
               } else {
@@ -336,14 +340,19 @@ function getUserStateInVault(dataPackets: DataPacket[]): UserStates {
               }
               userStates[account].isGone = (userStates[account].sharesIn == 0) ||
                   (userStates[account].sharesCurrent / userStates[account].sharesIn < 0.001)
-              //userStates[account].isGone = (userStates[account].sharesCurrent * 2) 
-              //    / (userStates[account].sharesIn + userStates[account].sharesOut) < 1.0001;
+
+              if (userStates[account].isGone) {
+                userStates[account].transactionsToSkip = userStates[account].transactionsToSkip.concat(userStates[account].transactionsToKeep);
+                userStates[account].transactionsToKeep = [];
+              }
           } else {
               if (isDeposit) {
                   const userState:UserStateInVault = {
                       sharesIn: shares,
                       sharesOut: 0,
                       sharesCurrent: shares,
+                      transactionsToSkip: [],
+                      transactionsToKeep: [transaction["id"]],
                       isGone: false
                   };
                   userStates[account] = userState;
@@ -352,6 +361,8 @@ function getUserStateInVault(dataPackets: DataPacket[]): UserStates {
                       sharesIn: 0,
                       sharesOut: shares,
                       sharesCurrent: -shares,
+                      transactionsToSkip: [],
+                      transactionsToKeep: [transaction["id"]],
                       isGone: false
                   };
                   userStates[account] = userState;
@@ -417,6 +428,7 @@ function getVerboseTransactions(
       const type = packet.type;
 
       const holder: VerboseTransaction = {
+        id: transaction["id"],
         date: date,
         oneTokenAmount: oneTokenAmount,
         scarceTokenAmount: scarceTokenAmount,
@@ -457,7 +469,8 @@ function getDistilledTransactions(
 
   for (const transaction of verboseTransactions) {
     // skip transactions from user who withdrew
-    if (userStates[transaction["account"]].isGone) continue;
+    if (userStates[transaction.account].transactionsToSkip.includes(transaction.id)) continue;
+    // if (userStates[transaction["account"]].isGone) continue;
 
     let dollarAmount = getDollarAmount(transaction);
     if (transaction.type == 'deposit') {
