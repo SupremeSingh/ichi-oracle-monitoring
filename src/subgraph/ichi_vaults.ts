@@ -54,6 +54,8 @@ query($first: Int, $skip: Int, $vault: String, $ts: Int){
     amount1
     createdAtTimestamp
     sqrtPrice
+    sender
+    shares
     totalAmount0
     totalAmount1
     totalAmount0BeforeEvent
@@ -70,6 +72,8 @@ query($first: Int, $skip: Int, $vault: String, $ts: Int){
     amount1
     createdAtTimestamp
     sqrtPrice
+    sender
+    shares
     totalAmount0
     totalAmount1
     totalAmount0BeforeEvent
@@ -126,6 +130,7 @@ type VerboseTransaction = {
   oneTokenAmount: number;
   scarceTokenAmount: number;
   price: number;
+  account: string;
   oneTokenTotalAmount: number;
   scarceTokenTotalAmount: number;
   oneTokenTotalAmountBeforeEvent: number;
@@ -136,6 +141,17 @@ type VerboseTransaction = {
 type DistilledTransaction = {
   amount: number;
   when: Date;
+};
+
+interface UserStates {
+  [account: string]: UserStateInVault;
+}
+
+type UserStateInVault = {
+  isGone: boolean;
+  sharesIn: number;
+  sharesOut: number;
+  sharesCurrent: number;
 };
 
 type DecimalsObject = {
@@ -152,6 +168,7 @@ export class Vault {
   dataPackets: DataPacket[];
   verboseTransactions: VerboseTransaction[] = [];
   distilledTransactions: DistilledTransaction[] = [];
+  userStatesInVault: UserStates;
   currentVaultValue: number;
   cutOffDate: Date;
   APR: number;
@@ -175,13 +192,22 @@ export class Vault {
     this.decimals = VAULT_DECIMAL_TRACKER[vaultName];
     this.dataPackets = data;
     this.cutOffDate = cutOffDate;
+
+    // check which users are still in the vault and which one already withdrew
+      this.userStatesInVault = getUserStateInVault(this.dataPackets);
+      //console.log(vaultName + ' : ' + JSON.stringify(this.userStatesInVault));
+        
     this.verboseTransactions = getVerboseTransactions(
       this.dataPackets,
       this.amountsInverted,
       this.decimals.baseToken,
       this.decimals.scarceToken
     );
-    this.distilledTransactions = getDistilledTransactions(this.verboseTransactions, this.cutOffDate);
+    this.distilledTransactions = getDistilledTransactions(
+      this.verboseTransactions, 
+      this.cutOffDate, 
+      this.userStatesInVault
+    );
     this.calcCurrentValue();
   }
 
@@ -284,6 +310,62 @@ export class Vault {
   }
 }
 
+function getUserStateInVault(dataPackets: DataPacket[]): UserStates {
+  let isDeposit: boolean;
+  const userStates:UserStates = {};
+  let packetData: any[];
+  for (const packet of dataPackets) {
+      if (packet.type == 'deposit') {
+          isDeposit = true;
+          packetData = packet.data.data['vaultDeposits'];
+      } else {
+          isDeposit = false;
+          packetData = packet.data.data['vaultWithdraws'];
+      }
+      for (const transaction of packetData) {
+          const account = transaction["sender"];
+          const shares = BNtoNumberWithoutDecimals(transaction["shares"], 18);
+
+          if (userStates[account]) {
+              if (isDeposit) {
+                  userStates[account].sharesIn += shares;
+                  userStates[account].sharesCurrent += shares;
+              } else {
+                  userStates[account].sharesOut += shares;
+                  userStates[account].sharesCurrent -= shares;
+              }
+              userStates[account].isGone = (userStates[account].sharesIn == 0) ||
+                  (userStates[account].sharesCurrent / userStates[account].sharesIn < 0.001)
+              //userStates[account].isGone = (userStates[account].sharesCurrent * 2) 
+              //    / (userStates[account].sharesIn + userStates[account].sharesOut) < 1.0001;
+          } else {
+              if (isDeposit) {
+                  const userState:UserStateInVault = {
+                      sharesIn: shares,
+                      sharesOut: 0,
+                      sharesCurrent: shares,
+                      isGone: false
+                  };
+                  userStates[account] = userState;
+              } else {
+                  const userState:UserStateInVault = {
+                      sharesIn: 0,
+                      sharesOut: shares,
+                      sharesCurrent: -shares,
+                      isGone: false
+                  };
+                  userStates[account] = userState;
+              }
+          }
+          
+      }
+  }
+
+  //console.log(JSON.stringify(userStates))
+
+  return userStates;
+}
+
 function getVerboseTransactions(
   dataPackets: DataPacket[],
   amountsInverted: boolean,
@@ -339,6 +421,7 @@ function getVerboseTransactions(
         oneTokenAmount: oneTokenAmount,
         scarceTokenAmount: scarceTokenAmount,
         price: price,
+        account: transaction["sender"],
         oneTokenTotalAmount: oneTokenTotalAmount,
         scarceTokenTotalAmount: scarceTokenTotalAmount,
         oneTokenTotalAmountBeforeEvent: oneTokenTotalAmountBeforeEvent,
@@ -355,7 +438,11 @@ function getVerboseTransactions(
   return verboseTransactions;
 }
 
-function getDistilledTransactions(verboseTransactions: VerboseTransaction[], cutOffDate: Date): DistilledTransaction[] {
+function getDistilledTransactions(
+    verboseTransactions: VerboseTransaction[], 
+    cutOffDate: Date,
+    userStates: UserStates
+  ): DistilledTransaction[] {
   const distilledTransactions: DistilledTransaction[] = [];
 
   //aggregates the transactions before the IRR start date
@@ -369,6 +456,9 @@ function getDistilledTransactions(verboseTransactions: VerboseTransaction[], cut
   distilledTransactions.push(aggregateHolder);
 
   for (const transaction of verboseTransactions) {
+    // skip transactions from user who withdrew
+    if (userStates[transaction["account"]].isGone) continue;
+
     let dollarAmount = getDollarAmount(transaction);
     if (transaction.type == 'deposit') {
       dollarAmount = -dollarAmount;

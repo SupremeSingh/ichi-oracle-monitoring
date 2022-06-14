@@ -81,7 +81,8 @@ LABELS[4000] = {
   isHodl: false,
   vaultName: 'polygon_onebtc',
   vaultAddress: '0xE5bf5D33C617556B91558aAfb7BeadB68E9Cea81',
-  irrStartDate: new Date('2022-05-26T02:00:00'),
+  //irrStartDate: new Date('2022-05-26T02:00:00'),
+  irrStartDate: new Date(0),
   irrStartTxAmount: 0
 };
 LABELS[4001] = {
@@ -95,7 +96,8 @@ LABELS[4001] = {
   isHodl: true,
   vaultName: 'polygon_wbtc',
   vaultAddress: '0x4aEF5144131dB95c110af41c8Ec09f46295a7C4B',
-  irrStartDate: new Date('2022-05-26T02:00:00'),
+  //irrStartDate: new Date('2022-05-26T02:00:00'),
+  irrStartDate: new Date(0),
   irrStartTxAmount: 0
 };
 LABELS[4002] = {
