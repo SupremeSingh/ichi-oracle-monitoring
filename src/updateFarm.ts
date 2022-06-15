@@ -19,7 +19,8 @@ import { ChainId, getProvider } from './providers';
 
 const getExchangeName = async function (poolId: number) {
   if (POOLS.depositPools.includes(poolId)) return '';
-  if (POOLS.bancorPools.includes(poolId)) return 'bancor';
+  if (POOLS.bancorPoolsV2.includes(poolId)) return 'bancor';
+  if (POOLS.bancorPoolsV3.includes(poolId)) return 'bancor v3';
   if (POOLS.dodoPools.includes(poolId)) return 'dodo';
   if (POOLS.rariAssets.includes(poolId)) return 'rari';
   if (POOLS.oneInchPools.includes(poolId)) return '1inch';

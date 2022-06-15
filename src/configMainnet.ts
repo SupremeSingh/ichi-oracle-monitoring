@@ -14,6 +14,7 @@ export const dbClient = new AWS.DynamoDB({ apiVersion: '2012-08-10' });
 const ADDRESSES = {
   // to look for BNT Converter addresses use this contract: 0xC0205e203F423Bcd8B2a4d6f8C8A154b0Aa60F19
   ICHI_BNT: '0x4a2F0Ca5E03B2cF81AebD936328CF2085037b63B',
+  ICHI_BNT_V3: '0x36FAbE4cAeF8c190550b6f93c306A5644E7dCef6',
   ICHIBPT: '0x96855eDEfC3Ad2d9eFD0421F301d1324e1e93a52',
   ETH: '0x0000000000000000000000000000000000000000',
   ALLY: '0x1aa1e61369874bae3444A8Ef6528d6b13D6952EF',
@@ -76,7 +77,7 @@ const TREASURIES = {
 };
 
 const POOLS = {
-  activePools: [1001, 1004, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005, 10009],
+  activePools: [1001, 1004, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10001, 10003, 10004, 10005, 10009, 10010],
   //activePools : [],
   depositPools: [1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10005, 10009],
   activeVaults: [
@@ -89,13 +90,14 @@ const POOLS = {
   migratingPools: [],
   retiredPools: [],
   unretiredPools: [
-    10001, 10008, 10009, 20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008, 1001, 1005, 1009, 1010, 1012, 1013,
+    10001, 10003, 10008, 10009, 10010, 20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008, 1001, 1005, 1009, 1010, 1012, 1013,
     1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1028, 1029
   ],
   oneInchPools: [15, 16, 10001],
   balancerPools: [18, 1001, 1002, 1008],
   balancerSmartPools: [1003, 1007],
-  bancorPools: [14, 1006, 10003],
+  bancorPoolsV2: [14, 1006, 10003],
+  bancorPoolsV3: [10010],
   uniPools: [1005],
   loopringPools: [10002],
   dodoPools: [10004, 10007],
@@ -581,10 +583,10 @@ LABELS[10003] = {
   name: 'ICHI-BNT',
   lpName: 'ICHI',
   shortLpName: 'ICHI',
-  tradeUrl: 'https://app.bancor.network/eth/portfolio/stake/add/single/0x563f6e19197A8567778180F66474E30122FD702A',
-  externalUrl: 'https://app.bancor.network/eth/portfolio',
-  externalText: 'Earn xICHI',
-  externalButton: 'Earn'
+  tradeUrl: 'https://app.bancor.network/portfolio/v2',
+  externalUrl: 'https://app.bancor.network/portfolio/v2',
+  externalText: 'Migrate',
+  externalButton: 'Migrate'
 };
 LABELS[10004] = {
   name: 'oneDODO-USDC',
@@ -656,6 +658,15 @@ LABELS[10009] = {
   externalUrl: 'https://app.rari.capital/fuse/pool/136',
   externalText: 'Earn $ICHI and $oneBTC',
   externalButton: 'RARI'
+};
+LABELS[10010] = {
+  name: 'ICHI',
+  lpName: 'ICHI',
+  shortLpName: 'ICHI',
+  tradeUrl: 'https://app.bancor.network/portfolio',
+  externalUrl: 'https://app.bancor.network/eth/portfolio',
+  externalText: 'Earn',
+  externalButton: 'Earn'
 };
 LABELS[1001] = {
   name: '80/20 ICHI-ETH',

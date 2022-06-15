@@ -40,6 +40,12 @@ async function getICHIBNTContract() {
   return poolContract;
 }
 
+async function getICHIBNTV3Contract() {
+  const provider = await getProvider(ChainId.mainnet);
+  const poolContract = new ethers.Contract(ADDRESSES.ICHI_BNT_V3, ERC20_ABI, provider);
+  return poolContract;
+}
+
 // async function getProvider(network) {
 //   if (network == 'bsc') {
 //     return bsc_provider;
@@ -58,7 +64,7 @@ async function getDLPContract(address: string, chainId: number) {
 // Used for Bancor and Smart Balancer pools
 async function getPoolContract(poolID: number, useBasic: boolean, farm, adjusterPoolId: number) {
   let isBalancerPool = POOLS.balancerPools.includes(poolID);
-  let isBancorPool = POOLS.bancorPools.includes(poolID);
+  let isBancorPoolV2 = POOLS.bancorPoolsV2.includes(poolID);
   let isBalancerSmartPool = POOLS.balancerSmartPools.includes(poolID);
   let isVault = POOLS.activeVaults.includes(poolID) || POOLS.underlyingVaults.includes(poolID);
 
@@ -72,7 +78,7 @@ async function getPoolContract(poolID: number, useBasic: boolean, farm, adjuster
   }
 
   const provider = await getProvider(ChainId.mainnet);
-  if (isBancorPool) {
+  if (isBancorPoolV2) {
     // exception for Bancor pools, getting proxy (pool owner) contract
     if (useBasic) {
       const poolContract = new ethers.Contract(poolToken, PAIR_ABI, provider);
@@ -138,12 +144,12 @@ async function getTokenData(token) {
 
 async function getPoolTokens(poolID: number, poolContract) {
   let isBalancerPool = POOLS.balancerPools.includes(poolID) || POOLS.balancerSmartPools.includes(poolID);
-  let isBancorPool = POOLS.bancorPools.includes(poolID);
+  let isBancorPoolV2 = POOLS.bancorPoolsV2.includes(poolID);
 
   let token0 = '';
   let token1 = '';
 
-  if (isBancorPool) {
+  if (isBancorPoolV2) {
     // exception for Bancor pools, getting proxy (pool owner) contract
     let tokens = await poolContract.reserveTokens();
     token0 = tokens[0].toLowerCase();
@@ -198,11 +204,11 @@ async function getBalancerPoolReserves(token0, token1, poolContract) {
 }
 
 async function getPoolReserves(poolID, poolContract) {
-  let isBancorPool = POOLS.bancorPools.includes(poolID);
+  let isBancorPoolV2 = POOLS.bancorPoolsV2.includes(poolID);
   let isVault = POOLS.activeVaults.includes(poolID) || POOLS.underlyingVaults.includes(poolID);
   let isDodoPool = POOLS.dodoPools.includes(poolID);
 
-  if (isBancorPool) {
+  if (isBancorPoolV2) {
     // exception for Bancor pool, getting proxy (pool owner) contract
     let reserveBalances = await poolContract.reserveBalances();
     return {
@@ -235,11 +241,11 @@ async function getPoolReserves(poolID, poolContract) {
 
 async function getTotalSupply(poolID, poolContract, lpToken) {
   const provider = await getProvider(ChainId.mainnet);
-  let isBancorPool = POOLS.bancorPools.includes(poolID);
+  let isBancorPoolV2 = POOLS.bancorPoolsV2.includes(poolID);
   let isBalancerSmartPool = POOLS.balancerSmartPools.includes(poolID);
 
-  if (isBancorPool) {
-    // exception for Bancor pools, getting proxy (pool owner) contract
+  if (isBancorPoolV2) {
+    // exception for Bancor V2 pool, getting proxy (pool owner) contract
     const bntContract = new ethers.Contract(lpToken, PAIR_ABI, provider);
     let tLP = await bntContract.totalSupply();
     return tLP.toString();
@@ -626,13 +632,13 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
 
     let farmTVL = reserve1Raw * prices[token1];
     let dailyAPY = 0;
-    if (knownIchiPerBlock['10003']) {
+    /*if (knownIchiPerBlock['10003']) {
       if (farmTVL !== 0) {
         let ichiReturnUsd =
           (BLOCKS_PER_DAY * (Number(knownIchiPerBlock['10003']) / 10 ** 9) * tokenPrices['ichi']) / farmTVL;
         dailyAPY = ichiReturnUsd * 100;
       }
-    }
+    }*/
 
     let poolRecord = {
       pool: poolID,
@@ -1077,6 +1083,49 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
       decimals1: 0,
       token0: 'oneBTC',
       token1: ''
+    };
+
+    return poolRecord;
+  }
+  if (poolID === 10010) {
+    let token0 = TOKENS.bnt.address;
+    let token1 = TOKENS.ichi.address;
+
+    const poolContract = await getICHIBNTV3Contract();
+
+    let totalPoolLP = await getTotalSupply(poolID, poolContract, null);
+
+    let prices = {};
+    prices[token0] = tokenPrices['bnt'];
+    prices[token1] = tokenPrices['ichi'];
+
+    let reserve1Raw = totalPoolLP / 10 ** 9; //ICHI
+    let reserve0Raw = reserve1Raw * prices[token1] / prices[token0]; //bnt
+
+    let TVL = reserve1Raw * prices[token1] * 2;
+
+    let farmTVL = reserve1Raw * prices[token1];
+    let dailyAPY = 0;
+
+    let poolRecord = {
+      pool: poolID,
+      lpAddress: ADDRESSES.ICHI_BNT_V3,
+      dailyAPY: dailyAPY,
+      weeklyAPY: dailyAPY * 7,
+      monthlyAPY: dailyAPY * 30,
+      yearlyAPY: dailyAPY * 365,
+      totalPoolLP: totalPoolLP,
+      totalFarmLP: totalPoolLP,
+      tvl: TVL,
+      farmTVL: farmTVL,
+      reserve0Raw: reserve0Raw,
+      reserve1Raw: reserve1Raw,
+      address0: token0,
+      address1: token1,
+      decimals0: 18,
+      decimals1: 9,
+      token0: 'BNT',
+      token1: 'ICHI'
     };
 
     return poolRecord;
