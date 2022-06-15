@@ -660,11 +660,11 @@ LABELS[10009] = {
   externalButton: 'RARI'
 };
 LABELS[10010] = {
-  name: 'ICHI',
+  name: 'ICHI-BNT',
   lpName: 'ICHI',
   shortLpName: 'ICHI',
   tradeUrl: 'https://app.bancor.network/portfolio',
-  externalUrl: 'https://app.bancor.network/eth/portfolio',
+  externalUrl: 'https://app.bancor.network/portfolio',
   externalText: 'Earn',
   externalButton: 'Earn'
 };
