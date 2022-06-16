@@ -496,6 +496,10 @@ const get1inchPools = async function () {
   return await axios.get(APIS._1inchPoolAPI);
 };
 
+const getBancorV3Pools = async function () {
+  return await axios.get(APIS.bancor_v3_API);
+};
+
 const getLoopringPools = async function () {
   return await axios.get(APIS.loopringAPI);
 };
@@ -1105,8 +1109,26 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
     let TVL = reserve1Raw * prices[token1] * 2;
 
     let farmTVL = reserve1Raw * prices[token1];
-    let dailyAPY = 0;
 
+    let dailyAPY = 0;
+    let allPools = await getBancorV3Pools();
+    if (allPools && allPools['data'] && allPools['data']['data']) {
+      let ichiPool = {};
+      for (let index = 0; index < allPools['data']['data'].length; index++) {
+        const pool = allPools['data']['data'][index];
+        if (pool['poolTokenDltId'] == ADDRESSES.ICHI_BNT_V3) {
+          ichiPool = pool;
+          break;
+        }
+      }
+      // replace this with fees7d when the pools settles down
+      // add dual rwewards when they are available
+      if (ichiPool['fees24h']) {
+        const fees = Number(ichiPool['fees24h']['tkn']);
+        dailyAPY = fees * 100 / farmTVL;
+      }
+    }
+    
     let poolRecord = {
       pool: poolID,
       lpAddress: ADDRESSES.ICHI_BNT_V3,

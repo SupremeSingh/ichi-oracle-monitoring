@@ -53,7 +53,8 @@ const APIS = {
   _1inchPoolAPI: 'https://governance.1inch.exchange/v1.1/farming/pools',
   subgraph_farming_v2: 'https://api.thegraph.com/subgraphs/name/ichi-org/farmv2',
   subgraph_risk_harbor: 'https://api.thegraph.com/subgraphs/name/risk-harbor/v2-mainnet',
-  subgraph_v1_mainnet: 'https://api.thegraph.com/subgraphs/name/ichi-org/v1'
+  subgraph_v1_mainnet: 'https://api.thegraph.com/subgraphs/name/ichi-org/v1',
+  bancor_v3_API: 'https://api-v3.bancor.network/pools'
 };
 
 const TREASURIES = {
@@ -663,7 +664,7 @@ LABELS[10010] = {
   name: 'ICHI-BNT',
   lpName: 'ICHI',
   shortLpName: 'ICHI',
-  tradeUrl: 'https://app.bancor.network/portfolio',
+  tradeUrl: 'https://app.bancor.network/earn',
   externalUrl: 'https://app.bancor.network/portfolio',
   externalText: 'Earn',
   externalButton: 'Earn'
