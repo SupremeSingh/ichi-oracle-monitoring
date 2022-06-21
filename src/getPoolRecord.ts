@@ -1121,11 +1121,9 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
           break;
         }
       }
-      // replace this with fees7d when the pools settles down
-      // add dual rwewards when they are available
-      if (ichiPool['fees24h']) {
-        const fees = Number(ichiPool['fees24h']['tkn']);
-        dailyAPY = fees * 100 / farmTVL;
+      if (ichiPool['fees7d']) {
+        const fees = Number(ichiPool['fees7d']['tkn']);
+        dailyAPY = fees * 100 / farmTVL / 7;
       }
     }
     
