@@ -326,7 +326,7 @@ function getUserStateInVault(dataPackets: DataPacket[]): UserStates {
   }
   packetData.sort((a,b) => (Number(a.createdAtTimestamp) - Number(b.createdAtTimestamp)));
 
-  //console.log(JSON.stringify(packetData1))
+  //console.log(JSON.stringify(packetData))
   for (const transaction of packetData) {
       if (transaction["__typename"] == 'VaultDeposit') {
           isDeposit = true;
