@@ -74,7 +74,7 @@ const TREASURIES = {
     'oneICHI'
   ],
   //treasuries: ['oneICHI'],
-  legacyTreasuries: ['oneBTC', 'oneFIL', 'oneMPH', 'onePERL', 'oneDODO', 'oneUNI', 'oneOJA', 'oneWING']
+  legacyTreasuries: ['oneBTC', 'oneFIL', 'oneMPH', 'onePERL', 'oneDODO', 'oneUNI', 'oneOJA', 'oneWING', 'BOOTusd']
 };
 
 const POOLS = {
