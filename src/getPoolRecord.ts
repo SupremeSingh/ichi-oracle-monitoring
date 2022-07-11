@@ -747,9 +747,6 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
         break;
       }
     }
-    //console.log(secondaryData)
-    //console.log(secondaryData[3][3].toString())
-    //console.log(secondaryData[3][6].toString())
 
     let data = await lensContract.callStatic.getPoolAssetsWithData(ADDRESSES.rari_comptroller);
 
@@ -758,15 +755,7 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
     let poolLP = '';
     for (let item of data) {
       if (item['underlyingSymbol'] == 'oneUNI') {
-        //console.log(item['totalSupply'].toString());
-        //console.log(item['supplyRatePerBlock'].toString());
-        //console.log(item['underlyingPrice'].toString()); // in ETH
-
-        //const apy = convertMantissaToAPY(item['supplyRatePerBlock'], 365)
-        //console.log(apy.toString());
-
         const apr = convertMantissaToAPR(item['supplyRatePerBlock']);
-        //console.log(apr.toString());
 
         reserve0 = Number(item['totalSupply']);
         poolLP = item['totalSupply'].toString();
@@ -776,11 +765,10 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
         const newMantissa = (newRewardUSDPerBlock * 1e18) / newUnderlyingTotalSupplyUSD;
 
         const rewardsAPR = convertMantissaToAPR(newMantissa);
-        //console.log(rewradsAPR.toString());
-        combinedAPR = apr + rewardsAPR;
+        //combinedAPR = apr + rewardsAPR;
+        combinedAPR = 0; // hardcode APR as 0
       }
     }
-    //console.log(combinedAPR.toString());
 
     let reserve0Raw = reserve0 / 10 ** 18; //oneUNI
     let reserve1Raw = 0;
@@ -984,7 +972,8 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
         const newMantissa = (newRewardUSDPerBlock * 1e18) / newUnderlyingTotalSupplyUSD;
 
         const rewardsAPR = convertMantissaToAPR(newMantissa);
-        combinedAPR = apr + rewardsAPR;
+        //combinedAPR = apr + rewardsAPR;
+        combinedAPR = 0; // hardcode APR as 0
       }
     }
 
@@ -1015,7 +1004,7 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
     let secondaryData = await lensContractSecondary.callStatic.getRewardSpeedsByPool(ADDRESSES.rari_comptroller);
 
     let rewardSpeed = 0;
-    // make sure rewardSpeed matched the index of the oneUNI cToken address
+    // make sure rewardSpeed matched the index of the oneBTC cToken address
     // cToken addresses are in array 0, rewardSpeeds are in array 3
     for (let i = 0; i < secondaryData[0].length; i++) {
       if (secondaryData[0][i].toString().toLowerCase() == ADDRESSES.rari_onebtc.toLowerCase()) {
@@ -1023,9 +1012,6 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
         break;
       }
     }
-    //console.log(secondaryData)
-    //console.log(secondaryData[3][3].toString())
-    //console.log(secondaryData[3][6].toString())
 
     let data = await lensContract.callStatic.getPoolAssetsWithData(ADDRESSES.rari_comptroller);
 
@@ -1034,15 +1020,7 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
     let poolLP = '';
     for (let item of data) {
       if (item['underlyingSymbol'] == 'oneBTC') {
-        //console.log(item['totalSupply'].toString());
-        //console.log(item['supplyRatePerBlock'].toString());
-        //console.log(item['underlyingPrice'].toString()); // in ETH
-
-        //const apy = convertMantissaToAPY(item['supplyRatePerBlock'], 365)
-        //console.log(apy.toString());
-
         const apr = convertMantissaToAPR(item['supplyRatePerBlock']);
-        //console.log(apr.toString());
 
         reserve0 = Number(item['totalSupply']);
         poolLP = item['totalSupply'].toString();
@@ -1052,13 +1030,12 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
         const newMantissa = (newRewardUSDPerBlock * 1e18) / newUnderlyingTotalSupplyUSD;
 
         const rewardsAPR = convertMantissaToAPR(newMantissa);
-        //console.log(rewradsAPR.toString());
-        combinedAPR = apr + rewardsAPR;
+        //combinedAPR = apr + rewardsAPR;
+        combinedAPR = 0; // hardcode APR as 0
       }
     }
-    //console.log(combinedAPR.toString());
 
-    let reserve0Raw = reserve0 / 10 ** 18; //oneUNI
+    let reserve0Raw = reserve0 / 10 ** 18; //oneBTC
     let reserve1Raw = 0;
 
     let TVL = reserve0Raw + reserve1Raw;
