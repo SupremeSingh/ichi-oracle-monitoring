@@ -160,6 +160,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
   } else {
     switch (tokenName) {
       case 'usdc':
+      case 'dai':
         price = 1;
         break;
       case 'xichi':

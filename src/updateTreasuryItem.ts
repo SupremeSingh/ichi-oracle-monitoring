@@ -51,9 +51,13 @@ const getOneTokenAttributes = async function (tokenName: string) {
       scarceTokenName: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['scarceTokenName'] : '',
       scarceTokenDecimals: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['scarceTokenDecimals'] : 18,
       scarceToken: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['scarceToken'] : ''
-    }
+    },
+    collateralToken: TOKENS['usdc']
   };
 
+  if (tokenName == 'onegiv') {
+    template.collateralToken = TOKENS['dai'];
+  }
   if (tokenName == 'onebtc') {
     template.stimulus_decimals = 8;
   }
@@ -96,6 +100,7 @@ export const updateTreasuryItem = async (
   const stimulusDisplayName = attr.stimulus_display_name;
   const stimulusTokenName = attr.stimulus_name;
   const stimulusDecimals = attr.stimulus_decimals;
+  const collateralToken = attr.collateralToken;
   const baseName = attr.base_name;
   const decimals = attr.decimals;
   const tradeUrl = attr.tradeUrl;
@@ -107,6 +112,7 @@ export const updateTreasuryItem = async (
   const ICHI = new ethers.Contract(TOKENS['ichi']['address'], ERC20_ABI, provider);
   const stimulusToken = new ethers.Contract(stimulusTokenAddress, ERC20_ABI, provider);
   const USDC = new ethers.Contract(TOKENS['usdc']['address'], ERC20_ABI, provider);
+  const DAI = new ethers.Contract(TOKENS['dai']['address'], ERC20_ABI, provider);
   const ally = new ethers.Contract(ADDRESSES.ALLY, ALLY_ABI, provider);
   const oneToken = new ethers.Contract(oneTokenAddress, oneTokenABI, provider);
   const oneUNI = new ethers.Contract(TOKENS['oneuni']['address'], oneTokenABI, provider);
@@ -117,6 +123,7 @@ export const updateTreasuryItem = async (
   // const riskHarbor = new ethers.Contract(ADDRESSES.risk_harbor, RISKHARBOR_ABI, provider);
 
   const oneToken_USDC = Number(await USDC.balanceOf(oneTokenAddress));
+  const oneToken_DAI = Number(await DAI.balanceOf(oneTokenAddress));
   const oneToken_stimulus = Number(await stimulusToken.balanceOf(oneTokenAddress));
   const oneToken_ichi = Number(await ICHI.balanceOf(oneTokenAddress));
 
@@ -125,6 +132,8 @@ export const updateTreasuryItem = async (
 
   let strategy_balance_usdc = 0;
   let strategy_balance_usdc_treasury = 0;
+  let strategy_balance_dai = 0;
+  let strategy_balance_dai_treasury = 0;
   let strategy_balance_stimulus = 0;
   let strategy_balance_onetoken = 0;
   let strategy_balance_ally = 0;
@@ -142,6 +151,7 @@ export const updateTreasuryItem = async (
 
   if (strategyAddress !== '') {
     strategy_balance_usdc += Number(await USDC.balanceOf(strategyAddress));
+    strategy_balance_dai += Number(await DAI.balanceOf(strategyAddress));
 
     strategy_balance_stimulus += Number(await stimulusToken.balanceOf(strategyAddress));
     strategy_balance_onetoken += Number(await oneToken.balanceOf(strategyAddress));
@@ -249,6 +259,7 @@ export const updateTreasuryItem = async (
         let detail = all_v3_positions.data.portfolio_item_list[i].detail;
         if (detail.supply_token_list && detail.supply_token_list.length > 0) {
           let usdc_in_position = 0;
+          let dai_in_position = 0;
           let isCollateral = false;
           for (let k = 0; k < detail.supply_token_list.length; k++) {
             let supply_token = detail.supply_token_list[k];
@@ -265,6 +276,8 @@ export const updateTreasuryItem = async (
               strategy_balance_ichi += Number(supply_token.amount) * 10 ** TOKENS.ichi.decimals;
             } else if (supply_token.id.toLowerCase() === TOKENS['usdc']['address'].toLowerCase()) {
               usdc_in_position += Number(supply_token.amount) * 10 ** TOKENS.usdc.decimals;
+            } else if (supply_token.id.toLowerCase() === TOKENS['dai']['address'].toLowerCase()) {
+              dai_in_position += Number(supply_token.amount) * 10 ** TOKENS.dai.decimals;
             } else if (supply_token.id.toLowerCase() === TOKENS['onebtc']['address'].toLowerCase()) {
               strategy_balance_one_btc += Number(supply_token.amount) * 10 ** TOKENS.onebtc.decimals;
             } else if (supply_token.id.toLowerCase() === stimulusTokenAddress.toLowerCase()) {
@@ -275,8 +288,10 @@ export const updateTreasuryItem = async (
           }
           if (isCollateral) {
             strategy_balance_usdc += usdc_in_position;
+            strategy_balance_dai += dai_in_position;
           } else {
             strategy_balance_usdc_treasury += usdc_in_position;
+            strategy_balance_dai_treasury += dai_in_position;
           }
         }
       }
@@ -284,6 +299,7 @@ export const updateTreasuryItem = async (
   }
 
   strategy_balance_usdc += strategy_balance_usdc_treasury;
+  strategy_balance_dai += strategy_balance_dai_treasury;
 
   // in case of oneBTC combine all wBTC positions into one
   if (itemName == 'oneBTC') {
@@ -550,8 +566,7 @@ export const updateTreasuryItem = async (
   }
   let oneToken_mintingRatio = 0;
   if (isV2) {
-    // assume USDC as collateral for V2 oneTokens for the time being
-    const mRatio = await oneToken.getMintingRatio(TOKENS['usdc']['address']);
+    const mRatio = await oneToken.getMintingRatio(collateralToken.address);
     oneToken_mintingRatio = Number(mRatio[0]) / 10 ** 18;
   } else {
     oneToken_mintingRatio = Number(await oneToken.reserveRatio()) / 10 ** 11;
@@ -560,6 +575,7 @@ export const updateTreasuryItem = async (
   let ichi_price = tokenPrices['ichi'];
   let wbtc_price = tokenPrices['wbtc'];
   let usdc_price = tokenPrices['usdc'];
+  let dai_price = tokenPrices['dai'];
   let oja_price = tokenPrices['oja'];
   let usdt_price = 1;
   let oneToken_price = 1;
@@ -602,6 +618,7 @@ export const updateTreasuryItem = async (
     stimulusPositionsUSDValue;
 
   let oneToken_collateral_USDC_only = usdc_price * (oneToken_USDC / 10 ** TOKENS.usdc.decimals);
+  let oneToken_collateral_DAI_only = dai_price * (oneToken_DAI / 10 ** TOKENS.dai.decimals);
 
   collateralPositionsUSDValue =
     collateralPositionsUSDValue +
@@ -610,10 +627,13 @@ export const updateTreasuryItem = async (
     (strategy_balance_one_btc * onebtc_price) / 10 ** 18 +
     strategy_balance_one_oja / 10 ** 18 +
     usdc_price * (strategy_balance_usdc / 10 ** TOKENS.usdc.decimals) +
+    dai_price * (strategy_balance_dai / 10 ** TOKENS.dai.decimals) +
     usdc_price * (aux_strategy_balance_riskharbor_usdc / 10 ** TOKENS.usdc.decimals) +
     usdt_price * (strategy_balance_bmi_usdt / 10 ** 18);
 
-  let oneToken_collateral_only = oneToken_collateral_USDC_only + collateralPositionsUSDValue;
+  let oneToken_collateral_only = oneToken_collateral_USDC_only +
+    oneToken_collateral_DAI_only + 
+    collateralPositionsUSDValue;
 
   let oneToken_treasury_backed =
     (Number(oneToken_SUPPLY) / 10 ** decimals) * (1 - oneToken_withdrawFee) -
@@ -621,15 +641,26 @@ export const updateTreasuryItem = async (
     Number(oneToken_burned_tokens) / 10 ** decimals;
 
   let oneToken_collateral_list = [];
-  oneToken_collateral_list.push({
-    M: {
-      name: { S: 'USDC' },
-      balance: { N: oneToken_collateral_USDC_only.toString() }
-    }
-  });
+  if (oneToken_collateral_USDC_only > 0) {
+    oneToken_collateral_list.push({
+      M: {
+        name: { S: 'USDC' },
+        balance: { N: oneToken_collateral_USDC_only.toString() }
+      }
+    });
+  }
+  if (oneToken_collateral_DAI_only > 0) {
+    oneToken_collateral_list.push({
+      M: {
+        name: { S: 'DAI' },
+        balance: { N: oneToken_collateral_DAI_only.toString() }
+      }
+    });
+  }
 
   if (
     strategy_balance_usdc > 0 ||
+    strategy_balance_dai > 0 ||
     strategy_balance_onetoken > 0 ||
     strategy_balance_one_uni > 0 ||
     strategy_balance_one_btc > 0 ||
@@ -642,10 +673,21 @@ export const updateTreasuryItem = async (
       assets.push({
         M: {
           name: { S: 'USDC' },
-          // balance: { N: Number(strategy_balance_usdc / 10 ** 6).toString() }
           balance: {
             N: Number(
               (strategy_balance_usdc + aux_strategy_balance_riskharbor_usdc) / 10 ** TOKENS.usdc.decimals
+            ).toString()
+          }
+        }
+      });
+    }
+    if (strategy_balance_dai > 0) {
+      assets.push({
+        M: {
+          name: { S: 'DAI' },
+          balance: {
+            N: Number(
+              strategy_balance_dai / 10 ** TOKENS.dai.decimals
             ).toString()
           }
         }
@@ -804,6 +846,7 @@ export const updateTreasuryItem = async (
 
   let totalUSDC =
     (oneToken_USDC + strategy_balance_usdc + aux_strategy_balance_riskharbor_usdc) / 10 ** TOKENS.usdc.decimals +
+    (oneToken_DAI + strategy_balance_dai) / 10 ** TOKENS.dai.decimals +
     strategy_balance_bmi_usdt / 10 ** 18;
 
   let res = {

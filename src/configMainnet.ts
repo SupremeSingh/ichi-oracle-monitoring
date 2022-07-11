@@ -71,9 +71,10 @@ const TREASURIES = {
     'oneWING',
     'BOOTusd',
     'oneOJA',
-    'oneICHI'
+    'oneICHI',
+    'oneGIV'
   ],
-  //treasuries: ['oneICHI'],
+  //treasuries: ['oneGIV'],
   legacyTreasuries: ['oneBTC', 'oneFIL', 'oneMPH', 'onePERL', 'oneDODO', 'oneUNI', 'oneOJA', 'oneWING', 'BOOTusd']
 };
 
@@ -147,6 +148,18 @@ const TOKENS = {
     address: '0xaaAEBE6Fe48E54f431b0C390CfaF0b017d09D42d',
     decimals: 4,
     displayName: 'CEL',
+    isOneToken: false
+  },
+  dai: {
+    address: '0x6b175474e89094c44da98b954eedeac495271d0f',
+    decimals: 18,
+    displayName: 'DAI',
+    isOneToken: false
+  },
+  giv: {
+    address: '0x900dB999074d9277c5DA2A43F252D74366230DA0',
+    decimals: 18,
+    displayName: 'GIV',
     isOneToken: false
   },
   gno: {
@@ -376,6 +389,19 @@ const TOKENS = {
     stimulusDisplayName: 'FUSE',
     tradeUrl:
       'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x970B9bB2C0444F5E81e9d0eFb84C8ccdcdcAf84d'
+  },
+  onegiv: {
+    address: '0x17e6BA2519B4d15199B6529dB340910Ae031b1B0',
+    strategy: '0x8A17A9ACF32811b0d2a10Bd97839643e8AD14B1B',
+    aux_strategy: [],
+    decimals: 18,
+    displayName: 'oneGIV',
+    isOneToken: true,
+    isV2: true,
+    stimulusName: 'giv',
+    stimulusDisplayName: 'GIV',
+    tradeUrl:
+      'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x900dB999074d9277c5DA2A43F252D74366230DA0'
   },
   onemph: {
     address: '0xBE3F88E18BE3944FdDa830695228ADBB82fA125F',
