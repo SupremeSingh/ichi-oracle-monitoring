@@ -848,7 +848,8 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
         const newMantissa = (newRewardUSDPerBlock * 1e18) / newUnderlyingTotalSupplyUSD;
 
         const rewardsAPR = convertMantissaToAPR(newMantissa);
-        combinedAPR = apr + rewardsAPR;
+        //combinedAPR = apr + rewardsAPR;
+        combinedAPR = 0; // hardcode APR as 0
       }
     }
 
