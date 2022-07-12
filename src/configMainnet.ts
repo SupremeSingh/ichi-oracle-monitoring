@@ -83,8 +83,9 @@ const POOLS = {
   //activePools : [],
   depositPools: [1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10005, 10009],
   activeVaults: [
-    1016, 1019, 1020, 1021, 1022, 1024, 1025, 1026, 1028, 1029, 20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008, 10006,
-    10008
+    1016, 1019, 1020, 1021, 1022, 1024, 1025, 1026, 1028, 1029, 
+    20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008, 20009,
+    10006, 10008
   ],
   //activeVaults: [],
   underlyingVaults: [1023],
@@ -92,7 +93,8 @@ const POOLS = {
   migratingPools: [],
   retiredPools: [],
   unretiredPools: [
-    10001, 10003, 10005, 10006, 10008, 10009, 10010, 20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008, 1001, 1005, 1009, 1010, 1012, 1013,
+    10001, 10003, 10005, 10006, 10008, 10009, 10010, 20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008, 20009,
+    1001, 1005, 1009, 1010, 1012, 1013,
     1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1028, 1029
   ],
   oneInchPools: [15, 16, 10001],
@@ -109,7 +111,7 @@ const POOLS = {
     1001, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 10001, 10004, 10005,
     10006, 10007, 10008, 10009, 20002, 20003, 20004, 20008
   ],
-  activeAPR: [20005, 20006, 20007, 1024, 1025, 1026, 1028, 1029]
+  activeAPR: [20005, 20006, 20007, 20009, 1024, 1025, 1026, 1028, 1029]
 };
 
 const TOKENS = {
@@ -1089,6 +1091,25 @@ LABELS[20008] = {
   isHodl: false,
   vaultName: 'fuse',
   vaultAddress: '0x3A4411a33CfeF8BC01f23ED7518208aA38cca824',
+  irrStartDate: new Date(0),
+  irrStartTxAmount: 0
+};
+LABELS[20009] = {
+  name: 'GIV Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  farmAddress: '0x944344CD4014305e1fFAA613396D82eAf5b67B2D',
+  farmId: 0,
+  farmRewardTokenName: 'GIV',
+  farmRewardTokenDecimals: 18,
+  farmRewardTokenAddress: '0x900dB999074d9277c5DA2A43F252D74366230DA0',
+  tradeUrl:
+    '/mint?name=onegiv&collateral=DAI',
+  subgraphEndpoint: '',
+  isInverted: true,
+  isHodl: false,
+  vaultName: 'giv',
+  vaultAddress: '0xc3151A58d519B94E915f66B044De3E55F77c2dd9',
   irrStartDate: new Date(0),
   irrStartTxAmount: 0
 };

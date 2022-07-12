@@ -22,6 +22,7 @@ export const VAULT_DECIMAL_TRACKER = {
   wnxm: { baseToken: 18, scarceToken: 9 },
   wnxm_v2: { baseToken: 18, scarceToken: 18 },
   qrdo: { baseToken: 6, scarceToken: 8 },
+  giv: { baseToken: 18, scarceToken: 18 },
   fox: { baseToken: 18, scarceToken: 18 }
 };
 
