@@ -1106,7 +1106,7 @@ LABELS[20009] = {
   tradeUrl:
     '/mint?name=onegiv&collateral=DAI',
   subgraphEndpoint: '',
-  isInverted: true,
+  isInverted: false,
   isHodl: false,
   vaultName: 'giv',
   vaultAddress: '0xc3151A58d519B94E915f66B044De3E55F77c2dd9',
