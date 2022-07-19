@@ -15,6 +15,7 @@ export const VAULT_DECIMAL_TRACKER = {
   wbtc: { baseToken: 8, scarceToken: 9 },
   wbtc_v2: { baseToken: 8, scarceToken: 18 },
   bnt_v2: { baseToken: 18, scarceToken: 18 },
+  fuse_v2: { baseToken: 18, scarceToken: 18 },
   polygon_wbtc: { baseToken: 8, scarceToken: 18 },
   onebtc: { baseToken: 18, scarceToken: 9 },
   polygon_onebtc: { baseToken: 18, scarceToken: 18 },

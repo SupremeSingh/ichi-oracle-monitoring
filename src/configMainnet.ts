@@ -83,7 +83,7 @@ const POOLS = {
   //activePools : [],
   depositPools: [1009, 1010, 1012, 1013, 1014, 1015, 1017, 1018, 10005, 10009],
   activeVaults: [
-    1016, 1019, 1020, 1021, 1022, 1024, 1025, 1026, 1028, 1029, 
+    1016, 1019, 1020, 1021, 1022, 1024, 1025, 1026, 1028, 1029, 1030,  
     20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008, 20009,
     10006, 10008
   ],
@@ -95,7 +95,7 @@ const POOLS = {
   unretiredPools: [
     10001, 10003, 10005, 10006, 10008, 10009, 10010, 20001, 20002, 20003, 20004, 20005, 20006, 20007, 20008, 20009,
     1001, 1005, 1009, 1010, 1012, 1013,
-    1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1028, 1029
+    1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1028, 1029, 1030
   ],
   oneInchPools: [15, 16, 10001],
   balancerPools: [18, 1001, 1002, 1008],
@@ -111,7 +111,7 @@ const POOLS = {
     1001, 1005, 1009, 1010, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 10001, 10004, 10005,
     10006, 10007, 10008, 10009, 20002, 20003, 20004, 20008
   ],
-  activeAPR: [20005, 20006, 20007, 20009, 1024, 1025, 1026, 1028, 1029]
+  activeAPR: [20005, 20006, 20007, 20009, 1024, 1025, 1026, 1028, 1029, 1030]
 };
 
 const TOKENS = {
@@ -939,6 +939,20 @@ LABELS[1029] = {
   isHodl: true,
   vaultName: 'bnt_v2',
   vaultAddress: '0x4DFa8455658f4d6D2eeb91CbeFb0Ee94056bB3dC',
+  irrStartDate: new Date(0),
+  irrStartTxAmount: 0
+};
+LABELS[1030] = {
+  name: 'FUSE Vault',
+  lpName: 'ICHI_VAULT_LP',
+  shortLpName: 'VAULT_LP',
+  tradeUrl:
+    'https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=0x970B9bB2C0444F5E81e9d0eFb84C8ccdcdcAf84d',
+  subgraphEndpoint: '',
+  isInverted: true,
+  isHodl: true,
+  vaultName: 'fuse_v2',
+  vaultAddress: '0xF6d4cdF6A9a82Aa56d2F2E1825B9f8E6052d8C46',
   irrStartDate: new Date(0),
   irrStartTxAmount: 0
 };
