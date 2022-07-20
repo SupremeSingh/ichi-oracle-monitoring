@@ -81,6 +81,12 @@ const TOKENS = {
     displayName: 'USDC',
     isOneToken: false
   },
+  test_dai: {
+    address: '0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa',
+    decimals: 18,
+    displayName: 'DAI',
+    isOneToken: false
+  },
   test_uni: {
     address: '0xdF2661E2E6A35B482E3F105bDE628B5e1F68aB41',
     decimals: 18,
