@@ -1,56 +1,61 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { ethers } from 'ethers';
-import { TOKENS, CHAIN_ID, ADDRESSES } from './configKovan';
-import ERC20_ABI from './../abis/ERC20_ABI.json';
-import ONETOKEN_ABI from './../abis/ONETOKEN_ABI.json';
-import ONELINK_ABI from './../abis/oneLINK_ABI.json';
-import ONEETH_ABI from './../abis/oneETH_ABI.json';
-import VAULT_ABI from './../abis/ICHI_VAULT_ABI.json';
-import FARMING_V2_ABI from './../abis/FARMING_V2_ABI.json';
 import { dbClient } from '../configMainnet';
-import { ChainId, getProvider } from '../providers';
+import {
+  ChainId,
+  getProvider,
+  getToken,
+  TokenName,
+  OneTokenTemplate,
+  getErc20Contract,
+  getOneTokenV1Contract,
+  AddressName,
+  getAddress,
+  getFarmingV2Contract,
+  asOneEth,
+  PartialRecord,
+  getIchiVaultContract
+} from '@ichidao/ichi-sdk';
 
-const getABI = async function (abiType: string) {
-  if (abiType == 'ONELINK') return ONELINK_ABI;
-  if (abiType == 'ONEETH') return ONEETH_ABI;
-  if (abiType == 'ONETOKEN') return ONETOKEN_ABI;
-  return ONETOKEN_ABI;
-};
-
-const getOneTokenAttributes = async function (tokenName: string) {
-  let template = {
-    address: TOKENS[tokenName]['address'],
-    decimals: TOKENS[tokenName]['decimals'],
-    strategy: TOKENS[tokenName]['strategy'],
-    tradeUrl: TOKENS[tokenName]['tradeUrl'],
+const getOneTokenAttributes = async function (tokenName: TokenName, chainId: ChainId) {
+  const token = getToken(tokenName, chainId);
+  let template: OneTokenTemplate = {
+    address: token.address,
+    decimals: token.decimals,
+    strategy: token.strategy,
+    tradeUrl: token.tradeUrl,
+    ally_swap: token.allySwap ? token.allySwap : '',
     stimulus_address: '',
-    stimulus_name: TOKENS[tokenName]['stimulusName'],
-    stimulus_display_name: TOKENS[tokenName]['stimulusDisplayName'],
+    stimulus_name: token.stimulusName,
+    stimulus_display_name: token.stimulusDisplayName,
     stimulus_decimals: 18,
     abi_type: 'ONETOKEN',
-    collateral_name: 'test_usdc',
-    base_name: tokenName.toLowerCase(),
-    display_name: tokenName,
-    isV2: TOKENS[tokenName]['isV2'],
+    base_name: tokenName,
+    // TODO: Logic change
+    collateral_name: chainId === ChainId.Mumbai ? TokenName.USDC : undefined, // 'test_usdc'
+    isV2: token.isV2,
     ichiVault: {
-      address: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['address'] : '',
-      farm: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['farm'] : 0,
-      ichi: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['ichi'] : ''
+      address: token.ichiVault ? token.ichiVault.address : '',
+      farm: token.ichiVault ? token.ichiVault.farm : 0,
+      externalFarm: token.ichiVault ? token.ichiVault.externalFarm : '',
+      scarceTokenName: token.ichiVault ? token.ichiVault.scarceTokenName : '',
+      scarceTokenDecimals: token.ichiVault ? token.ichiVault.scarceTokenDecimals : 18,
+      scarceToken: token.ichiVault ? token.ichiVault.scarceToken : ''
     }
   };
 
-  if (tokenName == 'oti') {
-    (template.display_name = 'OTI'), (template.collateral_name = 'token6');
+  if (tokenName == TokenName.OTI) {
+    (template.display_name = 'OTI'), (template.collateral_name = TokenName.TOKEN_6);
   }
-  if (tokenName == 'test_oneuni') {
+  if (tokenName == TokenName.ONE_UNI) {
     template.display_name = 'oneUNI';
   }
-  if (tokenName == 'test_onefil') {
+  if (tokenName == TokenName.ONE_FIL) {
     template.display_name = 'oneFIL';
   }
 
-  template.stimulus_address = TOKENS[template.stimulus_name]['address'];
+  const stimulusToken = getToken(template.stimulus_name as TokenName, chainId);
+  template.stimulus_address = stimulusToken.address;
 
   return template;
 };
@@ -59,10 +64,11 @@ const getOneTokenAttributes = async function (tokenName: string) {
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
 export const updateTreasuryItem = async (
   tableName: string,
-  itemName: string,
-  tokenPrices: { [name: string]: number }
+  tokenName: TokenName,
+  tokenPrices: PartialRecord<TokenName, number>,
+  chainId: ChainId
 ): Promise<APIGatewayProxyResult> => {
-  const attr = await getOneTokenAttributes(itemName.toLowerCase());
+  const attr = await getOneTokenAttributes(tokenName, chainId);
   const oneTokenAddress = attr.address;
   const strategyAddress = attr.strategy;
   const stimulusTokenAddress = attr.stimulus_address;
@@ -75,13 +81,13 @@ export const updateTreasuryItem = async (
   const displayName = attr.display_name;
   const tradeUrl = attr.tradeUrl;
   const isV2 = attr.isV2;
-  const oneTokenABI = await getABI(attr.abi_type);
+  // const oneTokenABI = await getABI(attr.abi_type);
 
-  const provider = await getProvider(ChainId.kovan);
-  const stimulusToken = new ethers.Contract(stimulusTokenAddress, ERC20_ABI, provider);
-  const USDC = new ethers.Contract(TOKENS[usdcName]['address'], ERC20_ABI, provider);
-  const oneToken = new ethers.Contract(oneTokenAddress, oneTokenABI, provider);
-  const ICHI = new ethers.Contract(TOKENS['test_ichi']['address'], ERC20_ABI, provider);
+  const provider = await getProvider(ChainId.Kovan);
+  const stimulusToken = getErc20Contract(stimulusTokenAddress, provider);
+  const usdcContract = getErc20Contract(getToken(usdcName.toLowerCase() as TokenName, chainId).address, provider);
+  const oneToken = getOneTokenV1Contract(oneTokenAddress, provider);
+  const ichiContract = getErc20Contract(getToken(TokenName.ICHI, chainId).address, provider);
 
   // =================================================================================
   // get balances from the strategy, if it exists
@@ -91,19 +97,19 @@ export const updateTreasuryItem = async (
   let strategy_balance_onetoken = 0;
   let strategy_balance_ichi = 0;
   if (strategyAddress !== '') {
-    strategy_balance_usdc = Number(await USDC.balanceOf(strategyAddress));
+    strategy_balance_usdc = Number(await usdcContract.balanceOf(strategyAddress));
     strategy_balance_stimulus = Number(await stimulusToken.balanceOf(strategyAddress));
     strategy_balance_onetoken = Number(await oneToken.balanceOf(strategyAddress));
-    strategy_balance_ichi = Number(await ICHI.balanceOf(strategyAddress));
+    strategy_balance_ichi = Number(await ichiContract.balanceOf(strategyAddress));
 
     let strategy_balance_vault_lp = 0;
     if (attr.ichiVault.farm > 0) {
-      const farming_V2 = new ethers.Contract(ADDRESSES.farming_V2, FARMING_V2_ABI, provider);
+      const farming_V2 = getFarmingV2Contract(getAddress(AddressName.FARMING_V2, chainId), provider);
       const userInfo = await farming_V2.userInfo(attr.ichiVault.farm, strategyAddress);
       strategy_balance_vault_lp += Number(userInfo.amount);
     }
     if (attr.ichiVault.address !== '') {
-      const vault = new ethers.Contract(attr.ichiVault.address, VAULT_ABI, provider);
+      const vault = getIchiVaultContract(attr.ichiVault.address, provider);
       strategy_balance_vault_lp += Number(await vault.balanceOf(strategyAddress));
       const vault_total_lp = Number(await vault.totalSupply());
       const vault_total_amounts = await vault.getTotalAmounts();
@@ -118,9 +124,9 @@ export const updateTreasuryItem = async (
     }
   }
 
-  let oneToken_USDC = Number(await USDC.balanceOf(oneTokenAddress));
+  let oneToken_USDC = Number(await usdcContract.balanceOf(oneTokenAddress));
   const oneToken_stimulus = Number(await stimulusToken.balanceOf(oneTokenAddress));
-  const oneToken_ichi = Number(await ICHI.balanceOf(oneTokenAddress));
+  const oneToken_ichi = Number(await ichiContract.balanceOf(oneTokenAddress));
 
   let oneToken_stimulus_price = tokenPrices[stimulusTokenName.toLowerCase()];
 
@@ -174,24 +180,26 @@ export const updateTreasuryItem = async (
   if (isV2) {
     oneToken_withdrawFee = Number(await oneToken.redemptionFee()) / 10 ** 18;
   } else {
-    oneToken_withdrawFee = Number(await oneToken.withdrawFee()) / 10 ** 11;
+    oneToken_withdrawFee = Number(await asOneEth(oneToken).withdrawFee()) / 10 ** 11;
   }
   let oneToken_mintFee = 0;
   if (isV2) {
     oneToken_mintFee = Number(await oneToken.mintingFee()) / 10 ** 18;
   } else {
-    oneToken_mintFee = Number(await oneToken.mintFee()) / 10 ** 11;
+    oneToken_mintFee = Number(await asOneEth(oneToken).mintFee()) / 10 ** 11;
   }
   let oneToken_mintingRatio = 0;
   if (isV2) {
     // assume USDC as collateral for V2 oneTokens for the time being
-    const mRatio = await oneToken.getMintingRatio(TOKENS[usdcName]['address']);
+    const mRatio = await oneToken.getMintingRatio(getToken(usdcName.toLowerCase() as TokenName, chainId).address);
     oneToken_mintingRatio = Number(mRatio[0]) / 10 ** 18;
   } else {
-    oneToken_mintingRatio = Number(await oneToken.reserveRatio()) / 10 ** 11;
+    oneToken_mintingRatio = Number(await asOneEth(oneToken).reserveRatio()) / 10 ** 11;
   }
 
-  let ichi_price = tokenPrices['test_ichi'];
+  // TODO: Logic change
+  // let ichi_price = tokenPrices['test_ichi'];
+  let ichi_price = tokenPrices[TokenName.ICHI];
 
   stimulusPositionsUSDValue =
     stimulusPositionsUSDValue +
@@ -235,7 +243,7 @@ export const updateTreasuryItem = async (
     if (strategy_balance_onetoken > 0) {
       assets.push({
         M: {
-          name: { S: TOKENS[itemName.toLowerCase()]['displayName'] },
+          name: { S: getToken(tokenName.toLowerCase() as TokenName, chainId).displayName },
           balance: { N: Number(strategy_balance_onetoken / 10 ** 18).toString() }
         }
       });
@@ -298,8 +306,8 @@ export const updateTreasuryItem = async (
   }
 
   let res = {
-    name: itemName.toLowerCase(),
-    displayName: itemName,
+    name: tokenName.toLowerCase(),
+    displayName: tokenName,
     base: baseName,
     usdc: (oneToken_USDC + strategy_balance_usdc) / 10 ** 6,
     circulation: Number(oneToken_SUPPLY) / 10 ** decimals,
@@ -324,12 +332,12 @@ export const updateTreasuryItem = async (
   const isLegacy = false;
 
   // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
-  console.log(`Attempting to update table: ${tableName}, token: ${itemName}`);
+  console.log(`Attempting to update table: ${tableName}, token: ${tokenName}`);
   const params: AWS.DynamoDB.UpdateItemInput = {
     TableName: tableName,
     Key: {
       name: {
-        S: itemName.toLowerCase()
+        S: tokenName.toLowerCase()
       }
     },
     UpdateExpression:
@@ -380,7 +388,7 @@ export const updateTreasuryItem = async (
       ':mintFee': { N: oneToken_mintFee.toString() },
       ':mintingRatio': { N: oneToken_mintingRatio.toString() },
       ':treasuryBacked': { N: Number(oneToken_treasury_backed).toString() },
-      ':chainId': { N: Number(CHAIN_ID).toString() },
+      ':chainId': { N: chainId.toString() },
       ':tradeUrl': { S: tradeUrl },
       ':isLegacy': { BOOL: isLegacy },
       ':oneTokenVersion': { N: Number(oneTokenVersion).toString() },

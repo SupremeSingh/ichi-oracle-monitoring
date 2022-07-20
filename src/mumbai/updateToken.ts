@@ -1,21 +1,22 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { ContractInterface, ethers } from 'ethers';
 import { dbClient } from '../configMainnet';
-import { ChainId, getProvider } from '../providers';
-import ERC20_ABI from '../abis/ERC20_ABI.json';
-import { TOKENS, CHAIN_ID } from './configMumbai';
+import { ChainId, getErc20Contract, getProvider, getToken, TokenName } from '@ichidao/ichi-sdk';
 
-export const updateToken = async (tableName: string, tokenName: string): Promise<APIGatewayProxyResult> => {
-  const address = TOKENS[tokenName]['address'];
-  const decimals = TOKENS[tokenName]['decimals'];
-  const isOneToken = TOKENS[tokenName]['isOneToken'];
-  const displayName = TOKENS[tokenName]['displayName'];
+export const updateToken = async (
+  tableName: string,
+  tokenName: TokenName,
+  chainId: ChainId
+): Promise<APIGatewayProxyResult> => {
+  const address = getToken(tokenName, chainId).address;
+  const decimals = getToken(tokenName, chainId).decimals;
+  const isOneToken = getToken(tokenName, chainId).isOneToken;
+  const displayName = getToken(tokenName, chainId).displayName;
   let price = 0;
   let priceChange = 0;
 
-  const provider = await getProvider(ChainId.mumbai);
-  const tokenContract = new ethers.Contract(address, ERC20_ABI as ContractInterface, provider);
+  const provider = await getProvider(ChainId.Mumbai);
+  const tokenContract = getErc20Contract(address, provider);
 
   let totalSupply = await tokenContract.totalSupply();
   let totalTokens = Number(totalSupply) / 10 ** decimals;
@@ -26,13 +27,19 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
     price = 1;
   } else {
     switch (tokenName) {
-      case 'mum_token6':
+      // TODO: Logic change, review
+      // case 'mum_token6':
+      case TokenName.TOKEN_6:
         price = 25;
         break;
-      case 'mum_usdc':
+      // TODO: Logic change, review
+      // case 'mum_usdc':
+      case TokenName.USDC:
         price = 1;
         break;
-      case 'mum_ichi':
+      // TODO: Logic change, review
+      // case 'mum_ichi':
+      case TokenName.ICHI_V2:
         price = 17;
         break;
       default:
@@ -69,7 +76,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
       ':price': { N: Number(price).toString() },
       ':price_24h_change': { N: Number(priceChange).toString() },
       ':isOneToken': { BOOL: isOneToken },
-      ':chainId': { N: Number(CHAIN_ID).toString() },
+      ':chainId': { N: chainId.toString() },
       ':supply': { N: totalTokens.toString() }
     },
     ReturnValues: 'UPDATED_NEW'

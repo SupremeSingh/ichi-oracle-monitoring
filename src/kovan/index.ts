@@ -4,11 +4,15 @@ import { updateTreasury } from './updateTreasury';
 import { updateFarms } from './updateFarms';
 import { updateFarm } from './updateFarm';
 import { dbClient } from '../configMainnet';
+import { ChainId, EnvUtils, KovanPoolNumbers, TokenName } from '@ichidao/ichi-sdk';
+import { PartialRecord } from '@ichidao/ichi-sdk/dist/src/types/common';
 
-const token_tableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
-const treasury_tableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
-const farms_tableName = process.env.FARMS_TABLE_NAME || 'farms-dev';
-const ichiPerBlock_tableName = process.env.ICHI_PER_BLOCK_TABLE_NAME || 'ichi-per-block';
+const tokenTableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
+const treasuryTableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
+const farmsTableName = process.env.FARMS_TABLE_NAME || 'farms-dev';
+const ichiPerBlockTableName = process.env.ICHI_PER_BLOCK_TABLE_NAME || 'ichi-per-block';
+
+EnvUtils.validateEnvironment();
 
 const getAllData = async (params) => {
   const _getAllData = async (params, startKey) => {
@@ -38,14 +42,14 @@ export const handler = async (event: APIGatewayProxyEvent) => {
     poolId = Number(event.pathParameters.poolId);
   }
 
-  await updateTokens(token_tableName);
+  await updateTokens(tokenTableName, ChainId.Kovan);
 
-  const tokenPrices = {};
+  const tokenPrices: PartialRecord<TokenName, number> = {};
   const tokenNames = {};
   tokenNames['eth'] = 'ETH';
 
   let params = {
-    TableName: token_tableName,
+    TableName: tokenTableName,
     FilterExpression: '#isOneToken = :is_one_token',
     ExpressionAttributeNames: {
       '#isOneToken': 'isOneToken'
@@ -65,7 +69,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   }
 
   params = {
-    TableName: token_tableName,
+    TableName: tokenTableName,
     FilterExpression: '#isOneToken = :is_one_token',
     ExpressionAttributeNames: {
       '#isOneToken': 'isOneToken'
@@ -84,10 +88,10 @@ export const handler = async (event: APIGatewayProxyEvent) => {
     throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
   }
 
-  const knownIchiPerBlock = {};
+  const knownIchiPerBlock: PartialRecord<KovanPoolNumbers, number> = {};
 
   let params_ipb = {
-    TableName: ichiPerBlock_tableName
+    TableName: ichiPerBlockTableName
   };
   try {
     const result = await getAllData(params_ipb);
@@ -105,10 +109,10 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   //console.log(knownIchiPerBlock);
 
   if (poolId === -1) {
-    await updateFarms(farms_tableName, tokenPrices, tokenNames, knownIchiPerBlock);
-    await updateTreasury(treasury_tableName, tokenPrices);
+    await updateFarms(farmsTableName, tokenPrices, tokenNames, knownIchiPerBlock, ChainId.Kovan);
+    await updateTreasury(treasuryTableName, tokenPrices, ChainId.Kovan);
   } else {
-    await updateFarm(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock);
+    await updateFarm(farmsTableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, ChainId.Kovan);
   }
 
   return {

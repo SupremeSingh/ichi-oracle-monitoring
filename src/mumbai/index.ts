@@ -4,11 +4,14 @@ import { updateTreasury } from './updateTreasury';
 import { updateFarms } from './updateFarms';
 import { updateFarm } from './updateFarm';
 import { dbClient } from '../configMainnet';
+import { ChainId, EnvUtils } from '@ichidao/ichi-sdk';
 
 const token_tableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
 const treasury_tableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
 const farms_tableName = process.env.FARMS_TABLE_NAME || 'farms-dev';
 const ichiPerBlock_tableName = process.env.ICHI_PER_BLOCK_TABLE_NAME || 'ichi-per-block';
+
+EnvUtils.validateEnvironment();
 
 const getAllData = async (params) => {
   const _getAllData = async (params, startKey) => {
@@ -38,7 +41,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
     poolId = Number(event.pathParameters.poolId);
   }
 
-  await updateTokens(token_tableName);
+  await updateTokens(token_tableName, ChainId.Mumbai);
 
   const tokenPrices = {};
   const tokenNames = {};
@@ -105,10 +108,10 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   //console.log(knownIchiPerBlock);
 
   if (poolId === -1) {
-    await updateFarms(farms_tableName, tokenPrices, tokenNames, knownIchiPerBlock);
-    await updateTreasury(treasury_tableName, tokenPrices);
+    await updateFarms(farms_tableName, tokenPrices, tokenNames, knownIchiPerBlock, ChainId.Mumbai);
+    await updateTreasury(treasury_tableName, tokenPrices, ChainId.Mumbai);
   } else {
-    await updateFarm(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock);
+    await updateFarm(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, ChainId.Mumbai);
   }
 
   return {

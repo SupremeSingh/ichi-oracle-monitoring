@@ -1,9 +1,9 @@
+import { ChainId, getTokens } from '@ichidao/ichi-sdk';
 import { updateToken } from './updateToken';
-import { TOKENS } from './configPolygon';
 
-export const updateTokens = async (tableName: string) => {
-  for (let token in TOKENS) {
-    const res = await updateToken(tableName, token);
+export const updateTokens = async (tableName: string, chainId: ChainId) => {
+  for (let token of getTokens(chainId)) {
+    const res = await updateToken(tableName, token.tokenName, chainId);
     console.log(`update ${token} results:`, res);
   }
 };

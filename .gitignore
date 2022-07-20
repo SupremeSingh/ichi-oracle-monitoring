@@ -19,3 +19,4 @@ amplifytools.xcconfig
 .secret-*
 *.zip
 yarn.lock
+.idea

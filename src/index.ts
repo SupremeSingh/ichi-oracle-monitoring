@@ -9,14 +9,23 @@ import AWS from 'aws-sdk';
 import { updateFarm } from './updateFarm';
 import { updateFarm as updateFarmKovan } from './kovan/updateFarm';
 import { updateFarm as updateFarmMumbai } from './mumbai/updateFarm';
-import { updateFarm as updateFarmPolygon } from './polygon/updateFarm';
-import { isFarmV2Kovan, isFarmV2Mumbai, isFarmV2Polygon } from './utils/pids';
 import { dbClient } from './configMainnet';
+import {
+  ChainId,
+  EnvUtils,
+  isFarmV2Kovan,
+  isFarmV2Mumbai,
+  isFarmV2Polygon,
+  PartialRecord,
+  TokenName
+} from '@ichidao/ichi-sdk';
 
-const token_tableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
-const treasury_tableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
-const farms_tableName = process.env.FARMS_TABLE_NAME || 'farms-dev';
-const ichiPerBlock_tableName = process.env.ICHI_PER_BLOCK_TABLE_NAME || 'ichi-per-block';
+const tokenTableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
+const treasuryTableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
+const farmsTableName = process.env.FARMS_TABLE_NAME || 'farms-dev';
+const ichiPerBlockTableName = process.env.ICHI_PER_BLOCK_TABLE_NAME || 'ichi-per-block';
+
+EnvUtils.validateEnvironment();
 
 AWS.config.update({
   region: process.env.AWS_REGION || 'us-east-1'
@@ -51,16 +60,16 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   }
 
   if (poolId === -1) {
-    await updateTokens(token_tableName);
-    await updateTokensPolygon(token_tableName);
+    await updateTokens(tokenTableName, ChainId.Mainnet);
+    await updateTokensPolygon(tokenTableName, ChainId.Polygon);
   }
 
-  const tokenPrices = {};
+  const tokenPrices: PartialRecord<TokenName, number> = {};
   const tokenNames = {};
   tokenNames['eth'] = 'ETH';
 
   let params = {
-    TableName: token_tableName,
+    TableName: tokenTableName,
     FilterExpression: '#isOneToken = :is_one_token',
     ExpressionAttributeNames: {
       '#isOneToken': 'isOneToken'
@@ -80,7 +89,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   }
 
   params = {
-    TableName: token_tableName,
+    TableName: tokenTableName,
     FilterExpression: '#isOneToken = :is_one_token',
     ExpressionAttributeNames: {
       '#isOneToken': 'isOneToken'
@@ -102,7 +111,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   const knownIchiPerBlock = {};
 
   let params_ipb = {
-    TableName: ichiPerBlock_tableName
+    TableName: ichiPerBlockTableName
   };
   try {
     const result = await getAllData(params_ipb);
@@ -120,23 +129,41 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   //console.log(knownIchiPerBlock);
 
   if (poolId === -1) {
-    await updateFarmsPolygon(farms_tableName, tokenPrices, tokenNames, knownIchiPerBlock);
-    await updateTreasuryPolygon(treasury_tableName, tokenPrices);
-    await updateFarms(farms_tableName, tokenPrices, tokenNames, knownIchiPerBlock);
-    await updateTreasury(treasury_tableName, tokenPrices, tokenNames);
+    await updateFarmsPolygon(farmsTableName, tokenPrices, tokenNames, knownIchiPerBlock, ChainId.Polygon);
+    await updateTreasuryPolygon(treasuryTableName, tokenPrices, ChainId.Polygon);
+    await updateFarms(farmsTableName, tokenPrices, tokenNames, knownIchiPerBlock, ChainId.Mainnet);
+    await updateTreasury(treasuryTableName, tokenPrices, tokenNames, ChainId.Mainnet);
   } else {
     if (isFarmV2Kovan(poolId)) {
       // Kovan farms
-      await updateFarmKovan(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock);
+      await updateFarmKovan(farmsTableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, ChainId.Kovan);
     } else if (isFarmV2Polygon(poolId)) {
       // Polygon farms
-      await updateFarmPolygon(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, false);
+      await updateFarm(
+        farmsTableName,
+        poolId,
+        tokenPrices,
+        tokenNames,
+        knownIchiPerBlock,
+        false,
+        false,
+        ChainId.Polygon
+      );
     } else if (isFarmV2Mumbai(poolId)) {
       // Mumbai farms
-      await updateFarmMumbai(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock);
+      await updateFarmMumbai(farmsTableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, ChainId.Mumbai);
     } else {
       // Mainnet farms
-      await updateFarm(farms_tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, false, false);
+      await updateFarm(
+        farmsTableName,
+        poolId,
+        tokenPrices,
+        tokenNames,
+        knownIchiPerBlock,
+        false,
+        false,
+        ChainId.Mainnet
+      );
     }
   }
 

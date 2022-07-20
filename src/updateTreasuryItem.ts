@@ -1,97 +1,78 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { ethers } from 'ethers';
-import { ADDRESSES, TOKENS, CHAIN_ID, APIS, DEBUNK_PROTOCOLS, TREASURIES, LABELS, dbClient } from './configMainnet';
-import { BSC_ADDRESSES, BSC_APIS } from './configBSC';
-import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
-import GENERIC_FARMING_V2_ABI from './abis/GENERIC_FARMING_V2_ABI.json';
-import ERC20_ABI from './abis/ERC20_ABI.json';
-import ALLY_ABI from './abis/ALLY_ABI.json';
-import _1INCH_STAKING_ABI from './abis/1INCH_STAKING_ABI.json';
-import VAULT_ABI from './abis/ICHI_VAULT_ABI.json';
-import BMI_STAKING_ABI from './abis/BMI_STAKING_ABI.json';
-import ONETOKEN_ABI from './abis/ONETOKEN_ABI.json';
-import ONELINK_ABI from './abis/oneLINK_ABI.json';
-import ONEETH_ABI from './abis/oneETH_ABI.json';
-import UNISWAP_V3_POSITIONS from './abis/UNISWAP_V3_POSITIONS_ABI.json';
+import { dbClient } from './configMainnet';
 import { getPoolRecord } from './getPoolRecord';
 import { GraphData } from './subgraph/model';
 import { risk_harbor_graph_query, RiskHarborPosition } from './subgraph/risk_harbor';
-import { ChainId, getProvider } from './providers';
-import { callDebunkOpenAPI } from './utils/apis';
+import {
+  Apis,
+  getDebankPortfolio,
+  ChainId,
+  getProvider,
+  TokenName,
+  getToken,
+  AddressName,
+  getAddress,
+  OneTokenV1__factory,
+  OneLink__factory,
+  OneEth__factory,
+  MainnetPoolNumbers,
+  getLegacyTreasuries,
+  getOneTokenAttributes,
+  DebankProtocolName,
+  getIchiContract,
+  asOneTokenV1,
+  asOneEth,
+  asOneLink,
+  getFarmingV2Contract,
+  getErc20Contract,
+  getIchiVaultContract,
+  getOneTokenV1Contract,
+  getUniswapV3PositionsContract,
+  getGenericFarmingV2Contract,
+  get1InchStakingContract,
+  getBmiStakingContract,
+  getPoolLabel,
+  PartialRecord
+} from '@ichidao/ichi-sdk';
+import { getAllyContract } from '@ichidao/ichi-sdk/dist/src/utils/contracts';
 
-const BSC_RPC_HOST = BSC_APIS.rpcHost;
+// const BSC_RPC_HOST = BSC_APIS.rpcHost;
 
-const getABI = async function (abiType: string) {
-  if (abiType == 'ONELINK') return ONELINK_ABI;
-  if (abiType == 'ONEETH') return ONEETH_ABI;
-  if (abiType == 'ONETOKEN') return ONETOKEN_ABI;
-  return ONETOKEN_ABI;
-};
-
-const getOneTokenAttributes = async function (tokenName: string) {
-  let template = {
-    address: TOKENS[tokenName]['address'],
-    decimals: TOKENS[tokenName]['decimals'],
-    strategy: TOKENS[tokenName]['strategy'],
-    aux_strategy: TOKENS[tokenName]['aux_strategy'],
-    ally_swap: TOKENS[tokenName]['ally_swap'] ? TOKENS[tokenName]['ally_swap'] : '',
-    tradeUrl: TOKENS[tokenName]['tradeUrl'],
-    stimulus_address: '',
-    stimulus_name: TOKENS[tokenName]['stimulusName'],
-    stimulus_display_name: TOKENS[tokenName]['stimulusDisplayName'],
-    stimulus_decimals: 18,
-    abi_type: 'ONETOKEN',
-    base_name: tokenName.toLowerCase(),
-    isV2: TOKENS[tokenName]['isV2'],
-    ichiVault: {
-      address: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['address'] : '',
-      farm: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['farm'] : 0,
-      externalFarm: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['externalFarm'] : '',
-      scarceTokenName: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['scarceTokenName'] : '',
-      scarceTokenDecimals: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['scarceTokenDecimals'] : 18,
-      scarceToken: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['scarceToken'] : ''
-    },
-    collateralToken: TOKENS['usdc']
-  };
-
-  if (tokenName == 'onegiv') {
-    template.collateralToken = TOKENS['dai'];
+// TODO: Type this and figure out a better mechanism
+const getOneTokenContract = function (tokenName: TokenName) {
+  switch (tokenName) {
+    case TokenName.ONE_VBTC:
+    case TokenName.ONE_ETH:
+      return OneEth__factory;
+    case TokenName.ONE_LINK:
+      return OneLink__factory;
+    case TokenName.ONE_BTC:
+    case TokenName.ONE_WING:
+      return OneTokenV1__factory;
+    default:
+      return OneTokenV1__factory;
   }
-  if (tokenName == 'onebtc') {
-    template.stimulus_decimals = 8;
-  }
-  if (tokenName == 'onevbtc') {
-    (template.abi_type = 'ONEETH'), (template.base_name = 'vbtc');
-  }
-  if (tokenName == 'onewing') {
-    template.stimulus_decimals = 9;
-  }
-  if (tokenName == 'oneeth') {
-    (template.abi_type = 'ONEETH'), (template.base_name = 'eth');
-  }
-  if (tokenName == 'onelink') {
-    (template.abi_type = 'ONELINK'), (template.base_name = 'link');
-  }
-
-  template.stimulus_address = TOKENS[template.stimulus_name]['address'];
-
-  return template;
 };
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
 export const updateTreasuryItem = async (
   tableName: string,
-  itemName: string,
-  tokenPrices: { [name: string]: number },
-  tokenNames: { [name: string]: string }
+  tokenName: TokenName,
+  tokenPrices: PartialRecord<TokenName, number>,
+  tokenNames: PartialRecord<TokenName, string>,
+  chainId: ChainId
 ): Promise<APIGatewayProxyResult> => {
-  const provider = await getProvider(ChainId.mainnet);
-  const farming_V2 = new ethers.Contract(ADDRESSES.farming_V2, FARMING_V2_ABI, provider);
-  const uniswap_V3_positions = new ethers.Contract(ADDRESSES.uniswap_V3_positions, UNISWAP_V3_POSITIONS, provider);
+  const provider = await getProvider(chainId);
+  const farming_V2 = getFarmingV2Contract(getAddress(AddressName.FARMING_V2, chainId), provider);
+  const uniswap_V3_positions = getUniswapV3PositionsContract(
+    getAddress(AddressName.UNISWAP_V3_POSITIONS, chainId),
+    provider
+  );
 
-  const attr = await getOneTokenAttributes(itemName.toLowerCase());
+  const attr = getOneTokenAttributes(tokenName, chainId);
   const oneTokenAddress = attr.address;
   const strategyAddress = attr.strategy;
   const auxStrategies = attr.aux_strategy;
@@ -105,27 +86,27 @@ export const updateTreasuryItem = async (
   const decimals = attr.decimals;
   const tradeUrl = attr.tradeUrl;
   const isV2 = attr.isV2;
-  const oneTokenABI = await getABI(attr.abi_type);
 
-  const isLegacy = TREASURIES.legacyTreasuries.includes(itemName);
+  const isLegacy = getLegacyTreasuries(chainId).includes(tokenName);
 
-  const ICHI = new ethers.Contract(TOKENS['ichi']['address'], ERC20_ABI, provider);
-  const stimulusToken = new ethers.Contract(stimulusTokenAddress, ERC20_ABI, provider);
-  const USDC = new ethers.Contract(TOKENS['usdc']['address'], ERC20_ABI, provider);
-  const DAI = new ethers.Contract(TOKENS['dai']['address'], ERC20_ABI, provider);
-  const ally = new ethers.Contract(ADDRESSES.ALLY, ALLY_ABI, provider);
-  const oneToken = new ethers.Contract(oneTokenAddress, oneTokenABI, provider);
-  const oneUNI = new ethers.Contract(TOKENS['oneuni']['address'], oneTokenABI, provider);
-  const oneBTC = new ethers.Contract(TOKENS['onebtc']['address'], oneTokenABI, provider);
-  const BMI_STAKING = new ethers.Contract(ADDRESSES.bmi_staking, BMI_STAKING_ABI, provider);
-  const _1INCH_STAKING = new ethers.Contract(ADDRESSES._1inch_staking, _1INCH_STAKING_ABI, provider);
-  const st1INCH = new ethers.Contract(ADDRESSES.st1inch, ERC20_ABI, provider);
+  const ichi = getIchiContract(getToken(TokenName.ICHI, chainId).address, provider);
+  const stimulusToken = getErc20Contract(stimulusTokenAddress, provider);
+  const usdc = getErc20Contract(getToken(TokenName.USDC, chainId).address, provider);
+  const dai = getErc20Contract(getToken(TokenName.DAI, chainId).address, provider);
+  const ally = getAllyContract(getAddress(AddressName.ALLY, chainId), provider);
+  const oneTokenContract = getOneTokenContract(oneTokenAddress as TokenName);
+  const oneToken = oneTokenContract.connect(oneTokenAddress, provider);
+  const oneUNI = getOneTokenV1Contract(getToken(TokenName.ONE_UNI, chainId).address, provider);
+  const oneBTC = getOneTokenV1Contract(getToken(TokenName.ONE_BTC, chainId).address, provider);
+  const bmiStaking = getBmiStakingContract(getAddress(AddressName.BMI_STAKING, chainId), provider);
+  const _1InchStaking = get1InchStakingContract(getAddress(AddressName._1INCH_STAKING, chainId), provider);
+  const st1INCH = getErc20Contract(getAddress(AddressName.ST1INCH, chainId), provider);
   // const riskHarbor = new ethers.Contract(ADDRESSES.risk_harbor, RISKHARBOR_ABI, provider);
 
-  const oneToken_USDC = Number(await USDC.balanceOf(oneTokenAddress));
-  const oneToken_DAI = Number(await DAI.balanceOf(oneTokenAddress));
-  const oneToken_stimulus = Number(await stimulusToken.balanceOf(oneTokenAddress));
-  const oneToken_ichi = Number(await ICHI.balanceOf(oneTokenAddress));
+  const oneTokenUsdc = Number(await usdc.balanceOf(oneTokenAddress));
+  const oneTokenDai = Number(await dai.balanceOf(oneTokenAddress));
+  const oneTokenStimulus = Number(await stimulusToken.balanceOf(oneTokenAddress));
+  const oneTokenIchi = Number(await ichi.balanceOf(oneTokenAddress));
 
   // =================================================================================
   // get balances from the strategy, if it exists
@@ -150,18 +131,22 @@ export const updateTreasuryItem = async (
   let aux_strategy_balance_usdc = 0;
 
   if (strategyAddress !== '') {
-    strategy_balance_usdc += Number(await USDC.balanceOf(strategyAddress));
-    strategy_balance_dai += Number(await DAI.balanceOf(strategyAddress));
+    strategy_balance_usdc += Number(await usdc.balanceOf(strategyAddress));
+    strategy_balance_dai += Number(await dai.balanceOf(strategyAddress));
 
     strategy_balance_stimulus += Number(await stimulusToken.balanceOf(strategyAddress));
     strategy_balance_onetoken += Number(await oneToken.balanceOf(strategyAddress));
-    if (itemName !== 'oneUNI') {
+    // TODO: Logic change, review.
+    // if (tokenName !== 'oneUNI') {
+    if (tokenName.toLowerCase() !== TokenName.ONE_UNI.toLowerCase()) {
       strategy_balance_one_uni += Number(await oneUNI.balanceOf(strategyAddress));
     }
-    if (itemName !== 'oneBTC') {
+    // TODO: Logic change, review.
+    // if (tokenName !== 'oneBTC') {
+    if (tokenName.toLowerCase() !== TokenName.ONE_BTC.toLowerCase()) {
       strategy_balance_one_btc += Number(await oneBTC.balanceOf(strategyAddress));
     }
-    strategy_balance_ichi += Number(await ICHI.balanceOf(strategyAddress));
+    strategy_balance_ichi += Number(await ichi.balanceOf(strategyAddress));
 
     let strategy_balance_vault_lp = 0;
     if (attr.ichiVault.farm > 0 && attr.ichiVault.externalFarm === '') {
@@ -169,12 +154,12 @@ export const updateTreasuryItem = async (
       strategy_balance_vault_lp += Number(userInfo.amount);
     }
     if (attr.ichiVault.externalFarm !== '' && attr.ichiVault.externalFarm.length > 0) {
-      const generic_farming_V2 = new ethers.Contract(attr.ichiVault.externalFarm, GENERIC_FARMING_V2_ABI, provider);
+      const generic_farming_V2 = getGenericFarmingV2Contract(attr.ichiVault.externalFarm, provider);
       const userInfo = await generic_farming_V2.userInfo(attr.ichiVault.farm, strategyAddress);
       strategy_balance_vault_lp += Number(userInfo.amount);
     }
     if (attr.ichiVault.address !== '') {
-      const vault = new ethers.Contract(attr.ichiVault.address, VAULT_ABI, provider);
+      const vault = getIchiVaultContract(attr.ichiVault.address, provider);
       strategy_balance_vault_lp += Number(await vault.balanceOf(strategyAddress));
       const vault_total_lp = Number(await vault.totalSupply());
       const vault_total_amounts = await vault.getTotalAmounts();
@@ -198,11 +183,14 @@ export const updateTreasuryItem = async (
       }
     }
 
-    strategy_balance_bmi_usdt = Number(await BMI_STAKING.totalStaked(strategyAddress));
+    strategy_balance_bmi_usdt = Number(await bmiStaking.totalStaked(strategyAddress));
     uni_v3_positions = Number(await uniswap_V3_positions.balanceOf(strategyAddress));
-    if (itemName == 'one1INCH') {
+
+    // TODO: Logic change, review.
+    // if (tokenName == 'one1INCH') {
+    if (tokenName.toLowerCase() == TokenName.ONE_1INCH.toLowerCase()) {
       strategy_balance_st1inch += Number(await st1INCH.balanceOf(strategyAddress));
-      strategy_balance_stimulus += Number(await _1INCH_STAKING.earned(strategyAddress));
+      strategy_balance_stimulus += Number(await _1InchStaking.earned(strategyAddress));
     }
   }
 
@@ -217,7 +205,7 @@ export const updateTreasuryItem = async (
       let auxStrategyAddress = auxStrategies[i];
 
       // aux strategy may own USDC
-      aux_strategy_balance_usdc = Number(await USDC.balanceOf(auxStrategyAddress));
+      aux_strategy_balance_usdc = Number(await usdc.balanceOf(auxStrategyAddress));
       strategy_balance_usdc += aux_strategy_balance_usdc;
 
       // aux strategy may own Risk Harbor postions
@@ -225,7 +213,7 @@ export const updateTreasuryItem = async (
       let rh_strategy_shares = 0;
       let rh_total_capacity = 0;
       let rh_total_premiums = 0;
-      let rawData: boolean | GraphData = await risk_harbor_graph_query(APIS.subgraph_risk_harbor, auxStrategyAddress);
+      let rawData: boolean | GraphData = await risk_harbor_graph_query(Apis.SUBGRAPH_RISK_HARBOR, auxStrategyAddress);
       if (rawData && rawData['data']) {
         let rhData = rawData['data']['underwriterPositions'] as RiskHarborPosition[];
         for (let i = 0; i < rhData.length; i++) {
@@ -249,14 +237,10 @@ export const updateTreasuryItem = async (
   //console.log(aux_strategy_balance_riskharbor_usdc);
 
   if (uni_v3_positions > 0) {
-    let all_v3_positions = await callDebunkOpenAPI(strategyAddress, DEBUNK_PROTOCOLS.UNI_V3);
-    if (
-      all_v3_positions.data &&
-      all_v3_positions.data.portfolio_item_list &&
-      all_v3_positions.data.portfolio_item_list.length > 0
-    ) {
-      for (let i = 0; i < all_v3_positions.data.portfolio_item_list.length; i++) {
-        let detail = all_v3_positions.data.portfolio_item_list[i].detail;
+    let all_v3_positions = await getDebankPortfolio(strategyAddress, DebankProtocolName.UNI_V3);
+    if (all_v3_positions && all_v3_positions.portfolio_item_list && all_v3_positions.portfolio_item_list.length > 0) {
+      for (let i = 0; i < all_v3_positions.portfolio_item_list.length; i++) {
+        let detail = all_v3_positions.portfolio_item_list[i].detail;
         if (detail.supply_token_list && detail.supply_token_list.length > 0) {
           let usdc_in_position = 0;
           let dai_in_position = 0;
@@ -266,24 +250,27 @@ export const updateTreasuryItem = async (
             if (supply_token.id.toLowerCase() === oneTokenAddress.toLowerCase()) {
               isCollateral = true;
               strategy_balance_onetoken += Number(supply_token.amount) * 10 ** 18;
-            } else if (supply_token.id.toLowerCase() === TOKENS['oneuni']['address'].toLowerCase()) {
-              if (itemName !== 'oneUNI') {
+            } else if (supply_token.id.toLowerCase() === getToken(TokenName.ONE_UNI, chainId).address.toLowerCase()) {
+              // TODO: Logic change, review
+              // if (tokenName !== 'oneUNI') {
+              if (tokenName.toLowerCase() !== TokenName.ONE_UNI.toLowerCase()) {
                 strategy_balance_one_uni += Number(supply_token.amount) * 10 ** 18;
               } else {
                 strategy_balance_onetoken += Number(supply_token.amount) * 10 ** 18;
               }
-            } else if (supply_token.id.toLowerCase() === TOKENS['ichi']['address'].toLowerCase()) {
-              strategy_balance_ichi += Number(supply_token.amount) * 10 ** TOKENS.ichi.decimals;
-            } else if (supply_token.id.toLowerCase() === TOKENS['usdc']['address'].toLowerCase()) {
-              usdc_in_position += Number(supply_token.amount) * 10 ** TOKENS.usdc.decimals;
-            } else if (supply_token.id.toLowerCase() === TOKENS['dai']['address'].toLowerCase()) {
-              dai_in_position += Number(supply_token.amount) * 10 ** TOKENS.dai.decimals;
-            } else if (supply_token.id.toLowerCase() === TOKENS['onebtc']['address'].toLowerCase()) {
-              strategy_balance_one_btc += Number(supply_token.amount) * 10 ** TOKENS.onebtc.decimals;
+            } else if (supply_token.id.toLowerCase() === getToken(TokenName.ICHI, chainId).address.toLowerCase()) {
+              strategy_balance_ichi += Number(supply_token.amount) * 10 ** getToken(TokenName.ICHI, chainId).decimals;
+            } else if (supply_token.id.toLowerCase() === getToken(TokenName.USDC, chainId).address.toLowerCase()) {
+              usdc_in_position += Number(supply_token.amount) * 10 ** getToken(TokenName.USDC, chainId).decimals;
+            } else if (supply_token.id.toLowerCase() === getToken(TokenName.DAI, chainId).address.toLowerCase()) {
+              dai_in_position += Number(supply_token.amount) * 10 ** getToken(TokenName.DAI, chainId).decimals;
+            } else if (supply_token.id.toLowerCase() === getToken(TokenName.ONE_BTC, chainId).address.toLowerCase()) {
+              strategy_balance_one_btc +=
+                Number(supply_token.amount) * 10 ** getToken(TokenName.ONE_BTC, chainId).decimals;
             } else if (supply_token.id.toLowerCase() === stimulusTokenAddress.toLowerCase()) {
               strategy_balance_stimulus += Number(supply_token.amount) * 10 ** stimulusDecimals;
-            } else if (supply_token.id.toLowerCase() === TOKENS['wbtc']['address'].toLowerCase()) {
-              strategy_balance_wbtc += Number(supply_token.amount) * 10 ** TOKENS.wbtc.decimals;
+            } else if (supply_token.id.toLowerCase() === getToken(TokenName.WBTC, chainId).address.toLowerCase()) {
+              strategy_balance_wbtc += Number(supply_token.amount) * 10 ** getToken(TokenName.WBTC, chainId).decimals;
             }
           }
           if (isCollateral) {
@@ -302,26 +289,26 @@ export const updateTreasuryItem = async (
   strategy_balance_dai += strategy_balance_dai_treasury;
 
   // in case of oneBTC combine all wBTC positions into one
-  if (itemName == 'oneBTC') {
+  // TODO: Logic change, review
+  // if (tokenName == 'oneBTC') {
+  if (tokenName == TokenName.ONE_BTC) {
     strategy_balance_stimulus += strategy_balance_wbtc;
     strategy_balance_wbtc = 0;
   }
 
   // special case of oneUNI investing into OJA vault
-  if (itemName == 'oneUNI') {
-    const OJA = new ethers.Contract(TOKENS['oja']['address'], ERC20_ABI, provider);
-    const oneOJA = new ethers.Contract(TOKENS['oneoja']['address'], oneTokenABI, provider);
-    const ojaFarm = new ethers.Contract(
-      TOKENS['oneoja']['ichiVault']['externalFarm'],
-      GENERIC_FARMING_V2_ABI,
-      provider
-    );
-    const ojaVault = new ethers.Contract(TOKENS['oneoja']['ichiVault']['address'], VAULT_ABI, provider);
+  // TODO: Logic change, review
+  // if (tokenName == 'oneUNI') {
+  if (tokenName == TokenName.ONE_UNI) {
+    const ojaContract = getErc20Contract(getToken(TokenName.OJA, chainId).address, provider);
+    const oneOJA = getOneTokenV1Contract(getToken(TokenName.ONE_OJA, chainId).address, provider);
+    const ojaFarm = getGenericFarmingV2Contract(getToken(TokenName.ONE_OJA, chainId).ichiVault.externalFarm, provider);
+    const ojaVault = getIchiVaultContract(getToken(TokenName.ONE_OJA, chainId).ichiVault.address, provider);
 
     strategy_balance_one_oja += Number(await oneOJA.balanceOf(strategyAddress));
-    strategy_balance_oja += Number(await OJA.balanceOf(strategyAddress));
+    strategy_balance_oja += Number(await ojaContract.balanceOf(strategyAddress));
 
-    const userInfo = await ojaFarm.userInfo(TOKENS['oneoja']['ichiVault']['farm'], strategyAddress);
+    const userInfo = await ojaFarm.userInfo(getToken(TokenName.ONE_OJA, chainId).ichiVault.farm, strategyAddress);
     let strategy_balance_vault_lp_in_farm = Number(userInfo.amount);
     let strategy_balance_vault_lp = Number(await ojaVault.balanceOf(strategyAddress));
     strategy_balance_vault_lp += strategy_balance_vault_lp_in_farm;
@@ -338,10 +325,12 @@ export const updateTreasuryItem = async (
   // console.log(strategy_balance_oja);
 
   // special case of oneUNI investing into oneBTC assets
-  if (itemName == 'oneUNI') {
-    const wBTC = new ethers.Contract(TOKENS['wbtc']['address'], ERC20_ABI, provider);
-    const oneBTC = new ethers.Contract(TOKENS['onebtc']['address'], oneTokenABI, provider);
-    const oneBTCVault = new ethers.Contract(TOKENS['onebtc']['ichiVault']['address'], VAULT_ABI, provider);
+  // TODO: Logic change, review
+  // if (tokenName == 'oneUNI') {
+  if (tokenName == TokenName.ONE_UNI) {
+    const wBTC = getErc20Contract(getToken(TokenName.WBTC, chainId).address, provider);
+    const oneBTC = getOneTokenV1Contract(getToken(TokenName.ONE_BTC, chainId).address, provider);
+    const oneBTCVault = getIchiVaultContract(getToken(TokenName.ONE_BTC, chainId).ichiVault.address, provider);
 
     strategy_balance_one_btc += Number(await oneBTC.balanceOf(strategyAddress));
     strategy_balance_wbtc += Number(await wBTC.balanceOf(strategyAddress));
@@ -361,8 +350,11 @@ export const updateTreasuryItem = async (
   // console.log(strategy_balance_wbtc);
 
   // special case of oneBTC investing into vaults
-  if (itemName == 'oneBTC') {
-    const wBTCVault = new ethers.Contract(LABELS[1028].vaultAddress, VAULT_ABI, provider);
+  // TODO: Logic change, review
+  // if (tokenName == 'oneBTC') {
+  if (tokenName == TokenName.ONE_BTC) {
+    // const wBTCVault = getIchiVaultContract(PoolLabels[MainnetPoolNumbers.WBTC_VAULT][chainId].vaultAddress, provider);
+    const wBTCVault = getIchiVaultContract(getPoolLabel(MainnetPoolNumbers.WBTC_VAULT, chainId).vaultAddress, provider);
 
     let strategy_balance_vault_lp = Number(await wBTCVault.balanceOf(strategyAddress));
 
@@ -370,28 +362,30 @@ export const updateTreasuryItem = async (
     const vault_total_amounts = await wBTCVault.getTotalAmounts();
     if (strategy_balance_vault_lp > 0) {
       const vault_ratio = strategy_balance_vault_lp / vault_total_lp;
-      strategy_balance_ichi += Number(vault_total_amounts.total0) * vault_ratio / 10 ** 9;
+      strategy_balance_ichi += (Number(vault_total_amounts.total0) * vault_ratio) / 10 ** 9;
       strategy_balance_wbtc += Number(vault_total_amounts.total1) * vault_ratio;
     }
   }
 
-  if (itemName == 'oneDODO') {
+  // TODO: Logic change, review
+  // if (tokenName == 'oneDODO') {
+  if (tokenName == TokenName.ONE_DODO) {
     // BCS positions for oneDODO
 
-    const bsc_provider = new ethers.providers.JsonRpcProvider(BSC_RPC_HOST);
+    const bsc_provider = new ethers.providers.JsonRpcProvider(Apis.BSC_RPC_HOST);
 
-    const bscContract_USDC = new ethers.Contract(BSC_ADDRESSES.usdc, ERC20_ABI, bsc_provider);
-    const bscContract_oneDODO = new ethers.Contract(BSC_ADDRESSES.oneDodo, ERC20_ABI, bsc_provider);
-    const bscContract_DLP = new ethers.Contract(BSC_ADDRESSES.dlp, ERC20_ABI, bsc_provider);
+    const bscContractUsdc = getErc20Contract(getAddress(AddressName.USDC, ChainId.Bsc), bsc_provider);
+    const bscContractOneDodo = getErc20Contract(getAddress(AddressName.ONE_DODO, ChainId.Bsc), bsc_provider);
+    const bscContractDlp = getErc20Contract(getAddress(AddressName.DLP, ChainId.Bsc), bsc_provider);
 
-    let usdc_in_gnosis = Number(await bscContract_USDC.balanceOf(BSC_ADDRESSES.gnosis));
-    let oneDodo_in_gnosis = Number(await bscContract_oneDODO.balanceOf(BSC_ADDRESSES.gnosis));
-    const dlp_in_gnosis = Number(await bscContract_DLP.balanceOf(BSC_ADDRESSES.gnosis));
+    let usdc_in_gnosis = Number(await bscContractUsdc.balanceOf(getAddress(AddressName.GNOSIS, ChainId.Bsc)));
+    let oneDodo_in_gnosis = Number(await bscContractOneDodo.balanceOf(getAddress(AddressName.GNOSIS, ChainId.Bsc)));
+    const dlp_in_gnosis = Number(await bscContractDlp.balanceOf(getAddress(AddressName.GNOSIS, ChainId.Bsc)));
 
-    const usdc_in_dlp = Number(await bscContract_USDC.balanceOf(BSC_ADDRESSES.dlp));
-    const oneDODO_in_dlp = Number(await bscContract_oneDODO.balanceOf(BSC_ADDRESSES.dlp));
+    const usdc_in_dlp = Number(await bscContractUsdc.balanceOf(getAddress(AddressName.DLP, ChainId.Bsc)));
+    const oneDODO_in_dlp = Number(await bscContractOneDodo.balanceOf(getAddress(AddressName.DLP, ChainId.Bsc)));
 
-    const dlp_total_supply = Number(await bscContract_DLP.totalSupply());
+    const dlp_total_supply = Number(await bscContractDlp.totalSupply());
 
     if (dlp_total_supply > 0) {
       const pct_dlp_in_gnosis = dlp_in_gnosis / dlp_total_supply;
@@ -460,17 +454,24 @@ export const updateTreasuryItem = async (
   // =================================================================================
   // special oneVBTC logic in this section
 
-  if (itemName == 'oneVBTC') {
+  // TODO: Logic change, review
+  // if (tokenName == 'oneVBTC') {
+  if (tokenName == TokenName.ONE_VBTC) {
+    // TODO: I think the easiest thing here to do is just create the relevant factory connect if this one so the call can succeed
+
     // temp fix for oneVBTC (removing price of burned stablecoins for a specific address from the total)
-    oneToken_burned_tokens = await oneToken.getBurnedStablecoin('0xcc71b8a0b9ea458ae7e17fa232a36816f6b27195');
+    oneToken_burned_tokens = Number(
+      await asOneEth(oneToken).getBurnedStablecoin('0xcc71b8a0b9ea458ae7e17fa232a36816f6b27195')
+    );
   }
 
-  if (itemName == 'one1INCH') {
-    const lpContract = new ethers.Contract(ADDRESSES._1inch_ICHI_LP, ERC20_ABI, provider);
+  if (tokenName == TokenName.ONE_1INCH) {
+    const _1inchIchiLpAddress = getAddress(AddressName._1INCH_ICHI_LP, chainId);
+    const lpContract = getErc20Contract(_1inchIchiLpAddress, provider);
     const strategyLPs = Number(await lpContract.balanceOf(strategyAddress));
     if (strategyLPs > 0) {
-      const lp_stimulus = Number(await stimulusToken.balanceOf(ADDRESSES._1inch_ICHI_LP));
-      const lp_ichi = Number(await ICHI.balanceOf(ADDRESSES._1inch_ICHI_LP));
+      const lp_stimulus = Number(await stimulusToken.balanceOf(_1inchIchiLpAddress));
+      const lp_ichi = Number(await ichi.balanceOf(_1inchIchiLpAddress));
       const lpTotal = Number(await lpContract.totalSupply());
       const ratio = strategyLPs / lpTotal;
       const strategy_lp_ichi = lp_ichi * ratio;
@@ -484,16 +485,18 @@ export const updateTreasuryItem = async (
 
   // =================================================================================
   // special oneLINK logic in this section
-
-  if (itemName == 'oneLINK') {
+  if (tokenName == TokenName.ONE_LINK) {
     // temp fix for oneLINK (removing price of burned stablecoins for a specific address from the total)
-    oneToken_burned_tokens = await oneToken.getBurnedStablecoin('0x549C0421c69Be943A2A60e76B19b4A801682cBD3');
+    oneToken_burned_tokens = Number(
+      await asOneLink(oneToken).getBurnedStablecoin('0x549C0421c69Be943A2A60e76B19b4A801682cBD3')
+    );
     //let oneLINK_USDC_num = Number(oneLINK_USDC) / 10 ** 6 - Number(oneLINK_burned_tokens) / 10 ** 9;
 
-    let oneLINK_67_33_Farming_Position = await farming_V2.userInfo(8, TOKENS['onelink']['address']);
+    let oneLINK_67_33_Farming_Position = await farming_V2.userInfo(8, getToken(TokenName.ONE_LINK, chainId).address);
     let oneLINK_67_33_LP = oneLINK_67_33_Farming_Position.amount;
 
-    let oneLINK_67_33_PoolRecord = await getPoolRecord(1008, tokenPrices, null, false);
+    // NOTE: There is no 1008 Pool anymore
+    let oneLINK_67_33_PoolRecord = await getPoolRecord(1008, tokenPrices, null, false, chainId);
 
     let totalOneLINKLP = oneLINK_67_33_PoolRecord['totalPoolLP'];
     let percentOwnership = Number(oneLINK_67_33_LP) / Number(totalOneLINKLP);
@@ -554,29 +557,31 @@ export const updateTreasuryItem = async (
 
   let oneToken_withdrawFee = 0;
   if (isV2) {
-    oneToken_withdrawFee = Number(await oneToken.redemptionFee()) / 10 ** 18;
+    oneToken_withdrawFee = Number(await asOneTokenV1(oneToken).redemptionFee()) / 10 ** 18;
   } else {
-    oneToken_withdrawFee = Number(await oneToken.withdrawFee()) / 10 ** 11;
+    oneToken_withdrawFee = Number(await asOneEth(oneToken).withdrawFee()) / 10 ** 11;
   }
   let oneToken_mintFee = 0;
   if (isV2) {
-    oneToken_mintFee = Number(await oneToken.mintingFee()) / 10 ** 18;
+    oneToken_mintFee = Number(await asOneTokenV1(oneToken).mintingFee()) / 10 ** 18;
   } else {
-    oneToken_mintFee = Number(await oneToken.mintFee()) / 10 ** 11;
+    oneToken_mintFee = Number(await asOneEth(oneToken).mintFee()) / 10 ** 11;
   }
   let oneToken_mintingRatio = 0;
   if (isV2) {
-    const mRatio = await oneToken.getMintingRatio(collateralToken.address);
+    // assume USDC as collateral for V2 oneTokens for the time being
+    // const mRatio = await asOneTokenV1(oneToken).getMintingRatio(getToken(TokenName.USDC, chainId).address);
+    const mRatio = await asOneTokenV1(oneToken).getMintingRatio(collateralToken.address);
     oneToken_mintingRatio = Number(mRatio[0]) / 10 ** 18;
   } else {
-    oneToken_mintingRatio = Number(await oneToken.reserveRatio()) / 10 ** 11;
+    oneToken_mintingRatio = Number(await asOneEth(oneToken).reserveRatio()) / 10 ** 11;
   }
 
-  let ichi_price = tokenPrices['ichi'];
-  let wbtc_price = tokenPrices['wbtc'];
-  let usdc_price = tokenPrices['usdc'];
-  let dai_price = tokenPrices['dai'];
-  let oja_price = tokenPrices['oja'];
+  let ichi_price = tokenPrices[TokenName.ICHI];
+  let wbtc_price = tokenPrices[TokenName.WBTC];
+  let usdc_price = tokenPrices[TokenName.USDC];
+  let dai_price = tokenPrices[TokenName.DAI];
+  let oja_price = tokenPrices[TokenName.OJA];
   let usdt_price = 1;
   let oneToken_price = 1;
   let onebtc_price = 1;
@@ -594,14 +599,18 @@ export const updateTreasuryItem = async (
     stimulusPositionsUSDValue +
     Number(oneToken_stimulus_price) * (strategy_balance_stimulus / 10 ** stimulusDecimals) +
     //usdc_price * (strategy_balance_usdc_treasury / 10 ** TOKENS.usdc.decimals) +
-    wbtc_price * (strategy_balance_wbtc / 10 ** TOKENS.wbtc.decimals) +
-    ichi_price * (strategy_balance_ichi / 10 ** TOKENS.ichi.decimals);
+    wbtc_price * (strategy_balance_wbtc / 10 ** getToken(TokenName.WBTC, chainId).decimals) +
+    ichi_price * (strategy_balance_ichi / 10 ** getToken(TokenName.ICHI, chainId).decimals);
 
-  if (itemName == 'one1INCH') {
+  // TODO: Logic change, review
+  // if (tokenName == 'one1INCH') {
+  if (tokenName == TokenName.ONE_1INCH) {
     stimulusPositionsUSDValue += Number(oneToken_stimulus_price) * (strategy_balance_st1inch / 10 ** stimulusDecimals);
   }
 
-  if (itemName == 'oneUNI') {
+  // TODO: Logic change, review
+  // if (tokenName == 'oneUNI') {
+  if (tokenName == TokenName.ONE_UNI) {
     stimulusPositionsUSDValue += oja_price * (strategy_balance_oja / 10 ** 18);
   }
 
@@ -613,12 +622,12 @@ export const updateTreasuryItem = async (
   }
 
   let oneToken_stimulus_usd =
-    Number(oneToken_stimulus_price) * (oneToken_stimulus / 10 ** stimulusDecimals) +
-    ichi_price * (oneToken_ichi / 10 ** TOKENS.ichi.decimals) +
+    Number(oneToken_stimulus_price) * (oneTokenStimulus / 10 ** stimulusDecimals) +
+    ichi_price * (oneTokenIchi / 10 ** getToken(TokenName.ICHI, chainId).decimals) +
     stimulusPositionsUSDValue;
 
-  let oneToken_collateral_USDC_only = usdc_price * (oneToken_USDC / 10 ** TOKENS.usdc.decimals);
-  let oneToken_collateral_DAI_only = dai_price * (oneToken_DAI / 10 ** TOKENS.dai.decimals);
+  let oneToken_collateral_USDC_only = usdc_price * (oneTokenUsdc / 10 ** getToken(TokenName.USDC, chainId).decimals);
+  let oneToken_collateral_DAI_only = dai_price * (oneTokenDai / 10 ** getToken(TokenName.DAI, chainId).decimals);
 
   collateralPositionsUSDValue =
     collateralPositionsUSDValue +
@@ -626,14 +635,12 @@ export const updateTreasuryItem = async (
     (strategy_balance_one_uni * oneuni_price) / 10 ** 18 +
     (strategy_balance_one_btc * onebtc_price) / 10 ** 18 +
     strategy_balance_one_oja / 10 ** 18 +
-    usdc_price * (strategy_balance_usdc / 10 ** TOKENS.usdc.decimals) +
-    dai_price * (strategy_balance_dai / 10 ** TOKENS.dai.decimals) +
-    usdc_price * (aux_strategy_balance_riskharbor_usdc / 10 ** TOKENS.usdc.decimals) +
+    usdc_price * (strategy_balance_usdc / 10 ** getToken(TokenName.USDC, chainId).decimals) +
+    usdc_price * (aux_strategy_balance_riskharbor_usdc / 10 ** getToken(TokenName.USDC, chainId).decimals) +
     usdt_price * (strategy_balance_bmi_usdt / 10 ** 18);
 
-  let oneToken_collateral_only = oneToken_collateral_USDC_only +
-    oneToken_collateral_DAI_only + 
-    collateralPositionsUSDValue;
+  let oneToken_collateral_only =
+    oneToken_collateral_USDC_only + oneToken_collateral_DAI_only + collateralPositionsUSDValue;
 
   let oneToken_treasury_backed =
     (Number(oneToken_SUPPLY) / 10 ** decimals) * (1 - oneToken_withdrawFee) -
@@ -673,9 +680,11 @@ export const updateTreasuryItem = async (
       assets.push({
         M: {
           name: { S: 'USDC' },
+          // balance: { N: Number(strategy_balance_usdc / 10 ** 6).toString() }
           balance: {
             N: Number(
-              (strategy_balance_usdc + aux_strategy_balance_riskharbor_usdc) / 10 ** TOKENS.usdc.decimals
+              (strategy_balance_usdc + aux_strategy_balance_riskharbor_usdc) /
+                10 ** getToken(TokenName.USDC, chainId).decimals
             ).toString()
           }
         }
@@ -686,9 +695,7 @@ export const updateTreasuryItem = async (
         M: {
           name: { S: 'DAI' },
           balance: {
-            N: Number(
-              strategy_balance_dai / 10 ** TOKENS.dai.decimals
-            ).toString()
+            N: Number(strategy_balance_dai / 10 ** getToken(TokenName.DAI, chainId).decimals).toString()
           }
         }
       });
@@ -696,7 +703,7 @@ export const updateTreasuryItem = async (
     if (strategy_balance_onetoken > 0) {
       assets.push({
         M: {
-          name: { S: TOKENS[itemName.toLowerCase()]['displayName'] },
+          name: { S: getToken(tokenName, chainId).displayName },
           balance: { N: Number(strategy_balance_onetoken / 10 ** 18).toString() }
         }
       });
@@ -751,14 +758,14 @@ export const updateTreasuryItem = async (
   oneToken_stimulus_list.push({
     M: {
       name: { S: stimulusDisplayName },
-      balance: { N: Number(oneToken_stimulus / 10 ** stimulusDecimals).toString() }
+      balance: { N: Number(oneTokenStimulus / 10 ** stimulusDecimals).toString() }
     }
   });
-  if (oneToken_ichi > 0) {
+  if (oneTokenIchi > 0) {
     oneToken_stimulus_list.push({
       M: {
         name: { S: 'ICHI' },
-        balance: { N: Number(oneToken_ichi / 10 ** TOKENS.ichi.decimals).toString() }
+        balance: { N: Number(oneTokenIchi / 10 ** getToken(TokenName.ICHI, chainId).decimals).toString() }
       }
     });
   }
@@ -785,7 +792,9 @@ export const updateTreasuryItem = async (
       assets.push({
         M: {
           name: { S: 'ICHI' },
-          balance: { N: Number(strategy_balance_ichi / 10 ** TOKENS.ichi.decimals).toString() }
+          balance: {
+            N: Number(strategy_balance_ichi / 10 ** getToken(TokenName.ICHI, chainId).decimals).toString()
+          }
         }
       });
     }
@@ -801,7 +810,9 @@ export const updateTreasuryItem = async (
       assets.push({
         M: {
           name: { S: 'wBTC' },
-          balance: { N: Number(strategy_balance_wbtc / 10 ** TOKENS.wbtc.decimals).toString() }
+          balance: {
+            N: Number(strategy_balance_wbtc / 10 ** getToken(TokenName.WBTC, chainId).decimals).toString()
+          }
         }
       });
     }
@@ -819,7 +830,10 @@ export const updateTreasuryItem = async (
         }
       });
     }
-    if (itemName === 'one1INCH' && Number(strategy_balance_st1inch) > 0) {
+
+    // TODO: logic change, review
+    // if (tokenName === 'one1INCH' && Number(strategy_balance_st1inch) > 0) {
+    if (tokenName === TokenName.ONE_1INCH && Number(strategy_balance_st1inch) > 0) {
       assets.push({
         M: {
           name: { S: 'st1INCH' },
@@ -845,13 +859,14 @@ export const updateTreasuryItem = async (
   }
 
   let totalUSDC =
-    (oneToken_USDC + strategy_balance_usdc + aux_strategy_balance_riskharbor_usdc) / 10 ** TOKENS.usdc.decimals +
-    (oneToken_DAI + strategy_balance_dai) / 10 ** TOKENS.dai.decimals +
+    (oneTokenUsdc + strategy_balance_usdc + aux_strategy_balance_riskharbor_usdc) /
+      10 ** getToken(TokenName.USDC, chainId).decimals +
+    (oneTokenDai + strategy_balance_dai) / 10 ** getToken(TokenName.DAI, chainId).decimals +
     strategy_balance_bmi_usdt / 10 ** 18;
 
   let res = {
-    name: itemName.toLowerCase(),
-    displayName: itemName,
+    name: tokenName.toLowerCase(),
+    displayName: tokenName,
     base: baseName,
     usdc: totalUSDC,
     circulation: Number(oneToken_SUPPLY) / 10 ** decimals,
@@ -874,12 +889,12 @@ export const updateTreasuryItem = async (
   console.log(res);
 
   // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
-  console.log(`Attempting to update table: ${tableName}, token: ${itemName}`);
+  console.log(`Attempting to update table: ${tableName}, token: ${tokenName}`);
   const params: AWS.DynamoDB.UpdateItemInput = {
     TableName: tableName,
     Key: {
       name: {
-        S: itemName.toLowerCase()
+        S: tokenName.toLowerCase()
       }
     },
     UpdateExpression:
@@ -913,7 +928,7 @@ export const updateTreasuryItem = async (
       ':baseName': { S: baseName },
       ':address': { S: oneTokenAddress },
       ':strategy': { S: strategyAddress },
-      ':displayName': { S: itemName },
+      ':displayName': { S: tokenName },
       ':usdc': { N: Number(totalUSDC).toString() },
       ':circulation': { N: (Number(oneToken_SUPPLY) / 10 ** decimals).toString() },
       ':collateral': { L: oneToken_collateral_list },
@@ -930,7 +945,7 @@ export const updateTreasuryItem = async (
       ':mintFee': { N: oneToken_mintFee.toString() },
       ':mintingRatio': { N: oneToken_mintingRatio.toString() },
       ':treasuryBacked': { N: Number(oneToken_treasury_backed).toString() },
-      ':chainId': { N: Number(CHAIN_ID).toString() },
+      ':chainId': { N: ChainId.Mainnet.toString() },
       ':tradeUrl': { S: tradeUrl },
       ':isLegacy': { BOOL: isLegacy },
       ':oneTokenVersion': { N: Number(oneTokenVersion).toString() },

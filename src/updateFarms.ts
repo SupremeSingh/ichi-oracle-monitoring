@@ -1,57 +1,61 @@
 import { updateFarm } from './updateFarm';
-import { POOLS } from './configMainnet';
-import { adjustedPid, isFarmV2 } from './utils/pids';
 import { getSubgraphPoolRecords, GraphFarm } from './subgraph/farm_v2';
 import { APIGatewayProxyResult } from 'aws-lambda';
+import { adjustedPid, ChainId, isFarmV2, MainnetPoolNumbers, PartialRecord, Pools, TokenName } from '@ichidao/ichi-sdk';
 
 export const updateFarms = async (
   tableName: string,
-  tokenPrices: { [name: string]: number },
+  tokenPrices: PartialRecord<TokenName, number>,
   tokenNames: { [name: string]: string },
-  knownIchiPerBlock: { [poolId: string]: string }
+  knownIchiPerBlock: { [poolId: string]: string },
+  chainId: ChainId
 ): Promise<void> => {
-  let graph_farm = await getSubgraphPoolRecords();
-  let specific_graph_farm: GraphFarm | false;
+  let graphFarm = await getSubgraphPoolRecords();
+  let specificGraphFarm: GraphFarm | false;
 
   const promises: Promise<APIGatewayProxyResult>[] = [];
 
-  for (let poolId of POOLS.activePools) {
-    if (graph_farm && isFarmV2(poolId)) {
-      specific_graph_farm = graph_farm.get(adjustedPid(poolId));
+  for (const poolId of Pools.ACTIVE_POOLS[chainId]) {
+    if (graphFarm && isFarmV2(poolId)) {
+      specificGraphFarm = graphFarm.get(adjustedPid(poolId));
     } else {
-      specific_graph_farm = false;
+      specificGraphFarm = false;
     }
     promises.push(
-      updateFarm(tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, specific_graph_farm, false)
+      updateFarm(tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, specificGraphFarm, false, chainId)
     );
   }
 
-  let oneUni_vault_obj = false;
-  if (POOLS.activeVaults.includes(1016)) {
-    if (graph_farm) specific_graph_farm = graph_farm.get(adjustedPid(1016));
-    else specific_graph_farm = false;
-    const oneUni_vault = await updateFarm(
+  let oneUniVaultObj = false;
+  if (Pools.ACTIVE_VAULTS[chainId].includes(MainnetPoolNumbers.ONE_UNI_VAULT_LP)) {
+    if (graphFarm) {
+      specificGraphFarm = graphFarm.get(adjustedPid(MainnetPoolNumbers.ONE_UNI_VAULT_LP));
+    } else {
+      specificGraphFarm = false;
+    }
+    const oneUniVault = await updateFarm(
       tableName,
-      1016,
+      MainnetPoolNumbers.ONE_UNI_VAULT_LP,
       tokenPrices,
       tokenNames,
       knownIchiPerBlock,
-      specific_graph_farm,
-      false
+      specificGraphFarm,
+      false,
+      chainId
     );
-    oneUni_vault_obj = JSON.parse(oneUni_vault.body);
+    oneUniVaultObj = JSON.parse(oneUniVault.body);
   }
 
-  for (let vaultId of POOLS.activeVaults) {
-    if (vaultId == 1016) continue;
+  for (const vaultId of Pools.ACTIVE_VAULTS[chainId]) {
+    if (vaultId == MainnetPoolNumbers.ONE_UNI_VAULT_LP) continue;
 
-    if (graph_farm && isFarmV2(vaultId)) {
-      specific_graph_farm = graph_farm.get(adjustedPid(vaultId));
+    if (graphFarm && isFarmV2(vaultId)) {
+      specificGraphFarm = graphFarm.get(adjustedPid(vaultId));
     } else {
-      specific_graph_farm = false;
+      specificGraphFarm = false;
     }
 
-    if (vaultId == 10006) {
+    if (vaultId == MainnetPoolNumbers.ONE_UNI_VAULT) {
       promises.push(
         updateFarm(
           tableName,
@@ -59,13 +63,14 @@ export const updateFarms = async (
           tokenPrices,
           tokenNames,
           knownIchiPerBlock,
-          specific_graph_farm,
-          oneUni_vault_obj
+          specificGraphFarm,
+          oneUniVaultObj,
+          chainId
         )
       );
     } else {
       promises.push(
-        updateFarm(tableName, vaultId, tokenPrices, tokenNames, knownIchiPerBlock, specific_graph_farm, false)
+        updateFarm(tableName, vaultId, tokenPrices, tokenNames, knownIchiPerBlock, specificGraphFarm, false, chainId)
       );
     }
   }

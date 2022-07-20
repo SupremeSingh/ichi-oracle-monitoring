@@ -1,13 +1,17 @@
 import { updateTreasuryItem } from './updateTreasuryItem';
 import { APIGatewayProxyResult } from 'aws-lambda';
+import { ChainId, PartialRecord, TokenName } from '@ichidao/ichi-sdk';
 
-// , tokenNames: {[name: string]: string}
-export const updateTreasury = async (tableName: string, tokenPrices: { [name: string]: number }) => {
-  let treasuryPositions = ['OTI', 'test_oneUNI', 'test_oneFIL'];
+export const updateTreasury = async (
+  tableName: string,
+  tokenPrices: PartialRecord<TokenName, number>,
+  chainId: ChainId
+) => {
+  let tokenNames = [TokenName.OTI, TokenName.ONE_UNI, TokenName.ONE_FIL];
 
   const promises: Promise<APIGatewayProxyResult>[] = [];
-  for (let treasuryPosition of treasuryPositions) {
-    promises.push(updateTreasuryItem(tableName, treasuryPosition, tokenPrices));
+  for (let tokenName of tokenNames) {
+    promises.push(updateTreasuryItem(tableName, tokenName, tokenPrices, chainId));
   }
 
   const results = await Promise.all(promises);

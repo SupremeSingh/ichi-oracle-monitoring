@@ -2,12 +2,15 @@ import { APIGatewayProxyEvent } from 'aws-lambda';
 import { updateTreasury } from './updateTreasury';
 import { updateFarms } from './updateFarms';
 import { updateTokens } from './updateTokens';
-import { updateFarm } from './updateFarm';
 import { dbClient } from '../configMainnet';
+import { ChainId, EnvUtils } from '@ichidao/ichi-sdk';
+import { updateFarm } from 'src/updateFarm';
 
 const token_tableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
 const treasury_tableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
 const farms_tableName = process.env.FARMS_TABLE_NAME || 'farms-dev';
+
+EnvUtils.validateEnvironment();
 
 const getAllData = async (params) => {
   const _getAllData = async (params, startKey) => {
@@ -38,7 +41,7 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   }
 
   if (poolId === -1) {
-    await updateTokens(token_tableName);
+    await updateTokens(token_tableName, ChainId.Polygon);
   }
 
   const tokenPrices = {};
@@ -89,11 +92,11 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   //console.log(tokenNames);
 
   if (poolId === -1) {
-    await updateFarms(farms_tableName, tokenPrices, tokenNames, {});
-    await updateTreasury(treasury_tableName, tokenPrices);
+    await updateFarms(farms_tableName, tokenPrices, tokenNames, {}, ChainId.Polygon);
+    await updateTreasury(treasury_tableName, tokenPrices, ChainId.Polygon);
   } else {
-    // Mainnet farms
-    await updateFarm(farms_tableName, poolId, tokenPrices, tokenNames, {}, false);
+    // Polygon farms
+    await updateFarm(farms_tableName, poolId, tokenPrices, tokenNames, {}, false, false, ChainId.Polygon);
   }
 
   return {

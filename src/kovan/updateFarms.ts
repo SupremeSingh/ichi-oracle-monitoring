@@ -1,37 +1,39 @@
 import { updateFarm } from './updateFarm';
-import { POOLS } from './configKovan';
 import { APIGatewayProxyResult } from 'aws-lambda';
+import { ChainId, PartialRecord, KovanPoolNumbers, Pools, TokenName } from '@ichidao/ichi-sdk';
 
 export const updateFarms = async (
   tableName: string,
-  tokenPrices: { [name: string]: number },
-  tokenNames: { [name: string]: string },
-  knownIchiPerBlock: { [poolId: string]: string }
+  tokenPrices: PartialRecord<TokenName, number>,
+  tokenNames: PartialRecord<TokenName, string>,
+  knownIchiPerBlock: PartialRecord<KovanPoolNumbers, number>,
+  chainId: ChainId
 ) => {
-  for (let i = 0; i < POOLS.activePools.length; i++) {
-    const res = await updateFarm(tableName, POOLS.activePools[i], tokenPrices, tokenNames, knownIchiPerBlock);
-    console.log(`update ${POOLS.activePools[i]} results:`, res);
+  for (const poolId of Pools.ACTIVE_POOLS[chainId]) {
+    const res = await updateFarm(tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, chainId);
+    console.log(`update ${poolId} results:`, res);
   }
-  for (let i = 0; i < POOLS.activeVaults.length; i++) {
-    const res = await updateFarm(tableName, POOLS.activeVaults[i], tokenPrices, tokenNames, knownIchiPerBlock);
-    console.log(`update ${POOLS.activeVaults[i]} results:`, res);
+  for (const poolId of Pools.ACTIVE_VAULTS[chainId]) {
+    const res = await updateFarm(tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, chainId);
+    console.log(`update ${poolId} results:`, res);
   }
 };
 
 export const updateFarmsParallel = async (
   tableName: string,
-  tokenPrices: { [name: string]: number },
-  tokenNames: { [name: string]: string },
-  knownIchiPerBlock: { [poolId: string]: string }
+  tokenPrices: PartialRecord<TokenName, number>,
+  tokenNames: PartialRecord<TokenName, string>,
+  knownIchiPerBlock: PartialRecord<KovanPoolNumbers, number>,
+  chainId: ChainId
 ) => {
   const poolPromises: Promise<APIGatewayProxyResult>[] = [];
-  for (let poolId of POOLS.activePools) {
-    poolPromises.push(updateFarm(tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock));
+  for (const poolId of Pools.ACTIVE_POOLS[chainId]) {
+    poolPromises.push(updateFarm(tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, chainId));
   }
 
   const vaultPromises: Promise<APIGatewayProxyResult>[] = [];
-  for (let vaultId of POOLS.activeVaults) {
-    vaultPromises.push(updateFarm(tableName, vaultId, tokenPrices, tokenNames, knownIchiPerBlock));
+  for (const poolId of Pools.ACTIVE_VAULTS[chainId]) {
+    vaultPromises.push(updateFarm(tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, chainId));
   }
 
   const farmResults = await Promise.all(poolPromises);

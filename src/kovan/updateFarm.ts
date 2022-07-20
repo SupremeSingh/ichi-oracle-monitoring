@@ -1,25 +1,38 @@
+import {
+  ChainId,
+  getExchangeName,
+  getPoolLabel,
+  getToken,
+  isFarmExternal,
+  isFarmGeneric,
+  isUnretired,
+  PartialRecord,
+  KovanPoolNumbers,
+  Pools,
+  TokenName,
+  isOneToken
+} from '@ichidao/ichi-sdk';
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { dbClient } from '../configMainnet';
-import { isFarmExternal, isFarmGeneric, isUnretired } from '../utils/pids';
-import { POOLS, LABELS, CHAIN_ID, TOKENS } from './configKovan';
 import { getPoolRecord } from './getPoolRecord';
 
-const getExchangeName = async function (poolId: number) {
-  if (POOLS.depositPools.includes(poolId)) return '';
-  return 'test exchange';
-};
-
-const getTradeUrl = function (poolId: number) {
-  let isDeposit = POOLS.depositPools.includes(poolId);
+const getTradeUrl = function (poolId: KovanPoolNumbers, chainId: ChainId) {
+  let isDeposit = Pools.DEPOSIT_POOLS[chainId].includes(poolId);
+  const poolLabel = getPoolLabel(poolId, chainId);
   if (isDeposit) {
-    let token_name = LABELS[poolId]['lpName'].toLowerCase();
-    if (!TOKENS[token_name]) {
-      token_name = 'test_' + LABELS[poolId]['lpName'].toLowerCase();
+    let tokenName = poolLabel.lpName.toLowerCase() as TokenName;
+    // TODO: Logic change, this should no longer be necessary
+    // if (!getToken(tokenName, { chainId, throwIfNotFound: false })) {
+    //   tokenName = 'test_' + poolLabel.lpName.toLowerCase();
+    // }
+    if (getToken(tokenName, chainId).tradeUrl) {
+      return getToken(tokenName, chainId).tradeUrl;
     }
-    if (TOKENS[token_name]['tradeUrl']) return TOKENS[token_name]['tradeUrl'];
   } else {
-    if (LABELS[poolId]['tradeUrl']) return LABELS[poolId]['tradeUrl'];
+    if (poolLabel.tradeUrl) {
+      return poolLabel.tradeUrl;
+    }
   }
   return '';
 };
@@ -28,12 +41,14 @@ const getTradeUrl = function (poolId: number) {
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
 export const updateFarm = async (
   tableName: string,
-  poolId: number,
-  tokenPrices: { [name: string]: number },
-  tokenNames: { [name: string]: string },
-  knownIchiPerBlock: { [poolId: string]: string }
+  poolId: KovanPoolNumbers,
+  tokenPrices: PartialRecord<TokenName, number>,
+  tokenNames: PartialRecord<TokenName, string>,
+  knownIchiPerBlock: PartialRecord<KovanPoolNumbers, number>,
+  chainId: ChainId
 ): Promise<APIGatewayProxyResult> => {
-  let pool = await getPoolRecord(poolId, tokenPrices, knownIchiPerBlock);
+  const pool = await getPoolRecord(poolId, tokenPrices, knownIchiPerBlock, chainId);
+  const poolLabel = getPoolLabel(poolId, chainId);
 
   let farmPoolId = poolId;
   let farmName = 'V2';
@@ -41,40 +56,36 @@ export const updateFarm = async (
 
   let tokens = [];
 
-  if (pool['token0'] == '') {
-    searchName = farmName.toLowerCase() + '-multi-' + farmPoolId;
+  if (pool.token0 == '') {
+    searchName = `${farmName.toLowerCase()}-multi-${farmPoolId}`;
   } else {
     let token0 = {
-      name: { S: pool['token0'].toLowerCase() },
-      displayName: { S: tokenNames[pool['token0'].toLowerCase()] },
-      isOneToken: { BOOL: TOKENS[pool['token0']] ? TOKENS[pool['token0'].toLowerCase()]['isOneToken'] : false },
-      price: { N: tokenPrices[pool['token0'].toLowerCase()].toString() },
-      address: { S: pool['address0'] },
-      reserve: { N: Number(pool['reserve0Raw']).toString() },
-      decimals: { N: Number(pool['decimals0']).toString() }
+      name: { S: pool.token0.toLowerCase() },
+      displayName: { S: tokenNames[pool.token0.toLowerCase()] },
+      isOneToken: {
+        BOOL: isOneToken(pool.token0, chainId)
+      },
+      price: { N: tokenPrices[pool.token0.toLowerCase()].toString() },
+      address: { S: pool.address0 },
+      reserve: { N: Number(pool.reserve0Raw).toString() },
+      decimals: { N: Number(pool.decimals0).toString() }
     };
     tokens.push({ M: token0 });
 
-    if (pool['token1'] == '') {
-      searchName = farmName.toLowerCase() + '-' + pool['token0'].toLowerCase() + '-' + farmPoolId;
+    if (pool.token1 == '') {
+      searchName = farmName.toLowerCase() + '-' + pool.token0.toLowerCase() + '-' + farmPoolId;
     } else {
       searchName =
-        farmName.toLowerCase() +
-        '-' +
-        pool['token0'].toLowerCase() +
-        '-' +
-        pool['token1'].toLowerCase() +
-        '-' +
-        farmPoolId;
+        farmName.toLowerCase() + '-' + pool.token0.toLowerCase() + '-' + pool.token1.toLowerCase() + '-' + farmPoolId;
 
       let token1 = {
-        name: { S: pool['token1'].toLowerCase() },
-        displayName: { S: tokenNames[pool['token1'].toLowerCase()] },
-        isOneToken: { BOOL: TOKENS[pool['token1'].toLowerCase()]['isOneToken'] },
-        price: { N: tokenPrices[pool['token1'].toLowerCase()].toString() },
-        address: { S: pool['address1'] },
-        reserve: { N: Number(pool['reserve1Raw']).toString() },
-        decimals: { N: Number(pool['decimals1']).toString() }
+        name: { S: pool.token1.toLowerCase() },
+        displayName: { S: tokenNames[pool.token1.toLowerCase()] },
+        isOneToken: { BOOL: isOneToken(pool.token1, chainId) },
+        price: { N: tokenPrices[pool.token1.toLowerCase()].toString() },
+        address: { S: pool.address1 },
+        reserve: { N: Number(pool.reserve1Raw).toString() },
+        decimals: { N: Number(pool.decimals1).toString() }
       };
       tokens.push({ M: token1 });
     }
@@ -86,55 +97,55 @@ export const updateFarm = async (
     pool['token0'].toLowerCase() == 'ichi' ||
     pool['token1'].toLowerCase() == 'ichi' ||
     pool['token0'].toLowerCase() == 'weenus'; // treat WEENUS-ETH as ichi pool
-  let isUpcoming = POOLS.upcomingPools.includes(poolId);
-  let isMigrating = POOLS.migratingPools.includes(poolId);
-  let isRetired = POOLS.retiredPools.includes(poolId);
-  let isDeposit = POOLS.depositPools.includes(poolId);
-  let isVault = POOLS.activeVaults.includes(poolId);
+  let isUpcoming = Pools.UPCOMING_POOLS[chainId].includes(poolId);
+  let isMigrating = Pools.MIGRATING_POOLS[chainId].includes(poolId);
+  let isRetired = Pools.RETIRED_POOLS[chainId].includes(poolId);
+  let isDeposit = Pools.DEPOSIT_POOLS[chainId].includes(poolId);
+  let isVault = Pools.ACTIVE_VAULTS[chainId].includes(poolId);
 
-  let exchange = await getExchangeName(poolId);
+  let exchange = getExchangeName(poolId, chainId);
 
-  let displayName = LABELS[poolId]['name'];
-  let lpName = LABELS[poolId]['lpName'];
-  let shortLpName = LABELS[poolId]['shortLpName'];
+  let displayName = poolLabel.name;
+  let lpName = poolLabel.lpName;
+  let shortLpName = poolLabel.shortLpName;
 
   let lpPrice = 0;
-  if (pool['totalPoolLP'] && Number(pool['totalPoolLP']) > 0 && pool['tvl'] && Number(pool['tvl']) > 0) {
-    lpPrice = (Number(pool['tvl']) * 10 ** 18) / Number(pool['totalPoolLP']);
+  if (pool['totalPoolLP'] && Number(pool.totalPoolLP) > 0 && pool.tvl && Number(pool.tvl) > 0) {
+    lpPrice = (Number(pool.tvl) * 10 ** 18) / Number(pool.totalPoolLP);
     lpPrice = Math.round(lpPrice * 100) / 100;
   }
 
   let extras = {};
-  if (LABELS[poolId]) {
-    if (LABELS[poolId]['externalUrl']) {
-      extras['externalUrl'] = { S: LABELS[poolId]['externalUrl'] };
+  if (poolLabel) {
+    if (poolLabel.externalUrl) {
+      extras['externalUrl'] = { S: poolLabel.externalUrl };
     }
-    if (LABELS[poolId]['externalText']) {
-      extras['externalText'] = { S: LABELS[poolId]['externalText'] };
+    if (poolLabel.externalText) {
+      extras['externalText'] = { S: poolLabel.externalText };
     }
-    if (LABELS[poolId]['externalButton']) {
-      extras['externalButton'] = { S: LABELS[poolId]['externalButton'] };
+    if (poolLabel.externalButton) {
+      extras['externalButton'] = { S: poolLabel.externalButton };
     }
   }
-  const tradeUrl = getTradeUrl(poolId);
+  const tradeUrl = getTradeUrl(poolId, chainId);
   if (tradeUrl != '') {
     extras['tradeUrl'] = { S: tradeUrl };
   }
 
   let farm = {};
-  if (LABELS[poolId]) {
-    if (LABELS[poolId]['farmAddress']) {
-      farm['farmAddress'] = { S: LABELS[poolId]['farmAddress'] };
-      farm['farmId'] = { N: Number(LABELS[poolId]['farmId']).toString() };
+  if (poolLabel) {
+    if (poolLabel.farmAddress) {
+      farm['farmAddress'] = { S: poolLabel.farmAddress };
+      farm['farmId'] = { N: Number(poolLabel.farmId).toString() };
     }
-    if (LABELS[poolId]['farmRewardTokenName']) {
-      farm['farmRewardTokenName'] = { S: LABELS[poolId]['farmRewardTokenName'] };
+    if (poolLabel.farmRewardTokenName) {
+      farm['farmRewardTokenName'] = { S: poolLabel.farmRewardTokenName };
     }
-    if (LABELS[poolId]['farmRewardTokenDecimals']) {
-      farm['farmRewardTokenDecimals'] = { N: Number(LABELS[poolId]['farmRewardTokenDecimals']).toString() };
+    if (poolLabel.farmRewardTokenDecimals) {
+      farm['farmRewardTokenDecimals'] = { N: Number(poolLabel.farmRewardTokenDecimals).toString() };
     }
-    if (LABELS[poolId]['farmRewardTokenAddress']) {
-      farm['farmRewardTokenAddress'] = { S: LABELS[poolId]['farmRewardTokenAddress'] };
+    if (poolLabel.farmRewardTokenAddress) {
+      farm['farmRewardTokenAddress'] = { S: poolLabel.farmRewardTokenAddress };
     }
   }
 
@@ -219,7 +230,7 @@ export const updateFarm = async (
       ':isDeposit': { BOOL: isDeposit },
       ':isPosition': { BOOL: isVault },
       ':isLegacy': { BOOL: isLegacy },
-      ':chainId': { N: Number(CHAIN_ID).toString() },
+      ':chainId': { N: chainId.toString() },
       ':farmName': { S: farmName }
     },
     ReturnValues: 'UPDATED_NEW'

@@ -1,31 +1,25 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { ContractInterface, ethers } from 'ethers';
-import ERC20_ABI from '../abis/ERC20_ABI.json';
-import { TOKENS, CHAIN_ID } from './configPolygon';
-import { dbClient, TOKENS as MAINNET_TOKENS } from '../configMainnet';
-import axios from 'axios';
-import { ChainId, getProvider } from '../providers';
-
-const lookUpTokenPrices = async function (id_array) {
-  let ids = id_array.join('%2C');
-  return await axios.get(
-    `https://api.coingecko.com/api/v3/simple/token_price/ethereum?contract_addresses=${ids}&vs_currencies=usd&include_24hr_change=true`
-  );
-};
+import { dbClient } from '../configMainnet';
+import { ChainId, getErc20Contract, getProvider, getToken, lookUpTokenPrices, TokenName } from '@ichidao/ichi-sdk';
 
 // https://medium.com/@dupski/debug-typescript-in-vs-code-without-compiling-using-ts-node-9d1f4f9a94a
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
-export const updateToken = async (tableName: string, tokenName: string): Promise<APIGatewayProxyResult> => {
-  const provider = await getProvider(ChainId.polygon);
-  const address = TOKENS[tokenName]['address'];
-  const decimals = TOKENS[tokenName]['decimals'];
-  const isOneToken = TOKENS[tokenName]['isOneToken'];
-  const displayName = TOKENS[tokenName]['displayName'];
+export const updateToken = async (
+  tableName: string,
+  tokenName: TokenName,
+  chainId: ChainId
+): Promise<APIGatewayProxyResult> => {
+  const provider = await getProvider(chainId);
+  const token = getToken(tokenName, chainId);
+  const address = token.address;
+  const decimals = token.decimals;
+  const isOneToken = token.isOneToken;
+  const displayName = token.displayName;
   let price = 0;
   let priceChange = 0;
 
-  const tokenContract = new ethers.Contract(address, ERC20_ABI as ContractInterface, provider);
+  const tokenContract = getErc20Contract(address, provider);
 
   let totalSupply = await tokenContract.totalSupply();
   let totalTokens = Number(totalSupply) / 10 ** decimals;
@@ -36,25 +30,25 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
     price = 1;
   } else {
     switch (tokenName) {
-      case 'pol_usdc':
+      case TokenName.USDC:
         price = 1;
         break;
-      case 'pol_ichi':
-        let ichiAddress = MAINNET_TOKENS['ichi_v2']['address'];
-        let lookup_price_ichi = await lookUpTokenPrices([ichiAddress.toLowerCase()]);
-        price = lookup_price_ichi.data[ichiAddress.toLowerCase()].usd;
-        priceChange = lookup_price_ichi.data[ichiAddress.toLowerCase()].usd_24h_change;
+      case TokenName.ICHI_V2:
+        let ichiAddress = getToken(TokenName.ICHI_V2, ChainId.Mainnet).address;
+        const ichiTokenPrices = await lookUpTokenPrices([ichiAddress.toLowerCase()]);
+        price = ichiTokenPrices[ichiAddress.toLowerCase()].usd;
+        priceChange = ichiTokenPrices[ichiAddress.toLowerCase()].usd_24h_change;
         break;
-      case 'pol_wbtc':
-        let wBTCAddress = MAINNET_TOKENS['wbtc']['address'];
-        let lookup_price_wbtc = await lookUpTokenPrices([wBTCAddress.toLowerCase()]);
-        price = lookup_price_wbtc.data[wBTCAddress.toLowerCase()].usd;
-        priceChange = lookup_price_wbtc.data[wBTCAddress.toLowerCase()].usd_24h_change;
+      case TokenName.WBTC:
+        let wBTCAddress = getToken(TokenName.WBTC, ChainId.Mainnet).address;
+        const wBtcTokenPrices = await lookUpTokenPrices([wBTCAddress.toLowerCase()]);
+        price = wBtcTokenPrices[wBTCAddress.toLowerCase()].usd;
+        priceChange = wBtcTokenPrices[wBTCAddress.toLowerCase()].usd_24h_change;
         break;
       default:
-        let lookup_price = await lookUpTokenPrices([address.toLowerCase()]);
-        price = lookup_price.data[address.toLowerCase()].usd;
-        priceChange = lookup_price.data[address.toLowerCase()].usd_24h_change;
+        const tokenPrices = await lookUpTokenPrices([address.toLowerCase()]);
+        price = tokenPrices[address.toLowerCase()].usd;
+        priceChange = tokenPrices[address.toLowerCase()].usd_24h_change;
     }
   }
 
@@ -85,7 +79,7 @@ export const updateToken = async (tableName: string, tokenName: string): Promise
       ':displayName': { S: displayName },
       ':price': { N: Number(price).toString() },
       ':price_24h_change': { N: Number(priceChange).toString() },
-      ':chainId': { N: Number(CHAIN_ID).toString() },
+      ':chainId': { N: ChainId.Polygon.toString() },
       ':isOneToken': { BOOL: isOneToken },
       ':supply': { N: totalTokens.toString() }
     },

@@ -1,50 +1,55 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { ethers } from 'ethers';
-import { ADDRESSES, TOKENS, CHAIN_ID, DEBUNK_PROTOCOLS } from './configPolygon';
-import FARMING_V2_ABI from '../abis/FARMING_V2_ABI.json';
-import ERC20_ABI from '../abis/ERC20_ABI.json';
-import VAULT_ABI from '../abis/ICHI_VAULT_ABI.json';
-import ONETOKEN_ABI from '../abis/ONETOKEN_ABI.json';
-import UNISWAP_V3_POSITIONS from '../abis/UNISWAP_V3_POSITIONS_ABI.json';
-import { ChainId, getProvider } from '../providers';
 import { dbClient } from '../configMainnet';
-import { callDebunkOpenAPI } from '../utils/apis';
+import {
+  getDebankPortfolio,
+  getProvider,
+  getToken,
+  TokenName,
+  AddressName,
+  getAddress,
+  ChainId,
+  DebankProtocolName,
+  getErc20Contract,
+  getIchiVaultContract,
+  getOneTokenV1Contract,
+  getFarmingV2Contract,
+  getUniswapV3PositionsContract,
+  PartialRecord
+} from '@ichidao/ichi-sdk';
 
-const getABI = async function () {
-  return ONETOKEN_ABI;
-};
-
-const getOneTokenAttributes = async function (tokenName: string) {
+const getOneTokenAttributes = async function (tokenName: TokenName, chainId: ChainId) {
+  const token = getToken(tokenName, chainId);
   let template = {
-    address: TOKENS[tokenName]['address'],
-    decimals: TOKENS[tokenName]['decimals'],
-    strategy: TOKENS[tokenName]['strategy'],
-    aux_strategy: TOKENS[tokenName]['aux_strategy'],
-    tradeUrl: TOKENS[tokenName]['tradeUrl'],
-    displayName: TOKENS[tokenName]['displayName'],
+    address: token.address,
+    decimals: token.decimals,
+    strategy: token.strategy,
+    aux_strategy: token.auxStrategy,
+    tradeUrl: token.tradeUrl,
+    displayName: token.displayName,
     stimulus_address: '',
-    stimulus_name: TOKENS[tokenName]['stimulusName'],
-    stimulus_display_name: TOKENS[tokenName]['stimulusDisplayName'],
+    stimulus_name: token.stimulusName,
+    stimulus_display_name: token.stimulusDisplayName,
     stimulus_decimals: 18,
     abi_type: 'ONETOKEN',
     base_name: tokenName.toLowerCase(),
-    isV2: TOKENS[tokenName]['isV2'],
+    isV2: token.isV2,
     ichiVault: {
-      address: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['address'] : '',
-      farm: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['farm'] : 0,
-      externalFarm: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['externalFarm'] : '',
-      scarceTokenName: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['scarceTokenName'] : '',
-      scarceTokenDecimals: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['scarceTokenDecimals'] : 18,
-      scarceToken: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['scarceToken'] : ''
+      address: token.ichiVault ? token.ichiVault.address : '',
+      farm: token.ichiVault ? token.ichiVault.farm : 0,
+      externalFarm: token.ichiVault ? token.ichiVault.externalFarm : '',
+      scarceTokenName: token.ichiVault ? token.ichiVault.scarceTokenName : '',
+      scarceTokenDecimals: token.ichiVault ? token.ichiVault.scarceTokenDecimals : 18,
+      scarceToken: token.ichiVault ? token.ichiVault.scarceToken : ''
     }
   };
 
-  if (tokenName == 'pol_onebtc') {
+  if (tokenName === TokenName.ONE_BTC) {
     template.stimulus_decimals = 8;
   }
 
-  template.stimulus_address = TOKENS[template.stimulus_name]['address'];
+  const stimulusToken = getToken(template.stimulus_name as TokenName, chainId);
+  template.stimulus_address = stimulusToken.address;
 
   return template;
 };
@@ -53,16 +58,22 @@ const getOneTokenAttributes = async function (tokenName: string) {
 // https://code.visualstudio.com/docs/typescript/typescript-debugging
 export const updateTreasuryItem = async (
   tableName: string,
-  itemName: string,
-  tokenPrices: { [name: string]: number }
+  tokenName: TokenName,
+  tokenPrices: PartialRecord<TokenName, number>,
+  chainId: ChainId
 ): Promise<APIGatewayProxyResult> => {
-  const provider = await getProvider(ChainId.polygon);
+  const provider = await getProvider(chainId);
+  const usdcToken = getToken(TokenName.USDC, chainId);
+  const ichiV2Token = getToken(TokenName.ICHI_V2, chainId);
 
-  const farming_V2 = new ethers.Contract(ADDRESSES.farming_V2, FARMING_V2_ABI, provider);
+  const farmingV2 = getFarmingV2Contract(getAddress(AddressName.FARMING_V2, chainId), provider);
 
-  const uniswap_V3_positions = new ethers.Contract(ADDRESSES.uniswap_V3_positions, UNISWAP_V3_POSITIONS, provider);
+  const uniswapV3Positions = getUniswapV3PositionsContract(
+    getAddress(AddressName.UNISWAP_V3_POSITIONS, chainId),
+    provider
+  );
 
-  const attr = await getOneTokenAttributes(itemName.toLowerCase());
+  const attr = await getOneTokenAttributes(tokenName, chainId);
   const oneTokenAddress = attr.address;
   const strategyAddress = attr.strategy;
   const auxStrategies = attr.aux_strategy;
@@ -75,16 +86,16 @@ export const updateTreasuryItem = async (
   const decimals = attr.decimals;
   const tradeUrl = attr.tradeUrl;
   const isV2 = attr.isV2;
-  const oneTokenABI = await getABI();
+  // const oneTokenABI = await getABI();
 
-  const ICHI = new ethers.Contract(TOKENS['pol_ichi']['address'], ERC20_ABI, provider);
-  const stimulusToken = new ethers.Contract(stimulusTokenAddress, ERC20_ABI, provider);
-  const USDC = new ethers.Contract(TOKENS['pol_usdc']['address'], ERC20_ABI, provider);
-  const oneToken = new ethers.Contract(oneTokenAddress, oneTokenABI, provider);
+  const ichi = getErc20Contract(ichiV2Token.address, provider);
+  const stimulusToken = getErc20Contract(stimulusTokenAddress, provider);
+  const usdc = getErc20Contract(usdcToken.address, provider);
+  const oneToken = getOneTokenV1Contract(oneTokenAddress, provider);
 
-  const oneToken_USDC = Number(await USDC.balanceOf(oneTokenAddress));
-  const oneToken_stimulus = Number(await stimulusToken.balanceOf(oneTokenAddress));
-  const oneToken_ichi = Number(await ICHI.balanceOf(oneTokenAddress));
+  const oneTokenUsdc = Number(await usdc.balanceOf(oneTokenAddress));
+  const oneTokenStimulus = Number(await stimulusToken.balanceOf(oneTokenAddress));
+  const oneTokenIchi = Number(await ichi.balanceOf(oneTokenAddress));
 
   // =================================================================================
   // get balances from the strategy, if it exists
@@ -98,33 +109,38 @@ export const updateTreasuryItem = async (
   let aux_strategy_balance_usdc = 0;
 
   if (strategyAddress !== '') {
-    strategy_balance_usdc += Number(await USDC.balanceOf(strategyAddress));
+    strategy_balance_usdc += Number(await usdc.balanceOf(strategyAddress));
 
     strategy_balance_stimulus += Number(await stimulusToken.balanceOf(strategyAddress));
     strategy_balance_onetoken += Number(await oneToken.balanceOf(strategyAddress));
-    strategy_balance_ichi += Number(await ICHI.balanceOf(strategyAddress));
+    strategy_balance_ichi += Number(await ichi.balanceOf(strategyAddress));
 
     let strategy_balance_vault_lp = 0;
     if (attr.ichiVault.farm > 0 && attr.ichiVault.externalFarm === '') {
-      const userInfo = await farming_V2.userInfo(attr.ichiVault.farm, strategyAddress);
+      const userInfo = await farmingV2.userInfo(attr.ichiVault.farm, strategyAddress);
       strategy_balance_vault_lp += Number(userInfo.amount);
     }
     if (attr.ichiVault.address !== '') {
-      const vault = new ethers.Contract(attr.ichiVault.address, VAULT_ABI, provider);
+      const vault = getIchiVaultContract(attr.ichiVault.address, provider);
       strategy_balance_vault_lp += Number(await vault.balanceOf(strategyAddress));
       const vault_total_lp = Number(await vault.totalSupply());
       const vault_total_amounts = await vault.getTotalAmounts();
       if (strategy_balance_vault_lp > 0) {
         const vault_ratio = strategy_balance_vault_lp / vault_total_lp;
         if (attr.ichiVault.scarceToken === 'token0') {
-          if (attr.ichiVault.scarceTokenName === 'pol_ichi') {
+          // TODO: I have a feeling these are hard coded in Dynamo and we shouldn't use TokenName.ICHI_V2
+          // if (attr.ichiVault.scarceTokenName === 'pol_ichi') {
+          if (attr.ichiVault.scarceTokenName === TokenName.ICHI) {
             strategy_balance_ichi += Number(vault_total_amounts.total0) * vault_ratio;
           } else {
             strategy_balance_stimulus += Number(vault_total_amounts.total0) * vault_ratio;
           }
           strategy_balance_onetoken += Number(vault_total_amounts.total1) * vault_ratio;
         } else {
-          if (attr.ichiVault.scarceTokenName === 'pol_ichi') {
+          // TODO: I have a feeling these are hard coded in Dynamo and we shouldn't use TokenName.ICHI_V2
+          // if (attr.ichiVault.scarceTokenName === 'pol_ichi') {
+          // TODO: Logic change, removed pol_
+          if (attr.ichiVault.scarceTokenName === TokenName.ICHI) {
             strategy_balance_ichi += Number(vault_total_amounts.total1) * vault_ratio;
           } else {
             strategy_balance_stimulus += Number(vault_total_amounts.total1) * vault_ratio;
@@ -135,26 +151,25 @@ export const updateTreasuryItem = async (
     }
   }
 
-  uni_v3_positions = Number(await uniswap_V3_positions.balanceOf(strategyAddress));
+  uni_v3_positions = Number(await uniswapV3Positions.balanceOf(strategyAddress));
   if (uni_v3_positions > 0) {
-    let all_v3_positions = await callDebunkOpenAPI(strategyAddress, DEBUNK_PROTOCOLS.UNI_V3);
-    if (all_v3_positions.data && all_v3_positions.data.portfolio_item_list && 
-      all_v3_positions.data.portfolio_item_list.length > 0) {
-      for (let i = 0; i < all_v3_positions.data.portfolio_item_list.length; i++ ) {
-        let detail = all_v3_positions.data.portfolio_item_list[i].detail;
+    let all_v3_positions = await getDebankPortfolio(strategyAddress, DebankProtocolName.UNI_V3);
+    if (all_v3_positions && all_v3_positions.portfolio_item_list && all_v3_positions.portfolio_item_list.length > 0) {
+      for (let i = 0; i < all_v3_positions.portfolio_item_list.length; i++) {
+        let detail = all_v3_positions.portfolio_item_list[i].detail;
         if (detail.supply_token_list && detail.supply_token_list.length > 0) {
           let usdc_in_position = 0;
           let isCollateral = false;
-          for (let k = 0; k < detail.supply_token_list.length; k++ ) {
+          for (let k = 0; k < detail.supply_token_list.length; k++) {
             let supply_token = detail.supply_token_list[k];
             if (supply_token.id.toLowerCase() === oneTokenAddress.toLowerCase()) {
               isCollateral = true;
               strategy_balance_onetoken += Number(supply_token.amount) * 10 ** 18;
-            } else if (supply_token.id.toLowerCase() === TOKENS.pol_ichi.address.toLowerCase()){
-              strategy_balance_ichi += Number(supply_token.amount) * 10 ** TOKENS.pol_ichi.decimals;
+            } else if (supply_token.id.toLowerCase() === ichiV2Token.address.toLowerCase()) {
+              strategy_balance_ichi += Number(supply_token.amount) * 10 ** ichiV2Token.decimals;
             }
-            if (supply_token.id.toLowerCase() === TOKENS.pol_usdc.address.toLowerCase()) {
-              usdc_in_position += Number(supply_token.amount) * 10 ** TOKENS.pol_usdc.decimals;
+            if (supply_token.id.toLowerCase() === usdcToken.address.toLowerCase()) {
+              usdc_in_position += Number(supply_token.amount) * 10 ** usdcToken.decimals;
             }
             if (supply_token.id.toLowerCase() === stimulusTokenAddress.toLowerCase()) {
               strategy_balance_stimulus += Number(supply_token.amount) * 10 ** stimulusDecimals;
@@ -176,7 +191,7 @@ export const updateTreasuryItem = async (
       let auxStrategyAddress = auxStrategies[i];
 
       // aux strategy may own USDC
-      aux_strategy_balance_usdc = Number(await USDC.balanceOf(auxStrategyAddress));
+      aux_strategy_balance_usdc = Number(await usdc.balanceOf(auxStrategyAddress));
       strategy_balance_usdc += aux_strategy_balance_usdc;
     }
   }
@@ -207,21 +222,24 @@ export const updateTreasuryItem = async (
       balance: { N: (Number(oneToken_burned_tokens) / 10 ** decimals).toString() }
     }
   });
-  if (Number(oneToken_burned_tokens) > 0) {
-    let unredeemedCollateralPosition = {
-      name: { S: 'unredeemed ' + itemName },
-      assets: { L: assets }
-    };
-    //oneTokenCollateralPostions.push({ M: unredeemedCollateralPosition });
-  }
+  // 06/28/2022 - Unused so commenting out
+  // if (Number(oneToken_burned_tokens) > 0) {
+  //   let unredeemedCollateralPosition = {
+  //     name: { S: 'unredeemed ' + tokenName },
+  //     assets: { L: assets }
+  //   };
+  //   //oneTokenCollateralPostions.push({ M: unredeemedCollateralPosition });
+  // }
 
   let oneToken_withdrawFee = Number(await oneToken.redemptionFee()) / 10 ** 18;
   let oneToken_mintFee = Number(await oneToken.mintingFee()) / 10 ** 18;
-  const mRatio = await oneToken.getMintingRatio(TOKENS['pol_usdc']['address']);
+  const mRatio = await oneToken.getMintingRatio(usdcToken.address);
   let oneToken_mintingRatio = Number(mRatio[0]) / 10 ** 18;
 
-  let ichi_price = tokenPrices['pol_ichi'];
-  let usdc_price = tokenPrices['pol_usdc'];
+  let ichi_price = tokenPrices[TokenName.ICHI];
+  let usdc_price = tokenPrices[TokenName.USDC];
+
+  console.log(`tokenPrices`, tokenPrices);
 
   stimulusPositionsUSDValue =
     stimulusPositionsUSDValue +
@@ -230,11 +248,11 @@ export const updateTreasuryItem = async (
     ichi_price * (strategy_balance_ichi / 10 ** 18);
 
   let oneToken_stimulus_usd =
-    Number(oneToken_stimulus_price) * (oneToken_stimulus / 10 ** stimulusDecimals) +
-    ichi_price * (oneToken_ichi / 10 ** 18) +
+    Number(oneToken_stimulus_price) * (oneTokenStimulus / 10 ** stimulusDecimals) +
+    ichi_price * (oneTokenIchi / 10 ** 18) +
     stimulusPositionsUSDValue;
 
-  let oneToken_collateral_USDC_only = usdc_price * (oneToken_USDC / 10 ** 6);
+  let oneToken_collateral_USDC_only = usdc_price * (oneTokenUsdc / 10 ** 6);
 
   collateralPositionsUSDValue =
     collateralPositionsUSDValue + strategy_balance_onetoken / 10 ** 18 + usdc_price * (strategy_balance_usdc / 10 ** 6);
@@ -265,9 +283,10 @@ export const updateTreasuryItem = async (
       });
     }
     if (strategy_balance_onetoken > 0) {
+      const token = getToken(tokenName, chainId);
       assets.push({
         M: {
-          name: { S: TOKENS[itemName.toLowerCase()]['displayName'] },
+          name: { S: token.displayName },
           balance: { N: Number(strategy_balance_onetoken / 10 ** 18).toString() }
         }
       });
@@ -284,14 +303,14 @@ export const updateTreasuryItem = async (
   oneToken_stimulus_list.push({
     M: {
       name: { S: stimulusDisplayName },
-      balance: { N: Number(oneToken_stimulus / 10 ** stimulusDecimals).toString() }
+      balance: { N: Number(oneTokenStimulus / 10 ** stimulusDecimals).toString() }
     }
   });
-  if (oneToken_ichi > 0) {
+  if (oneTokenIchi > 0) {
     oneToken_stimulus_list.push({
       M: {
         name: { S: 'ICHI' },
-        balance: { N: Number(oneToken_ichi / 10 ** 18).toString() }
+        balance: { N: Number(oneTokenIchi / 10 ** 18).toString() }
       }
     });
   }
@@ -339,10 +358,10 @@ export const updateTreasuryItem = async (
     reserveRatio = 100; // 10000%
   }
 
-  let totalUSDC = (oneToken_USDC + strategy_balance_usdc) / 10 ** 6;
+  let totalUSDC = (oneTokenUsdc + strategy_balance_usdc) / 10 ** 6;
 
   let res = {
-    name: itemName.toLowerCase(),
+    name: tokenName.toLowerCase(),
     displayName: displayName,
     base: baseName,
     usdc: totalUSDC,
@@ -368,12 +387,12 @@ export const updateTreasuryItem = async (
   const isLegacy = false;
 
   // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
-  console.log(`Attempting to update table: ${tableName}, token: ${itemName}`);
+  console.log(`Attempting to update table: ${tableName}, token: ${tokenName}`);
   const params: AWS.DynamoDB.UpdateItemInput = {
     TableName: tableName,
     Key: {
       name: {
-        S: itemName.toLowerCase()
+        S: tokenName.toLowerCase()
       }
     },
     UpdateExpression:
@@ -424,7 +443,7 @@ export const updateTreasuryItem = async (
       ':mintFee': { N: oneToken_mintFee.toString() },
       ':mintingRatio': { N: oneToken_mintingRatio.toString() },
       ':treasuryBacked': { N: Number(oneToken_treasury_backed).toString() },
-      ':chainId': { N: Number(CHAIN_ID).toString() },
+      ':chainId': { N: ChainId.Polygon.toString() },
       ':tradeUrl': { S: tradeUrl },
       ':isLegacy': { BOOL: isLegacy },
       ':oneTokenVersion': { N: Number(oneTokenVersion).toString() },

@@ -1,54 +1,27 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
 import { ethers } from 'ethers';
-import { TOKENS, CHAIN_ID } from './configMumbai';
-import ERC20_ABI from '../abis/ERC20_ABI.json';
-import ONETOKEN_ABI from '../abis/ONETOKEN_ABI.json';
-import VAULT_ABI from '../abis/ICHI_VAULT_ABI.json';
-import { ChainId, getProvider } from '../providers';
 import { dbClient } from '../configMainnet';
-
-const getABI = async function () {
-  return ONETOKEN_ABI;
-};
-
-const getOneTokenAttributes = async function (tokenName: string) {
-  let template = {
-    address: TOKENS[tokenName]['address'],
-    decimals: TOKENS[tokenName]['decimals'],
-    strategy: TOKENS[tokenName]['strategy'],
-    tradeUrl: TOKENS[tokenName]['tradeUrl'],
-    stimulus_address: '',
-    stimulus_name: TOKENS[tokenName]['stimulusName'],
-    stimulus_display_name: TOKENS[tokenName]['stimulusDisplayName'],
-    stimulus_decimals: 18,
-    abi_type: 'ONETOKEN',
-    collateral_name: 'mum_usdc',
-    base_name: tokenName.toLowerCase(),
-    display_name: tokenName,
-    isV2: TOKENS[tokenName]['isV2'],
-    ichiVault: {
-      address: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['address'] : '',
-      farm: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['farm'] : 0,
-      ichi: TOKENS[tokenName]['ichiVault'] ? TOKENS[tokenName]['ichiVault']['ichi'] : ''
-    }
-  };
-
-  if (tokenName == 'mum_onebtc') {
-    template.display_name = 'oneBTC';
-  }
-
-  template.stimulus_address = TOKENS[template.stimulus_name]['address'];
-
-  return template;
-};
+import {
+  ChainId,
+  getErc20Contract,
+  getOneTokenAttributes,
+  getProvider,
+  getToken,
+  TokenName,
+  getOneTokenV1Contract,
+  asStablecoinV2,
+  PartialRecord,
+  getIchiVaultContract
+} from '@ichidao/ichi-sdk';
 
 export const updateTreasuryItem = async (
   tableName: string,
-  itemName: string,
-  tokenPrices: { [name: string]: number }
+  tokenName: TokenName,
+  tokenPrices: PartialRecord<TokenName, number>,
+  chainId: ChainId
 ): Promise<APIGatewayProxyResult> => {
-  const attr = await getOneTokenAttributes(itemName.toLowerCase());
+  const attr = getOneTokenAttributes(tokenName, chainId);
   const oneTokenAddress = attr.address;
   const strategyAddress = attr.strategy;
   const stimulusTokenAddress = attr.stimulus_address;
@@ -61,12 +34,11 @@ export const updateTreasuryItem = async (
   const displayName = attr.display_name;
   const tradeUrl = attr.tradeUrl;
   const isV2 = attr.isV2;
-  const oneTokenABI = await getABI();
 
-  const provider = await getProvider(ChainId.mumbai);
-  const stimulusToken = new ethers.Contract(stimulusTokenAddress, ERC20_ABI, provider);
-  const USDC = new ethers.Contract(TOKENS[usdcName]['address'], ERC20_ABI, provider);
-  const oneToken = new ethers.Contract(oneTokenAddress, oneTokenABI, provider);
+  const provider = await getProvider(chainId);
+  const stimulusToken = getErc20Contract(stimulusTokenAddress, provider);
+  const usdcContract = getErc20Contract(getToken(usdcName as TokenName, chainId).address, provider);
+  const oneToken = getOneTokenV1Contract(oneTokenAddress, provider);
   //const ICHI = new ethers.Contract(TOKENS['test_ichi']['address'], ERC20_ABI, provider);
 
   // =================================================================================
@@ -77,7 +49,7 @@ export const updateTreasuryItem = async (
   let strategy_balance_onetoken = 0;
   let strategy_balance_ichi = 0;
   if (strategyAddress !== '') {
-    strategy_balance_usdc = Number(await USDC.balanceOf(strategyAddress));
+    strategy_balance_usdc = Number(await usdcContract.balanceOf(strategyAddress));
     strategy_balance_stimulus = Number(await stimulusToken.balanceOf(strategyAddress));
     strategy_balance_onetoken = Number(await oneToken.balanceOf(strategyAddress));
     //strategy_balance_ichi = Number(await ICHI.balanceOf(strategyAddress));
@@ -89,7 +61,7 @@ export const updateTreasuryItem = async (
       strategy_balance_vault_lp += Number(userInfo.amount);
     }*/
     if (attr.ichiVault.address !== '') {
-      const vault = new ethers.Contract(attr.ichiVault.address, VAULT_ABI, provider);
+      const vault = getIchiVaultContract(attr.ichiVault.address, provider);
       strategy_balance_vault_lp += Number(await vault.balanceOf(strategyAddress));
       const vault_total_lp = Number(await vault.totalSupply());
       const vault_total_amounts = await vault.getTotalAmounts();
@@ -104,7 +76,7 @@ export const updateTreasuryItem = async (
     }
   }
 
-  let oneToken_USDC = Number(await USDC.balanceOf(oneTokenAddress));
+  let oneToken_USDC = Number(await usdcContract.balanceOf(oneTokenAddress));
   const oneToken_stimulus = Number(await stimulusToken.balanceOf(oneTokenAddress));
   const oneToken_ichi = 0;
   //const oneToken_ichi = Number(await ICHI.balanceOf(oneTokenAddress));
@@ -126,24 +98,26 @@ export const updateTreasuryItem = async (
   if (isV2) {
     oneToken_withdrawFee = Number(await oneToken.redemptionFee()) / 10 ** 18;
   } else {
-    oneToken_withdrawFee = Number(await oneToken.withdrawFee()) / 10 ** 11;
+    oneToken_withdrawFee = Number(await asStablecoinV2(oneToken).withdrawFee()) / 10 ** 11;
   }
   let oneToken_mintFee = 0;
   if (isV2) {
     oneToken_mintFee = Number(await oneToken.mintingFee()) / 10 ** 18;
   } else {
-    oneToken_mintFee = Number(await oneToken.mintFee()) / 10 ** 11;
+    oneToken_mintFee = Number(await asStablecoinV2(oneToken).mintFee()) / 10 ** 11;
   }
   let oneToken_mintingRatio = 0;
   if (isV2) {
     // assume USDC as collateral for V2 oneTokens for the time being
-    const mRatio = await oneToken.getMintingRatio(TOKENS[usdcName]['address']);
+    const mRatio = await oneToken.getMintingRatio(getToken(usdcName as TokenName, chainId).address);
     oneToken_mintingRatio = Number(mRatio[0]) / 10 ** 18;
   } else {
-    oneToken_mintingRatio = Number(await oneToken.reserveRatio()) / 10 ** 11;
+    oneToken_mintingRatio = Number(await asStablecoinV2(oneToken).reserveRatio()) / 10 ** 11;
   }
 
-  let ichi_price = tokenPrices['test_ichi'];
+  // TODO: Logic change
+  // let ichi_price = tokenPrices['test_ichi'];
+  let ichi_price = tokenPrices[TokenName.ICHI];
 
   stimulusPositionsUSDValue =
     stimulusPositionsUSDValue +
@@ -187,7 +161,7 @@ export const updateTreasuryItem = async (
     if (strategy_balance_onetoken > 0) {
       assets.push({
         M: {
-          name: { S: TOKENS[itemName.toLowerCase()]['displayName'] },
+          name: { S: getToken(tokenName, chainId).displayName },
           balance: { N: Number(strategy_balance_onetoken / 10 ** 18).toString() }
         }
       });
@@ -250,8 +224,8 @@ export const updateTreasuryItem = async (
   }
 
   let res = {
-    name: itemName.toLowerCase(),
-    displayName: itemName,
+    name: tokenName.toLowerCase(),
+    displayName: tokenName,
     base: baseName,
     usdc: (oneToken_USDC + strategy_balance_usdc) / 10 ** 6,
     circulation: Number(oneToken_SUPPLY) / 10 ** decimals,
@@ -276,12 +250,12 @@ export const updateTreasuryItem = async (
   const isLegacy = false;
 
   // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.NodeJs.03.html#GettingStarted.NodeJs.03.03
-  console.log(`Attempting to update table: ${tableName}, token: ${itemName}`);
+  console.log(`Attempting to update table: ${tableName}, token: ${tokenName}`);
   const params: AWS.DynamoDB.UpdateItemInput = {
     TableName: tableName,
     Key: {
       name: {
-        S: itemName.toLowerCase()
+        S: tokenName.toLowerCase()
       }
     },
     UpdateExpression:
@@ -332,7 +306,7 @@ export const updateTreasuryItem = async (
       ':mintFee': { N: oneToken_mintFee.toString() },
       ':mintingRatio': { N: oneToken_mintingRatio.toString() },
       ':treasuryBacked': { N: Number(oneToken_treasury_backed).toString() },
-      ':chainId': { N: Number(CHAIN_ID).toString() },
+      ':chainId': { N: chainId.toString() },
       ':tradeUrl': { S: tradeUrl },
       ':isLegacy': { BOOL: isLegacy },
       ':oneTokenVersion': { N: Number(oneTokenVersion).toString() },

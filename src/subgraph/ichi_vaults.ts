@@ -1,49 +1,54 @@
 import * as pkg from '@apollo/client';
 import 'cross-fetch/dist/node-polyfill.js';
-import * as ethers from 'ethers';
 import { BigNumber } from 'ethers';
-import vaultABI from '../abis/ICHI_VAULT_ABI.json';
-import poolABI from '../abis/UNI_V3_POOL_ABI.json';
 import xirr from 'xirr';
-import { getPrice, VAULT_DECIMAL_TRACKER } from '../utils/vaults';
-import { BNtoNumberWithoutDecimals } from '../utils/numbers';
 import { GraphData } from './model';
-import { TOKENS } from '../configMainnet';
-import { APIS } from '../configMainnet';
-import { APIS as POLYGON_APIS } from '../polygon/configPolygon';
+import {
+  Apis,
+  getPrice,
+  bnToNumberWithoutDecimals,
+  ChainId,
+  getToken,
+  TokenName,
+  getVault,
+  VaultName,
+  getIchiVaultContract,
+  getUniswapV3PoolContract
+} from '@ichidao/ichi-sdk';
+import { JsonRpcProvider } from '@ethersproject/providers';
 
 const { ApolloClient, InMemoryCache, gql } = pkg;
 
-const rangedDepositTokensQuery = `
-query($first: Int, $skip:Int, $ts: Int){
-  deposits(first: $first, skip: $skip, orderBy: createdAtTimestamp, where:{createdAtTimestamp_gt: $ts}){
-    id
-    createdAtTimestamp
-    sqrtPrice
-    amount0
-    amount1
-    totalAmount0
-    totalAmount1
-    totalAmount0BeforeEvent
-    totalAmount1BeforeEvent
-  }
-}`;
+// const rangedDepositTokensQuery = `
+// query($first: Int, $skip:Int, $ts: Int){
+//   deposits(first: $first, skip: $skip, orderBy: createdAtTimestamp, where:{createdAtTimestamp_gt: $ts}){
+//     id
+//     createdAtTimestamp
+//     sqrtPrice
+//     amount0
+//     amount1
+//     totalAmount0
+//     totalAmount1
+//     totalAmount0BeforeEvent
+//     totalAmount1BeforeEvent
+//   }
+// }`;
 
-const rangedWithdrawalTokens = `
-query($first: Int, $skip:Int, $ts: Int){
-  withdraws(first: $first, skip: $skip, orderBy: createdAtTimestamp, where:{createdAtTimestamp_gt: $ts}){
-    id
-    createdAtTimestamp
-    sqrtPrice
-    amount0
-    amount1
-    totalAmount0
-    totalAmount1
-    totalAmount0BeforeEvent
-    totalAmount1BeforeEvent
-  }
-}
-`;
+// const rangedWithdrawalTokens = `
+// query($first: Int, $skip:Int, $ts: Int){
+//   withdraws(first: $first, skip: $skip, orderBy: createdAtTimestamp, where:{createdAtTimestamp_gt: $ts}){
+//     id
+//     createdAtTimestamp
+//     sqrtPrice
+//     amount0
+//     amount1
+//     totalAmount0
+//     totalAmount1
+//     totalAmount0BeforeEvent
+//     totalAmount1BeforeEvent
+//   }
+// }
+// `;
 
 const v1VaultDepositTokensQuery = `
 query($first: Int, $skip: Int, $vault: String, $ts: Int){
@@ -81,21 +86,21 @@ query($first: Int, $skip: Int, $vault: String, $ts: Int){
   }
 }`;
 
-export async function vault_graph_query(
+export async function vaultGraphQuery(
   page: number,
   isDeposit: boolean,
   irrStartDate: Date,
   vault_address: String,
   network: 'mainnet' | 'polygon'
 ) {
-  let endpoint;
+  let endpoint: string;
 
   switch (network) {
     case 'mainnet':
-      endpoint = APIS.subgraph_v1_mainnet;
+      endpoint = Apis.SUBGRAPH_V1_MAINNET;
       break;
     case 'polygon':
-      endpoint = POLYGON_APIS.subgraph_v1_polygon;
+      endpoint = Apis.SUBGRAPH_V1_POLYGON;
   }
 
   const tokensQuery = isDeposit ? v1VaultDepositTokensQuery : v1VaultWithdrawTokensQuery;
@@ -157,17 +162,11 @@ type UserStateInVault = {
   transactionsToKeep: string[];
 };
 
-type DecimalsObject = {
-  baseToken: number;
-  scarceToken: number;
-};
-
 export class Vault {
-  vaultName: string;
+  vaultName: VaultName;
   vaultEndpoint: string;
   vaultAddress: string;
   amountsInverted: boolean;
-  decimals: DecimalsObject;
   dataPackets: DataPacket[];
   verboseTransactions: VerboseTransaction[] = [];
   distilledTransactions: DistilledTransaction[] = [];
@@ -176,50 +175,54 @@ export class Vault {
   cutOffDate: Date;
   APR: number;
   IRR: number;
-  provider: ethers.providers.JsonRpcProvider;
+  provider: JsonRpcProvider;
 
   constructor(
-    vaultName: string,
+    vaultName: VaultName,
     vaultAddress: string,
     vaultEndpoint: string,
     data: DataPacket[],
     isInverted: boolean,
     cutOffDate: Date,
-    provider: ethers.providers.JsonRpcProvider
+    provider: JsonRpcProvider
   ) {
     this.provider = provider;
     this.vaultName = vaultName;
     this.vaultEndpoint = vaultEndpoint;
     this.vaultAddress = vaultAddress;
     this.amountsInverted = isInverted;
-    this.decimals = VAULT_DECIMAL_TRACKER[vaultName];
     this.dataPackets = data;
     this.cutOffDate = cutOffDate;
 
     // check which users are still in the vault and which one already withdrew
-      this.userStatesInVault = getUserStateInVault(this.dataPackets);
-      //console.log(vaultName + ' : ' + JSON.stringify(this.userStatesInVault));
-        
+    this.userStatesInVault = getUserStateInVault(this.dataPackets);
+    //console.log(vaultName + ' : ' + JSON.stringify(this.userStatesInVault));
+
+    const vault = getVault(vaultName, provider.network.chainId);
+
     this.verboseTransactions = getVerboseTransactions(
       this.dataPackets,
       this.amountsInverted,
-      this.decimals.baseToken,
-      this.decimals.scarceToken
+      // this.decimals.baseToken,
+      // this.decimals.scarceToken
+      vault.baseTokenDecimals,
+      vault.scarceTokenDecimals
     );
     this.distilledTransactions = getDistilledTransactions(
-      this.verboseTransactions, 
-      this.cutOffDate, 
+      this.verboseTransactions,
+      this.cutOffDate,
       this.userStatesInVault
     );
     this.calcCurrentValue();
   }
 
   public async calcCurrentValue() {
+    const vault = getVault(this.vaultName, this.provider.network.chainId);
     const value = await getCurrentVaultValue(
       this.vaultAddress,
       this.amountsInverted,
-      this.decimals.baseToken,
-      this.decimals.scarceToken,
+      vault.baseTokenDecimals,
+      vault.scarceTokenDecimals,
       this.provider
     );
 
@@ -257,7 +260,7 @@ export class Vault {
 
     // Transactions earlier than irrStartDate are removed.
     // First big transaction amount (made on irrStartDate) is replaced with irrStartTxAmount.
-    if (irrStartDate.toDateString() !== (new Date(0)).toDateString()) {
+    if (irrStartDate.toDateString() !== new Date(0).toDateString()) {
       firstTxDate = irrStartDate;
       xirrObjArray = xirrObjArray.filter((tx) => {
         const currTxDate = new Date(tx.when);
@@ -265,7 +268,7 @@ export class Vault {
       });
       // replace first tx amount
       if (irrStartTxAmount !== 0) {
-          xirrObjArray = xirrObjArray.map((tx) => {
+        xirrObjArray = xirrObjArray.map((tx) => {
           const currTxDate = new Date(tx.when);
           if (currTxDate.getTime() === firstTxDate.getTime()) {
             return { amount: -irrStartTxAmount, when: tx.when };
@@ -315,66 +318,68 @@ export class Vault {
 
 function getUserStateInVault(dataPackets: DataPacket[]): UserStates {
   let isDeposit: boolean;
-  const userStates:UserStates = {};
+  const userStates: UserStates = {};
   let packetData: any[] = [];
   for (const packet of dataPackets) {
-      if (packet.type == 'deposit') {
-          packetData = packetData.concat(packet.data.data['vaultDeposits']);
-      } else {
-          packetData = packetData.concat(packet.data.data['vaultWithdraws']);
-      }
+    if (packet.type == 'deposit') {
+      packetData = packetData.concat(packet.data.data['vaultDeposits']);
+    } else {
+      packetData = packetData.concat(packet.data.data['vaultWithdraws']);
+    }
   }
-  packetData.sort((a,b) => (Number(a.createdAtTimestamp) - Number(b.createdAtTimestamp)));
+  packetData.sort((a, b) => Number(a.createdAtTimestamp) - Number(b.createdAtTimestamp));
 
   //console.log(JSON.stringify(packetData))
   for (const transaction of packetData) {
-      if (transaction["__typename"] == 'VaultDeposit') {
-          isDeposit = true;
-      } else {
-          isDeposit = false;
-      }
-      const account = transaction["sender"];
-      const shares = BNtoNumberWithoutDecimals(transaction["shares"], 18);
+    if (transaction['__typename'] == 'VaultDeposit') {
+      isDeposit = true;
+    } else {
+      isDeposit = false;
+    }
+    const account = transaction['sender'];
+    const shares = bnToNumberWithoutDecimals(transaction['shares'], 18);
 
-      if (userStates[account]) {
-          userStates[account].transactionsToKeep.push(transaction["id"]);
-          if (isDeposit) {
-              userStates[account].sharesIn += shares;
-              userStates[account].sharesCurrent += shares;
-          } else {
-              userStates[account].sharesOut += shares;
-              userStates[account].sharesCurrent -= shares;
-          }
-          userStates[account].isGone = (userStates[account].sharesIn == 0) ||
-              (userStates[account].sharesCurrent / userStates[account].sharesIn < 0.001)
-
-          if (userStates[account].isGone) {
-              userStates[account].transactionsToSkip = userStates[account].transactionsToSkip.concat(userStates[account].transactionsToKeep);
-              userStates[account].transactionsToKeep = [];
-          }
+    if (userStates[account]) {
+      userStates[account].transactionsToKeep.push(transaction['id']);
+      if (isDeposit) {
+        userStates[account].sharesIn += shares;
+        userStates[account].sharesCurrent += shares;
       } else {
-          if (isDeposit) {
-              const userState:UserStateInVault = {
-                  sharesIn: shares,
-                  sharesOut: 0,
-                  sharesCurrent: shares,
-                  transactionsToSkip: [],
-                  transactionsToKeep: [transaction["id"]],
-                  isGone: false
-              };
-              userStates[account] = userState;
-          } else {
-              const userState:UserStateInVault = {
-                  sharesIn: 0,
-                  sharesOut: shares,
-                  sharesCurrent: -shares,
-                  transactionsToSkip: [],
-                  transactionsToKeep: [transaction["id"]],
-                  isGone: false
-              };
-              userStates[account] = userState;
-          }
+        userStates[account].sharesOut += shares;
+        userStates[account].sharesCurrent -= shares;
       }
+      userStates[account].isGone =
+        userStates[account].sharesIn == 0 || userStates[account].sharesCurrent / userStates[account].sharesIn < 0.001;
+
+      if (userStates[account].isGone) {
+        userStates[account].transactionsToSkip = userStates[account].transactionsToSkip.concat(
+          userStates[account].transactionsToKeep
+        );
+        userStates[account].transactionsToKeep = [];
+      }
+    } else {
+      if (isDeposit) {
+        const userState: UserStateInVault = {
+          sharesIn: shares,
+          sharesOut: 0,
+          sharesCurrent: shares,
+          transactionsToSkip: [],
+          transactionsToKeep: [transaction['id']],
+          isGone: false
+        };
+        userStates[account] = userState;
+      } else {
+        const userState: UserStateInVault = {
+          sharesIn: 0,
+          sharesOut: shares,
+          sharesCurrent: -shares,
+          transactionsToSkip: [],
+          transactionsToKeep: [transaction['id']],
+          isGone: false
+        };
+        userStates[account] = userState;
+      }
+    }
   }
 
   //console.log(JSON.stringify(userStates))
@@ -402,11 +407,11 @@ function getVerboseTransactions(
     for (const transaction of packetData) {
       const date = new Date(transaction.createdAtTimestamp * 1000);
       const oneTokenAmount = amountsInverted
-        ? BNtoNumberWithoutDecimals(transaction['amount1'], baseTokenDecimals)
-        : BNtoNumberWithoutDecimals(transaction['amount0'], baseTokenDecimals);
+        ? bnToNumberWithoutDecimals(transaction['amount1'], baseTokenDecimals)
+        : bnToNumberWithoutDecimals(transaction['amount0'], baseTokenDecimals);
       const scarceTokenAmount = amountsInverted
-        ? BNtoNumberWithoutDecimals(transaction['amount0'], scarceTokenDecimals)
-        : BNtoNumberWithoutDecimals(transaction['amount1'], scarceTokenDecimals);
+        ? bnToNumberWithoutDecimals(transaction['amount0'], scarceTokenDecimals)
+        : bnToNumberWithoutDecimals(transaction['amount1'], scarceTokenDecimals);
 
       let price = getPrice(
         amountsInverted,
@@ -417,28 +422,28 @@ function getVerboseTransactions(
       price = isDeposit ? -price : price;
 
       const oneTokenTotalAmount = amountsInverted
-        ? BNtoNumberWithoutDecimals(transaction['totalAmount1'], baseTokenDecimals)
-        : BNtoNumberWithoutDecimals(transaction['totalAmount0'], baseTokenDecimals);
+        ? bnToNumberWithoutDecimals(transaction['totalAmount1'], baseTokenDecimals)
+        : bnToNumberWithoutDecimals(transaction['totalAmount0'], baseTokenDecimals);
       const scarceTokenTotalAmount = amountsInverted
-        ? BNtoNumberWithoutDecimals(transaction['totalAmount0'], scarceTokenDecimals)
-        : BNtoNumberWithoutDecimals(transaction['totalAmount1'], scarceTokenDecimals);
+        ? bnToNumberWithoutDecimals(transaction['totalAmount0'], scarceTokenDecimals)
+        : bnToNumberWithoutDecimals(transaction['totalAmount1'], scarceTokenDecimals);
 
       const oneTokenTotalAmountBeforeEvent = amountsInverted
-        ? BNtoNumberWithoutDecimals(transaction['totalAmount1BeforeEvent'], baseTokenDecimals)
-        : BNtoNumberWithoutDecimals(transaction['totalAmount0BeforeEvent'], baseTokenDecimals);
+        ? bnToNumberWithoutDecimals(transaction['totalAmount1BeforeEvent'], baseTokenDecimals)
+        : bnToNumberWithoutDecimals(transaction['totalAmount0BeforeEvent'], baseTokenDecimals);
       const scarceTokenTotalAmountBeforeEvent = amountsInverted
-        ? BNtoNumberWithoutDecimals(transaction['totalAmount0BeforeEvent'], scarceTokenDecimals)
-        : BNtoNumberWithoutDecimals(transaction['totalAmount1BeforeEvent'], scarceTokenDecimals);
+        ? bnToNumberWithoutDecimals(transaction['totalAmount0BeforeEvent'], scarceTokenDecimals)
+        : bnToNumberWithoutDecimals(transaction['totalAmount1BeforeEvent'], scarceTokenDecimals);
 
       const type = packet.type;
 
       const holder: VerboseTransaction = {
-        id: transaction["id"],
+        id: transaction['id'],
         date: date,
         oneTokenAmount: oneTokenAmount,
         scarceTokenAmount: scarceTokenAmount,
         price: price,
-        account: transaction["sender"],
+        account: transaction['sender'],
         oneTokenTotalAmount: oneTokenTotalAmount,
         scarceTokenTotalAmount: scarceTokenTotalAmount,
         oneTokenTotalAmountBeforeEvent: oneTokenTotalAmountBeforeEvent,
@@ -456,10 +461,10 @@ function getVerboseTransactions(
 }
 
 function getDistilledTransactions(
-    verboseTransactions: VerboseTransaction[], 
-    cutOffDate: Date,
-    userStates: UserStates
-  ): DistilledTransaction[] {
+  verboseTransactions: VerboseTransaction[],
+  cutOffDate: Date,
+  userStates: UserStates
+): DistilledTransaction[] {
   const distilledTransactions: DistilledTransaction[] = [];
 
   //aggregates the transactions before the IRR start date
@@ -499,7 +504,7 @@ function getDollarAmount(transaction: VerboseTransaction): number {
   return oneTokenAmount + price * scarceTokenAmount;
 }
 
-function compare(a, b) {
+function compare(a: { date: Date }, b: { date: Date }) {
   if (a['date'] > b['date']) {
     return 1;
   } else if (b['date'] > a['date']) {
@@ -509,11 +514,8 @@ function compare(a, b) {
   }
 }
 
-export async function getVaultPoolAddress(
-  vaultAddress: string,
-  provider: ethers.providers.JsonRpcProvider
-): Promise<string> {
-  const vaultContract = new ethers.Contract(vaultAddress, vaultABI, provider);
+export async function getVaultPoolAddress(vaultAddress: string, provider: JsonRpcProvider): Promise<string> {
+  const vaultContract = getIchiVaultContract(vaultAddress, provider);
   const poolAddress: string = await vaultContract.pool();
   return poolAddress;
 }
@@ -523,23 +525,23 @@ export async function getCurrentVaultValue(
   amountsInverted: boolean,
   baseTokenDecimals: number,
   scarceTokenDecimals: number,
-  provider: ethers.providers.JsonRpcProvider
+  provider: JsonRpcProvider
 ): Promise<number> {
   //get Current Balance
-  const vaultContract = new ethers.Contract(vaultAddress, vaultABI, provider);
+  const vaultContract = getIchiVaultContract(vaultAddress, provider);
   const totalAmountArray = await vaultContract.getTotalAmounts();
 
   const unformattedTotalBaseTokenAmount = amountsInverted ? totalAmountArray[1] : totalAmountArray[0];
   const unformattedTotalScarceTokenAmount = amountsInverted ? totalAmountArray[0] : totalAmountArray[1];
-  const totalBaseTokenAmount = BNtoNumberWithoutDecimals(unformattedTotalBaseTokenAmount.toString(), baseTokenDecimals);
-  const totalScarceTokenAmount = BNtoNumberWithoutDecimals(
+  const totalBaseTokenAmount = bnToNumberWithoutDecimals(unformattedTotalBaseTokenAmount.toString(), baseTokenDecimals);
+  const totalScarceTokenAmount = bnToNumberWithoutDecimals(
     unformattedTotalScarceTokenAmount.toString(),
     scarceTokenDecimals
   );
 
   //get Current Price
   const poolAddress: string = await vaultContract.pool();
-  const poolContract = new ethers.Contract(poolAddress, poolABI, provider);
+  const poolContract = getUniswapV3PoolContract(poolAddress, provider);
   const slot0 = await poolContract.slot0();
 
   const sqrtPrice = slot0[0];
@@ -550,27 +552,28 @@ export async function getCurrentVaultValue(
 }
 
 export async function getOneTokenPriceFromVault(
-  name: string,
+  name: TokenName,
   ichi_price: number,
-  provider: ethers.providers.JsonRpcProvider
+  provider: JsonRpcProvider,
+  chainId: ChainId
 ): Promise<number> {
   let vaultAddress = '';
   let inverted = true;
-  if (name == 'onebtc') {
-    vaultAddress = TOKENS.onebtc.ichiVault.address;
+  if (name == TokenName.ONE_BTC) {
+    vaultAddress = getToken(TokenName.ONE_BTC, chainId).ichiVault.address;
   }
-  if (name == 'oneuni') {
-    vaultAddress = TOKENS.oneuni.ichiVault.address;
+  if (name == TokenName.ONE_UNI) {
+    vaultAddress = getToken(TokenName.ONE_UNI, chainId).ichiVault.address;
     inverted = false;
   }
 
-  const vaultContract = new ethers.Contract(vaultAddress, vaultABI, provider);
+  const vaultContract = getIchiVaultContract(vaultAddress, provider);
 
   const poolAddress: string = await vaultContract.pool();
 
   if (vaultAddress == '') return 1;
 
-  const poolContract = new ethers.Contract(poolAddress, poolABI, provider);
+  const poolContract = getUniswapV3PoolContract(poolAddress, provider);
   const slot0 = await poolContract.slot0();
 
   const sqrtPrice = slot0[0];

@@ -1,19 +1,19 @@
 import { updateToken } from './updateToken';
-import { TOKENS } from './configMumbai';
 import { APIGatewayProxyResult } from 'aws-lambda';
+import { ChainId, getTokens } from '@ichidao/ichi-sdk';
 
-export const updateTokens = async (tableName: string) => {
-  for (let token in TOKENS) {
-    const res = await updateToken(tableName, token);
+export const updateTokens = async (tableName: string, chainId: ChainId) => {
+  for (const token of getTokens(chainId)) {
+    const res = await updateToken(tableName, token.tokenName, chainId);
     console.log(`update ${token} results`, res);
   }
 };
 
 // Parallelized but may cause throttling issues
-export const updateTokensParallel = async (tableName: string) => {
+export const updateTokensParallel = async (tableName: string, chainId: ChainId) => {
   const promises: Promise<APIGatewayProxyResult>[] = [];
-  for (const token in TOKENS) {
-    promises.push(updateToken(tableName, token));
+  for (const token of getTokens(chainId)) {
+    promises.push(updateToken(tableName, token.tokenName, chainId));
   }
 
   const results = await Promise.all(promises);

@@ -1,23 +1,54 @@
-import { BigNumber, ethers } from 'ethers';
-import { ADDRESSES, POOLS, TOKENS, APIS, LABELS, BLOCKS_PER_DAY } from './configMainnet';
-import FARMING_V1_ABI from './abis/FARMING_V1_ABI.json';
-import FARMING_V2_ABI from './abis/FARMING_V2_ABI.json';
-import GENERIC_FARMING_V2_ABI from './abis/GENERIC_FARMING_V2_ABI.json';
-import ERC20_ABI from './abis/ERC20_ABI.json';
-import BALANCER_ABI from './abis/BALANCER_ABI.json';
-import BALANCER_SMART_LP_ABI from './abis/BALANCER_SMART_LP_ABI.json';
-import PAIR_ABI from './abis/PAIR_ABI.json';
-import ICHI_BNT_ABI from './abis/ICHI_BNT_ABI.json';
-import VAULT_ABI from './abis/ICHI_VAULT_ABI.json';
-import DLP_ABI from './abis/DLP_ABI.json';
-import DODO_FARM_ABI from './abis/DODO_FARM_ABI.json';
-import RARI_POOL_LENS_ABI from './abis/RARI_POOL_LENS_ABI.json';
-import RARI_POOL_LENS_SECONDARY_ABI from './abis/RARI_POOL_LENS_SECONDARY_ABI.json';
+import { BigNumber } from 'ethers';
 import axios from 'axios';
-import { BSC_ADDRESSES } from './configBSC';
 import { GraphFarm } from './subgraph/farm_v2';
-import { adjustedPid, isFarmExternal, isFarmGeneric, isFarmV1 } from './utils/pids';
-import { ChainId, getProvider } from './providers';
+import {
+  Contracts,
+  ChainId,
+  getProvider,
+  get1InchPools,
+  getAddress,
+  AddressName,
+  MainnetPoolNumbers,
+  getPoolLabel,
+  TokenName,
+  getToken,
+  getBancorV3Pools,
+  getPoolTokens,
+  getPoolReserves,
+  Pools,
+  isFarmV1,
+  isFarmExternal,
+  isFarmGeneric,
+  adjustedPid,
+  getTokenData,
+  getBlocksPerDay,
+  PoolRecord,
+  Optional,
+  asBalancerPool,
+  asGenericPool,
+  getBalancerPoolContract,
+  getBalancerSmartLpContract,
+  getIchiVaultContract,
+  getGenericPoolContract,
+  getIchiBntContract,
+  FarmingV2,
+  FarmingV1,
+  asFarmingV1,
+  asFarmingV2,
+  getFarmingV1Contract,
+  getFarmingV2Contract,
+  GenericFarmingV2,
+  getGenericFarmingV2Contract,
+  asGenericFarmingV2,
+  PartialRecord,
+  FarmingContracts,
+  getDodoLiquidityPoolContract,
+  getIchiBntV3Contract,
+  getErc20Contract,
+  getRariPoolLensContract,
+  getRariPoolLensSecondaryContract,
+  getDodoFarmContract
+} from '@ichidao/ichi-sdk';
 
 export const toInt = (input: BigNumber) => {
   if (!input) return 0;
@@ -34,257 +65,152 @@ export const convertMantissaToAPR = (mantissa: any) => {
   return (parsedMantissa * 2372500) / 1e16;
 };
 
-async function getICHIBNTContract() {
-  const provider = await getProvider(ChainId.mainnet);
-  const poolContract = new ethers.Contract(ADDRESSES.ICHI_BNT, ICHI_BNT_ABI, provider);
-  return poolContract;
-}
-
-async function getICHIBNTV3Contract() {
-  const provider = await getProvider(ChainId.mainnet);
-  const poolContract = new ethers.Contract(ADDRESSES.ICHI_BNT_V3, ERC20_ABI, provider);
-  return poolContract;
-}
-
-// async function getProvider(network) {
-//   if (network == 'bsc') {
-//     return bsc_provider;
-//   }
-//   // mainnet provider by default
-//   return provider;
-// }
-
-async function getDLPContract(address: string, chainId: number) {
-  const prv = await getProvider(chainId);
-  const poolContract = new ethers.Contract(address, DLP_ABI, prv);
-  return poolContract;
-}
-
 // useBasic - true when we need to get the base LP instead of the full pool contract
 // Used for Bancor and Smart Balancer pools
-async function getPoolContract(poolID: number, useBasic: boolean, farm, adjusterPoolId: number) {
-  let isBalancerPool = POOLS.balancerPools.includes(poolID);
-  let isBancorPoolV2 = POOLS.bancorPoolsV2.includes(poolID);
-  let isBalancerSmartPool = POOLS.balancerSmartPools.includes(poolID);
-  let isVault = POOLS.activeVaults.includes(poolID) || POOLS.underlyingVaults.includes(poolID);
+async function getPoolContract(
+  poolId: number,
+  useBasic: boolean,
+  farm: FarmingV1 | FarmingV2 | GenericFarmingV2,
+  adjusterPoolId: number,
+  chainId: ChainId
+): Promise<Contracts> {
+  let isBalancerPool = Pools.BALANCER_POOLS[chainId].includes(poolId);
+  let isBancorPoolV2 = Pools.BANCOR_POOLS_V2[chainId].includes(poolId);
+  let isBalancerSmartPool = Pools.BALANCER_SMART_POOLS[chainId].includes(poolId);
+  let isVault = Pools.ACTIVE_VAULTS[chainId].includes(poolId) || Pools.UNDERLYING_VAULTS[chainId].includes(poolId);
 
   let poolToken = '';
-  if (isFarmV1(poolID)) {
+  if (isFarmV1(poolId)) {
     // farm V1
-    poolToken = await farm.getPoolToken(adjusterPoolId);
+    poolToken = await asFarmingV1(farm).getPoolToken(adjusterPoolId);
   } else {
     // farm V2 and generic farm V2
-    poolToken = await farm.lpToken(adjusterPoolId);
+    poolToken = await asFarmingV2(farm).lpToken(adjusterPoolId);
   }
 
-  const provider = await getProvider(ChainId.mainnet);
+  const provider = await getProvider(chainId);
   if (isBancorPoolV2) {
     // exception for Bancor pools, getting proxy (pool owner) contract
     if (useBasic) {
-      const poolContract = new ethers.Contract(poolToken, PAIR_ABI, provider);
+      const poolContract = getGenericPoolContract(poolToken, provider);
       return poolContract;
     } else {
-      const poolContract = new ethers.Contract(ADDRESSES.ICHI_BNT, ICHI_BNT_ABI, provider);
+      const poolContract = getIchiBntContract(getAddress(AddressName.ICHI_BNT, chainId), provider);
       return poolContract;
     }
   } else if (isBalancerPool) {
     // exception for the Balancer pools
-    const poolContract = new ethers.Contract(poolToken, BALANCER_ABI, provider);
+    const poolContract = getBalancerPoolContract(poolToken, provider);
     return poolContract;
   } else if (isBalancerSmartPool) {
     // exception for the Balancer Smart pools
-    const lpContract = new ethers.Contract(poolToken, BALANCER_SMART_LP_ABI, provider);
+    const lpContract = getBalancerSmartLpContract(poolToken, provider);
     const bPool = await lpContract.bPool();
     if (useBasic) {
       return lpContract;
     }
-    const poolContract = new ethers.Contract(bPool, BALANCER_ABI, provider);
+    const poolContract = getBalancerPoolContract(bPool, provider);
     return poolContract;
   } else if (isVault) {
-    const poolContract = new ethers.Contract(poolToken, VAULT_ABI, provider);
+    const poolContract = getIchiVaultContract(poolToken, provider);
     return poolContract;
   } else {
-    const poolContract = new ethers.Contract(poolToken, PAIR_ABI, provider);
+    const poolContract = getGenericPoolContract(poolToken, provider);
     return poolContract;
   }
 }
 
-async function getTokenData(token) {
-  let tokenSymbol = '';
-  let tokenDecimals = 0;
-
-  if (token === ADDRESSES.ETH) {
-    // special case for ETH
-    tokenDecimals = 18;
-    tokenSymbol = 'ETH';
-  } else {
-    for (const tkn in TOKENS) {
-      if (TOKENS[tkn].address.toLowerCase() == token.toLowerCase()) {
-        return {
-          symbol: tkn,
-          decimals: TOKENS[tkn].decimals
-        };
-      }
-    }
-
-    const provider = await getProvider(ChainId.mainnet);
-    let tokenContract = new ethers.Contract(token, ERC20_ABI, provider);
-
-    console.log('======= SHOULD NOT BE HERE, make sure to add missing token to tokens table');
-
-    tokenSymbol = await tokenContract.symbol();
-    tokenDecimals = await tokenContract.decimals();
-  }
-
-  return {
-    symbol: tokenSymbol,
-    decimals: tokenDecimals
-  };
-}
-
-async function getPoolTokens(poolID: number, poolContract) {
-  let isBalancerPool = POOLS.balancerPools.includes(poolID) || POOLS.balancerSmartPools.includes(poolID);
-  let isBancorPoolV2 = POOLS.bancorPoolsV2.includes(poolID);
-
-  let token0 = '';
-  let token1 = '';
-
-  if (isBancorPoolV2) {
-    // exception for Bancor pools, getting proxy (pool owner) contract
-    let tokens = await poolContract.reserveTokens();
-    token0 = tokens[0].toLowerCase();
-    token1 = tokens[1].toLowerCase();
-  } else if (isBalancerPool) {
-    // exception for Balancer pools
-    let tokens = await poolContract.getCurrentTokens();
-    token0 = tokens[0].toLowerCase();
-    token1 = tokens[1].toLowerCase();
-  } else {
-    // everything else
-    token0 = await poolContract.token0();
-    token1 = await poolContract.token1();
-    token0 = token0.toLowerCase();
-    token1 = token1.toLowerCase();
-  }
-
-  return {
-    token0: token0,
-    token1: token1
-  };
-}
-
-async function getOneInchPoolTokenReserve(token, poolAddress: string) {
-  const provider = await getProvider(ChainId.mainnet);
-  if (token === ADDRESSES.ETH) {
+async function getOneInchPoolTokenReserve(tokenAddress: string, poolAddress: string, chainId: ChainId) {
+  const provider = await getProvider(chainId);
+  if (tokenAddress === getAddress(AddressName.ETH, chainId)) {
     let tokenBalance = await provider.getBalance(poolAddress);
     return tokenBalance;
   } else {
-    let tokenContract = new ethers.Contract(token, ERC20_ABI, provider);
+    let tokenContract = getErc20Contract(tokenAddress, provider);
     let tokenBalance = await tokenContract.balanceOf(poolAddress);
     return tokenBalance;
   }
 }
 
-async function getOneInchPoolReserves(token0, token1, poolAddress: string) {
-  let token0reserve = await getOneInchPoolTokenReserve(token0, poolAddress);
-  let token1reserve = await getOneInchPoolTokenReserve(token1, poolAddress);
+async function getOneInchPoolReserves(token0: string, token1: string, poolAddress: string, chainId: ChainId) {
+  let token0reserve = await getOneInchPoolTokenReserve(token0, poolAddress, chainId);
+  let token1reserve = await getOneInchPoolTokenReserve(token1, poolAddress, chainId);
   return {
     _reserve0: Number(token0reserve),
     _reserve1: Number(token1reserve)
   };
 }
 
-async function getBalancerPoolReserves(token0, token1, poolContract) {
-  let token0reserve = await poolContract.getBalance(token0);
-  let token1reserve = await poolContract.getBalance(token1);
+async function getBalancerPoolReserves(token0: string, token1: string, poolContract: Contracts) {
+  let token0reserve = await asBalancerPool(poolContract).getBalance(token0);
+  let token1reserve = await asBalancerPool(poolContract).getBalance(token1);
   return {
     _reserve0: Number(token0reserve),
     _reserve1: Number(token1reserve)
   };
 }
 
-async function getPoolReserves(poolID, poolContract) {
-  let isBancorPoolV2 = POOLS.bancorPoolsV2.includes(poolID);
-  let isVault = POOLS.activeVaults.includes(poolID) || POOLS.underlyingVaults.includes(poolID);
-  let isDodoPool = POOLS.dodoPools.includes(poolID);
-
-  if (isBancorPoolV2) {
-    // exception for Bancor pool, getting proxy (pool owner) contract
-    let reserveBalances = await poolContract.reserveBalances();
-    return {
-      _reserve0: Number(reserveBalances[0]),
-      _reserve1: Number(reserveBalances[1])
-    };
-  } else if (isVault) {
-    // vaults
-    let reserveBalances = await poolContract.getTotalAmounts();
-    return {
-      _reserve0: Number(reserveBalances.total0),
-      _reserve1: Number(reserveBalances.total1)
-    };
-  } else if (isDodoPool) {
-    // vaults
-    let reserveBalances = await poolContract.getVaultReserve();
-    return {
-      _reserve0: Number(reserveBalances.baseReserve),
-      _reserve1: Number(reserveBalances.quoteReserve)
-    };
-  } else {
-    // everything else
-    let reserveBalances = await poolContract.getReserves();
-    return {
-      _reserve0: Number(reserveBalances._reserve0),
-      _reserve1: Number(reserveBalances._reserve1)
-    };
-  }
-}
-
-async function getTotalSupply(poolID, poolContract, lpToken) {
-  const provider = await getProvider(ChainId.mainnet);
-  let isBancorPoolV2 = POOLS.bancorPoolsV2.includes(poolID);
-  let isBalancerSmartPool = POOLS.balancerSmartPools.includes(poolID);
+async function getTotalSupply(
+  poolId: MainnetPoolNumbers,
+  poolContract: Contracts,
+  lpTokenAddress: string,
+  chainId: ChainId
+): Promise<BigNumber> {
+  const provider = await getProvider(chainId);
+  let isBancorPoolV2 = Pools.BANCOR_POOLS_V2[chainId].includes(poolId);
+  let isBalancerSmartPool = Pools.BALANCER_SMART_POOLS[chainId].includes(poolId);
 
   if (isBancorPoolV2) {
     // exception for Bancor V2 pool, getting proxy (pool owner) contract
-    const bntContract = new ethers.Contract(lpToken, PAIR_ABI, provider);
+    const bntContract = getIchiVaultContract(lpTokenAddress, provider);
     let tLP = await bntContract.totalSupply();
-    return tLP.toString();
+    return tLP;
   } else if (isBalancerSmartPool) {
     // exception for Balancer Smart pools, using LP contract instead of the bPool one
-    const lpContract = new ethers.Contract(lpToken, BALANCER_SMART_LP_ABI, provider);
+    const lpContract = getBalancerSmartLpContract(lpTokenAddress, provider);
     let tLP = await lpContract.totalSupply();
-    return tLP.toString();
+    return tLP;
   } else {
-    let tLP = await poolContract.totalSupply();
-    return tLP.toString();
+    let tLP = await asGenericPool(poolContract).totalSupply();
+    return tLP;
   }
 }
 
-export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock, graph_farm: false | GraphFarm) {
-  if (isFarmExternal(poolID)) return getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock);
+export async function getPoolRecord(
+  poolId: MainnetPoolNumbers,
+  tokenPrices: PartialRecord<TokenName, number>,
+  knownIchiPerBlock: PartialRecord<MainnetPoolNumbers, number>,
+  graph_farm: false | GraphFarm,
+  chainId: ChainId
+): Promise<PoolRecord> {
+  if (isFarmExternal(poolId)) {
+    return getExternalPoolRecord(poolId, tokenPrices, knownIchiPerBlock, chainId);
+  }
 
-  let isSpecialPricing = POOLS.specialPricing.includes(poolID);
+  let isSpecialPricing = Pools.SPECIAL_PRICING[chainId].includes(poolId);
 
-  let isOneInchPool = POOLS.oneInchPools.includes(poolID);
-  let isBalancerPool = POOLS.balancerPools.includes(poolID) || POOLS.balancerSmartPools.includes(poolID);
+  let isOneInchPool = Pools.ONE_INCH_POOLS[chainId].includes(poolId);
+  let isBalancerPool =
+    Pools.BALANCER_POOLS[chainId].includes(poolId) || Pools.BALANCER_SMART_POOLS[chainId].includes(poolId);
 
-  const provider = await getProvider(ChainId.mainnet);
-  const farming_V1 = new ethers.Contract(ADDRESSES.farming_V1, FARMING_V1_ABI, provider);
-  const farming_V2 = new ethers.Contract(ADDRESSES.farming_V2, FARMING_V2_ABI, provider);
+  const provider = await getProvider(chainId);
+  const farming_V1 = getFarmingV1Contract(getAddress(AddressName.FARMING_V1, chainId), provider);
+  const farming_V2 = getFarmingV2Contract(getAddress(AddressName.FARMING_V2, chainId), provider);
 
-  let farm = farming_V2;
+  let farm: FarmingContracts = farming_V2;
   let poolToken = '';
-  let adjusterPoolId = poolID;
-  if (isFarmV1(poolID)) {
+  let adjusterPoolId = poolId;
+  const poolLabel = getPoolLabel(poolId, chainId);
+  if (isFarmV1(poolId)) {
     farm = farming_V1;
     poolToken = await farm.getPoolToken(adjusterPoolId);
-  } else if (isFarmGeneric(poolID)) {
-    farm = new ethers.Contract(LABELS[poolID]['farmAddress'], GENERIC_FARMING_V2_ABI, provider);
-    adjusterPoolId = LABELS[poolID]['farmId'];
+  } else if (isFarmGeneric(poolId)) {
+    farm = getGenericFarmingV2Contract(poolLabel.farmAddress, provider);
+    adjusterPoolId = poolLabel.farmId;
     poolToken = await farm.lpToken(adjusterPoolId);
   } else {
     // getting here means it's V2 farm
-    adjusterPoolId = adjustedPid(poolID);
+    adjusterPoolId = adjustedPid(poolId);
     poolToken = graph_farm ? graph_farm.LPToken : await farm.lpToken(adjusterPoolId);
   }
 
@@ -293,20 +219,21 @@ export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock, grap
   let bonusToRealRatio = 1;
   let inTheFarmLP = '';
   let rewardTokenDecimals = 9;
-  let rewardTokenName = 'ichi';
+  let rewardTokenName = TokenName.ICHI;
 
-  if (isFarmV1(poolID)) {
-    reward = await farm.ichiReward(adjusterPoolId);
-    inTheFarmLP = await farm.getLPSupply(adjusterPoolId);
+  if (isFarmV1(poolId)) {
+    reward = Number(await asFarmingV1(farm).ichiReward(adjusterPoolId));
+    // TODO: Logic change, there was no toString previously
+    inTheFarmLP = (await farm.getLPSupply(adjusterPoolId)).toString();
   } else {
     let rewardsPerBlock = 0;
-    if (isFarmGeneric(poolID)) {
-      let res = await farm.rewardTokensPerBlock();
+    if (isFarmGeneric(poolId)) {
+      let res = await asGenericFarmingV2(farm).rewardTokensPerBlock();
       rewardsPerBlock = Number(res);
-      rewardTokenDecimals = LABELS[poolID]['farmRewardTokenDecimals'];
-      rewardTokenName = LABELS[poolID]['farmRewardTokenName'].toLowerCase();
+      rewardTokenDecimals = poolLabel.farmRewardTokenDecimals;
+      rewardTokenName = poolLabel.farmRewardTokenName.toLowerCase() as TokenName;
     } else {
-      let ichiPerBlock_V2 = graph_farm ? graph_farm.ichiPerBlock : await farm.ichiPerBlock();
+      let ichiPerBlock_V2 = graph_farm ? graph_farm.ichiPerBlock : await asFarmingV2(farm).ichiPerBlock();
       rewardsPerBlock = Number(ichiPerBlock_V2);
     }
 
@@ -316,195 +243,186 @@ export async function getPoolRecord(poolID, tokenPrices, knownIchiPerBlock, grap
     if (graph_farm) {
       poolAllocPoint = graph_farm.allocPoint;
     } else {
-      let poolInfo = await farm.poolInfo(adjusterPoolId);
-      poolAllocPoint = poolInfo.allocPoint;
+      let poolInfo = await asFarmingV2(farm).poolInfo(adjusterPoolId);
+      poolAllocPoint = Number(poolInfo.allocPoint);
     }
 
     reward = Number(totalAllocPoint) === 0 ? 0 : (rewardsPerBlock * poolAllocPoint) / Number(totalAllocPoint);
     //inTheFarmLP = graph_farm ? graph_farm.farmLPSupply :await farm.getLPSupply(adjusterPoolId);
-    inTheFarmLP = await farm.getLPSupply(adjusterPoolId);
+    // TODO: Logic change here, no toString previously
+    inTheFarmLP = (await farm.getLPSupply(adjusterPoolId)).toString();
   } //LP Balance stacked
 
-  const poolContract = await getPoolContract(poolID, false, farm, adjusterPoolId);
-
-  let poolRecord = {};
+  const poolContract = await getPoolContract(poolId, false, farm, adjusterPoolId, chainId);
 
   // common calls
   reward = Number(reward) / 10 ** rewardTokenDecimals;
   reward = reward * bonusToRealRatio;
 
   // let totalPoolLP = graph_farm ? graph_farm.totalLPSupply : await getTotalSupply(poolID, poolContract, poolToken);
-  let totalPoolLP = await getTotalSupply(poolID, poolContract, poolToken);
+  let totalPoolLP = await getTotalSupply(poolId, poolContract, poolToken, chainId);
 
   let farmRatio = 0;
   if (Number(totalPoolLP) !== 0) {
     farmRatio = Number(inTheFarmLP) / Number(totalPoolLP);
   }
 
-  if (poolID == 1007) {
-    //special case for oneToken Balancer pool
-    let apyTVL = (Number(totalPoolLP) * farmRatio) / 10 ** 18;
+  // 1007 is commented out and was ICHIBPT
+  // if (poolId == 1007) {
+  //   //special case for oneToken Balancer pool
+  //   let apyTVL = (Number(totalPoolLP) * farmRatio) / 10 ** 18;
 
-    let dailyAPY = 0;
-    if (apyTVL !== 0) {
-      let ichiReturnUsd = (BLOCKS_PER_DAY * reward * tokenPrices[rewardTokenName]) / apyTVL;
-      dailyAPY = ichiReturnUsd * 100;
-    }
+  //   let dailyAPY = 0;
+  //   if (apyTVL !== 0) {
+  //     let ichiReturnUsd = (BLOCKS_PER_DAY * reward * tokenPrices[rewardTokenName]) / apyTVL;
+  //     dailyAPY = ichiReturnUsd * 100;
+  //   }
 
-    poolRecord = {
-      pool: poolID,
-      lpAddress: poolToken,
-      dailyAPY: dailyAPY,
-      weeklyAPY: dailyAPY * 7,
-      monthlyAPY: dailyAPY * 30,
-      yearlyAPY: dailyAPY * 365,
-      totalPoolLP: totalPoolLP,
-      totalFarmLP: inTheFarmLP.toString(),
-      tvl: Number(totalPoolLP) / 10 ** 18,
-      farmTVL: apyTVL,
-      reserve0Raw: 0,
-      reserve1Raw: 0,
-      address0: '',
-      address1: '',
-      decimals0: 0,
-      decimals1: 0,
-      token0: '',
-      token1: ''
-    };
+  //   poolRecord = {
+  //     pool: poolId,
+  //     lpAddress: poolToken,
+  //     dailyAPY: dailyAPY,
+  //     weeklyAPY: dailyAPY * 7,
+  //     monthlyAPY: dailyAPY * 30,
+  //     yearlyAPY: dailyAPY * 365,
+  //     totalPoolLP: totalPoolLP,
+  //     totalFarmLP: inTheFarmLP.toString(),
+  //     tvl: Number(totalPoolLP) / 10 ** 18,
+  //     farmTVL: apyTVL,
+  //     reserve0Raw: 0,
+  //     reserve1Raw: 0,
+  //     address0: '',
+  //     address1: '',
+  //     decimals0: 0,
+  //     decimals1: 0,
+  //     token0: '',
+  //     token1: ''
+  //   };
+  // }
+  // else {
+  let isDeposit = Pools.DEPOSIT_POOLS[chainId].includes(poolId);
+
+  let token0 = '';
+  let token1 = '';
+  let token0Symbol = '';
+  let token1Symbol = '';
+  let token0Decimals = 0;
+  let token1Decimals = 0;
+  let reserve0Raw = 0;
+  let reserve1Raw = 0;
+  let localTVL = 0;
+
+  if (isDeposit) {
+    //deposit pools
+    token0 = poolToken;
+
+    let token0data = await getTokenData(token0, chainId);
+
+    token0Symbol = token0data.symbol;
+    token0Decimals = token0data.decimals;
+
+    reserve0Raw = Number(totalPoolLP) / 10 ** token0Decimals;
+    localTVL = reserve0Raw;
   } else {
-    let isDeposit = POOLS.depositPools.includes(poolID);
+    // the rest of the pools
+    let tokens = await getPoolTokens(poolContract, chainId, { poolId });
+    token0 = tokens.token0;
+    token1 = tokens.token1;
 
-    let token0 = '';
-    let token1 = '';
-    let token0Symbol = '';
-    let token1Symbol = '';
-    let token0Decimals = 0;
-    let token1Decimals = 0;
-    let reserve0Raw = 0;
-    let reserve1Raw = 0;
-    let localTVL = 0;
+    let token0data = await getTokenData(token0, chainId);
+    let token1data = await getTokenData(token1, chainId);
 
-    if (isDeposit) {
-      //deposit pools
-      token0 = poolToken;
+    token0Symbol = token0data.symbol;
+    token0Decimals = token0data.decimals;
+    token1Symbol = token1data.symbol;
+    token1Decimals = token1data.decimals;
 
-      let token0data = await getTokenData(token0);
-
-      token0Symbol = token0data.symbol;
-      token0Decimals = token0data.decimals;
-
-      reserve0Raw = Number(totalPoolLP) / 10 ** token0Decimals;
-      localTVL = reserve0Raw;
+    let reserve = {};
+    if (isOneInchPool) {
+      reserve = await getOneInchPoolReserves(token0, token1, poolToken, chainId);
+    } else if (isBalancerPool) {
+      reserve = await getBalancerPoolReserves(token0, token1, poolContract);
     } else {
-      // the rest of the pools
-      let tokens = await getPoolTokens(poolID, poolContract);
-      token0 = tokens.token0;
-      token1 = tokens.token1;
-
-      let token0data = await getTokenData(token0);
-      let token1data = await getTokenData(token1);
-
-      token0Symbol = token0data.symbol;
-      token0Decimals = token0data.decimals;
-      token1Symbol = token1data.symbol;
-      token1Decimals = token1data.decimals;
-
-      let reserve = {};
-      if (isOneInchPool) {
-        reserve = await getOneInchPoolReserves(token0, token1, poolToken);
-      } else if (isBalancerPool) {
-        reserve = await getBalancerPoolReserves(token0, token1, poolContract);
-      } else {
-        reserve = await getPoolReserves(poolID, poolContract);
-      }
-
-      let reserve0 = reserve['_reserve0'];
-      let reserve1 = reserve['_reserve1'];
-      reserve0Raw = reserve0 / 10 ** token0Decimals;
-      reserve1Raw = reserve1 / 10 ** token1Decimals;
-
-      token0 = token0 === ADDRESSES.ETH ? tokens['weth']['address'] : token0;
-      token1 = token1 === ADDRESSES.ETH ? tokens['weth']['address'] : token1;
-
-      let prices = {};
-      if (!isSpecialPricing) {
-        prices[token0] = tokenPrices[token0Symbol.toLowerCase()];
-        prices[token1] = tokenPrices[token1Symbol.toLowerCase()];
-      }
-
-      // both tokens there
-      if (prices[token0] && prices[token1]) {
-        localTVL = reserve0Raw * prices[token0] + reserve1Raw * prices[token1];
-      } else {
-        if (prices[token0]) {
-          localTVL = 2 * reserve0Raw * prices[token0];
-        } else if (prices[token1]) {
-          localTVL = 2 * reserve1Raw * prices[token1];
-        } else if (poolID == 19) {
-          // special case for oneVBTC-vBTC pool, use uni pairs for price check
-          let vBTC_price = tokenPrices['vbtc'];
-          localTVL = 2 * reserve1Raw * vBTC_price;
-        } else {
-          console.log('==== error ====');
-        }
-      }
+      reserve = await getPoolReserves(poolContract, chainId, { poolId });
     }
 
-    let apyTVL = Number(localTVL) * farmRatio;
+    let reserve0 = reserve['_reserve0'];
+    let reserve1 = reserve['_reserve1'];
+    reserve0Raw = reserve0 / 10 ** token0Decimals;
+    reserve1Raw = reserve1 / 10 ** token1Decimals;
 
-    let dailyAPY = 0;
-    if (apyTVL !== 0) {
-      let ichiReturnUsd = (BLOCKS_PER_DAY * reward * tokenPrices[rewardTokenName]) / apyTVL;
-      dailyAPY = ichiReturnUsd * 100;
+    token0 = token0 === getAddress(AddressName.ETH, chainId) ? tokens['weth']['address'] : token0;
+    token1 = token1 === getAddress(AddressName.ETH, chainId) ? tokens['weth']['address'] : token1;
+
+    let prices = {};
+    if (!isSpecialPricing) {
+      prices[token0] = tokenPrices[token0Symbol.toLowerCase()];
+      prices[token1] = tokenPrices[token1Symbol.toLowerCase()];
     }
 
-    // calculate future APY for deposits
-    let futureReward = 0.1; // 0.1 ichiPerBlock
-    let futureIchiReturnUsd = (BLOCKS_PER_DAY * futureReward * tokenPrices[rewardTokenName]) / apyTVL;
-    let futureAPY = futureIchiReturnUsd * 100;
-    if (apyTVL == 0) {
-      futureAPY = 0;
+    // both tokens there
+    if (prices[token0] && prices[token1]) {
+      localTVL = reserve0Raw * prices[token0] + reserve1Raw * prices[token1];
+    } else {
+      if (prices[token0]) {
+        localTVL = 2 * reserve0Raw * prices[token0];
+      } else if (prices[token1]) {
+        localTVL = 2 * reserve1Raw * prices[token1];
+      }
+      // TODO: There is no more pool 19
+      // else if (poolId == 19) {
+      //   // special case for oneVBTC-vBTC pool, use uni pairs for price check
+      //   let vBTC_price = tokenPrices['vbtc'];
+      //   localTVL = 2 * reserve1Raw * vBTC_price;
+      // }
+      else {
+        console.log('==== error ====');
+      }
     }
-
-    poolRecord = {
-      pool: poolID,
-      lpAddress: poolToken,
-      dailyAPY: dailyAPY,
-      weeklyAPY: dailyAPY * 7,
-      monthlyAPY: dailyAPY * 30,
-      yearlyAPY: dailyAPY * 365,
-      futureAPY: futureAPY * 365,
-      totalPoolLP: totalPoolLP,
-      totalFarmLP: inTheFarmLP.toString(),
-      tvl: localTVL,
-      farmTVL: apyTVL,
-      reserve0Raw: reserve0Raw,
-      reserve1Raw: reserve1Raw,
-      address0: token0,
-      address1: token1,
-      decimals0: token0Decimals,
-      decimals1: token1Decimals,
-      token0: token0Symbol,
-      token1: token1Symbol
-    };
   }
+
+  let apyTVL = Number(localTVL) * farmRatio;
+
+  let dailyAPY = 0;
+  if (apyTVL !== 0) {
+    let ichiReturnUsd = (getBlocksPerDay(chainId) * reward * tokenPrices[rewardTokenName]) / apyTVL;
+    dailyAPY = ichiReturnUsd * 100;
+  }
+
+  // calculate future APY for deposits
+  let futureReward = 0.1; // 0.1 ichiPerBlock
+  let futureIchiReturnUsd = (getBlocksPerDay(chainId) * futureReward * tokenPrices[rewardTokenName]) / apyTVL;
+  let futureAPY = futureIchiReturnUsd * 100;
+  if (apyTVL == 0) {
+    futureAPY = 0;
+  }
+
+  const poolRecord: PoolRecord = {
+    pool: poolId,
+    lpAddress: poolToken,
+    dailyAPY: dailyAPY,
+    weeklyAPY: dailyAPY * 7,
+    monthlyAPY: dailyAPY * 30,
+    yearlyAPY: dailyAPY * 365,
+    futureAPY: futureAPY * 365,
+    totalPoolLP: totalPoolLP.toString(),
+    totalFarmLP: inTheFarmLP.toString(),
+    tvl: localTVL,
+    farmTVL: apyTVL,
+    reserve0Raw: reserve0Raw,
+    reserve1Raw: reserve1Raw,
+    address0: token0,
+    address1: token1,
+    decimals0: token0Decimals,
+    decimals1: token1Decimals,
+    token0: token0Symbol,
+    token1: token1Symbol
+  };
 
   return poolRecord;
 }
 
-const get1inchPools = async function () {
-  return await axios.get(APIS._1inchPoolAPI);
-};
-
-const getBancorV3Pools = async function () {
-  return await axios.get(APIS.bancor_v3_API);
-};
-
-const getLoopringPools = async function () {
-  return await axios.get(APIS.loopringAPI);
-};
-
-const getDodoPools = async function (address, network) {
+const getDodoPools = async function (address: string, network: string) {
   let body = {
     query: `
         query Query($where: Mininginfo_filter) {
@@ -529,30 +447,43 @@ const getDodoPools = async function (address, network) {
   return await axios.post('https://gateway.dodoex.io/graphql', body);
 };
 
-async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
-  const provider = await getProvider(ChainId.mainnet);
-  if (poolID === 10001) {
-    let allPools = await get1inchPools();
-    let _1inchICHI_pool = allPools.data[5];
+async function getExternalPoolRecord(
+  poolId: MainnetPoolNumbers,
+  tokenPrices: PartialRecord<TokenName, number>,
+  knownIchiPerBlock: PartialRecord<MainnetPoolNumbers, number>,
+  chainId: ChainId
+): Promise<Optional<PoolRecord>> {
+  const provider = await getProvider(chainId);
+  const poolLabel = getPoolLabel(poolId, chainId);
+
+  if (poolId === MainnetPoolNumbers.ICHI_1INCH) {
+    let allPools = await get1InchPools();
+    let _1inchICHI_pool = allPools[5];
 
     let token0 = _1inchICHI_pool.apys[0].token;
     let token1 = _1inchICHI_pool.apys[1].token;
 
-    let token0data = await getTokenData(token0);
-    let token1data = await getTokenData(token1);
+    let token0data = await getTokenData(token0, chainId);
+    let token1data = await getTokenData(token1, chainId);
 
     let token0Symbol = token0data.symbol;
     let token1Symbol = token1data.symbol;
 
-    let reserve = await getOneInchPoolReserves(token0, token1, ADDRESSES._1inch_ICHI_LP);
+    let reserve = await getOneInchPoolReserves(
+      token0,
+      token1,
+      getAddress(AddressName._1INCH_ICHI_LP, chainId),
+      chainId
+    );
     let reserve0 = reserve._reserve0;
     let reserve1 = reserve._reserve1;
     let reserve0Raw = reserve0 / 10 ** 18; //1inch
     let reserve1Raw = reserve1 / 10 ** 9; //ICHI
 
-    let prices = {};
-    prices[token0] = tokenPrices[token0Symbol.toLowerCase()];
-    prices[token1] = tokenPrices[token1Symbol.toLowerCase()];
+    let prices = {
+      [token0]: tokenPrices[token0Symbol.toLowerCase()],
+      [token1]: tokenPrices[token1Symbol.toLowerCase()]
+    };
 
     let TVL = reserve0Raw * prices[token0] + reserve1Raw * prices[token1];
 
@@ -561,9 +492,9 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
 
     dailyAPY = 0; // hardcoded because the pool has ended
 
-    let poolRecord = {
-      pool: poolID,
-      lpAddress: ADDRESSES._1inch_ICHI_LP,
+    const poolRecord: PoolRecord = {
+      pool: poolId,
+      lpAddress: getAddress(AddressName._1INCH_ICHI_LP, chainId),
       dailyAPY: dailyAPY,
       weeklyAPY: dailyAPY * 7,
       monthlyAPY: dailyAPY * 30,
@@ -584,53 +515,54 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
 
     return poolRecord;
   }
-  if (poolID === 10002) {
-    let allPools = await getLoopringPools();
-    let loopring_pool = allPools.data[97];
+  // TODO: Review this, no longer a 10002 it appears
+  // if (poolId === 10002) {
+  //   let allPools = await getLoopringPools();
+  //   let loopring_pool = allPools.data[97];
 
-    let TVL = Number(loopring_pool.liquidityUSD);
+  //   let TVL = Number(loopring_pool.liquidityUSD);
 
-    let farmTVL = TVL;
-    let dailyAPY = Number(loopring_pool.apyBips) / 100 / 365;
+  //   let farmTVL = TVL;
+  //   let dailyAPY = Number(loopring_pool.apyBips) / 100 / 365;
 
-    let poolRecord = {
-      pool: poolID,
-      lpAddress: '',
-      dailyAPY: dailyAPY,
-      weeklyAPY: dailyAPY * 7,
-      monthlyAPY: dailyAPY * 30,
-      yearlyAPY: dailyAPY * 365,
-      totalPoolLP: '0',
-      totalFarmLP: '0',
-      tvl: TVL,
-      farmTVL: farmTVL,
-      reserve0Raw: 0,
-      reserve1Raw: 0,
-      address0: TOKENS['ichi']['address'],
-      address1: ADDRESSES.ETH,
-      decimals0: 9,
-      decimals1: 18,
-      token0: 'ICHI',
-      token1: 'ETH'
-    };
+  //   let poolRecord = {
+  //     pool: poolId,
+  //     lpAddress: '',
+  //     dailyAPY: dailyAPY,
+  //     weeklyAPY: dailyAPY * 7,
+  //     monthlyAPY: dailyAPY * 30,
+  //     yearlyAPY: dailyAPY * 365,
+  //     totalPoolLP: '0',
+  //     totalFarmLP: '0',
+  //     tvl: TVL,
+  //     farmTVL: farmTVL,
+  //     reserve0Raw: 0,
+  //     reserve1Raw: 0,
+  //     address0: TOKENS['ichi']['address'],
+  //     address1: ADDRESSES.ETH,
+  //     decimals0: 9,
+  //     decimals1: 18,
+  //     token0: 'ICHI',
+  //     token1: 'ETH'
+  //   };
 
-    return poolRecord;
-  }
-  if (poolID === 10003) {
-    let token0 = TOKENS.bnt.address;
-    let token1 = TOKENS.ichi.address;
+  //   return poolRecord;
+  // }
+  if (poolId === MainnetPoolNumbers.ICHI_BNT) {
+    let token0 = getToken(TokenName.BNT, chainId).address;
+    let token1 = getToken(TokenName.ICHI, chainId).address;
 
-    const poolContract = await getICHIBNTContract();
+    const poolContract = getIchiBntContract(getAddress(AddressName.ICHI_BNT, chainId), provider);
 
-    let reserve = await getPoolReserves(poolID, poolContract);
+    let reserve = await getPoolReserves(poolContract, chainId, { poolId });
     let reserve0 = reserve._reserve0;
     let reserve1 = reserve._reserve1;
     let reserve0Raw = reserve0 / 10 ** 18; //bnt
     let reserve1Raw = reserve1 / 10 ** 9; //ICHI
 
     let prices = {};
-    prices[token0] = tokenPrices['bnt'];
-    prices[token1] = tokenPrices['ichi'];
+    prices[token0] = tokenPrices[TokenName.BNT];
+    prices[token1] = tokenPrices[TokenName.ICHI];
 
     let TVL = reserve0Raw * prices[token0] + reserve1Raw * prices[token1];
 
@@ -644,8 +576,8 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
       }
     }*/
 
-    let poolRecord = {
-      pool: poolID,
+    const poolRecord: PoolRecord = {
+      pool: poolId,
       lpAddress: '0x563f6e19197A8567778180F66474E30122FD702A',
       dailyAPY: dailyAPY,
       weeklyAPY: dailyAPY * 7,
@@ -667,8 +599,8 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
 
     return poolRecord;
   }
-  if (poolID === 10004) {
-    let dodoPool = await getDodoPools(LABELS[poolID]['externalAddress'], 'ethereum-mainnet');
+  if (poolId === MainnetPoolNumbers.ONE_DODO_USDC_MAINNET) {
+    let dodoPool = await getDodoPools(poolLabel.externalAddress, 'ethereum-mainnet');
     let info = dodoPool.data['data']['mining_info'];
     let lpAddress = info['lp_token'];
     let lpTotal = info['total_supply'];
@@ -678,12 +610,12 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
     // console.log(info);
 
     if (!lpAddress) {
-      return { pool: null };
+      return;
     }
 
-    const poolContract = await getDLPContract(lpAddress, ChainId.mainnet);
+    const poolContract = getDodoLiquidityPoolContract(lpAddress, provider);
 
-    let reserve = await getPoolReserves(poolID, poolContract);
+    let reserve = await getPoolReserves(poolContract, chainId, { poolId });
     let reserve0 = reserve._reserve0;
     let reserve1 = reserve._reserve1;
     let reserve0Raw = reserve0 / 10 ** 18; //oneDODO
@@ -693,18 +625,18 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
 
     let farmTVL = (TVL / Number(lpTotal)) * Number(lpFarm);
 
-    const farmContract = new ethers.Contract(LABELS[poolID]['externalAddress'], DODO_FARM_ABI, provider);
+    const farmContract = getDodoFarmContract(poolLabel.externalAddress, provider);
 
     let dodo_reward_info = await farmContract.rewardTokenInfos('1');
     let dodo_reward_per_block = Number(dodo_reward_info['rewardPerBlock']) / 10 ** 18; // in DODOs
-    let dodo_reward_usd = dodo_reward_per_block * blocks_year * tokenPrices['dodo'];
+    let dodo_reward_usd = dodo_reward_per_block * blocks_year * tokenPrices[TokenName.DODO];
     let total_reward_usd = dodo_reward_usd + ichi_reward_usd;
 
     let yearlyAPY = (total_reward_usd / farmTVL) * 100;
     let dailyAPY = yearlyAPY / 365;
 
-    let poolRecord = {
-      pool: poolID,
+    const poolRecord: PoolRecord = {
+      pool: poolId,
       lpAddress: lpAddress,
       dailyAPY: dailyAPY,
       weeklyAPY: dailyAPY * 7,
@@ -716,8 +648,8 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
       farmTVL: farmTVL,
       reserve0Raw: reserve0Raw,
       reserve1Raw: reserve1Raw,
-      address0: TOKENS['onedodo']['address'],
-      address1: TOKENS['usdc']['address'],
+      address0: getToken(TokenName.ONE_DODO, chainId).address,
+      address1: getToken(TokenName.USDC, chainId).address,
       decimals0: 18,
       decimals1: 6,
       token0: 'oneDODO',
@@ -726,301 +658,37 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
 
     return poolRecord;
   }
-  if (poolID === 10005) {
-    const lensContract = new ethers.Contract(ADDRESSES.rari_pool_lens, RARI_POOL_LENS_ABI, provider);
-
-    const lensContractSecondary = new ethers.Contract(
-      ADDRESSES.rari_pool_lens_secondary,
-      RARI_POOL_LENS_SECONDARY_ABI,
+  if (poolId === MainnetPoolNumbers.ONE_UNI) {
+    const lensContract = getRariPoolLensContract(getAddress(AddressName.RARI_POOL_LENS, chainId), provider);
+    const lensContractSecondary = getRariPoolLensSecondaryContract(
+      getAddress(AddressName.RARI_POOL_LENS_SECONDARY, chainId),
       provider
     );
 
     // get rewardSpeed from the secondary lens contract
-    let secondaryData = await lensContractSecondary.callStatic.getRewardSpeedsByPool(ADDRESSES.rari_comptroller);
-
-    let rewardSpeed = 0;
-    // make sure rewardSpeed matched the index of the oneUNI cToken address
-    // cToken addresses are in array 0, rewardSpeeds are in array 3
-    for (let i = 0; i < secondaryData[0].length; i++) {
-      if (secondaryData[0][i].toString().toLowerCase() == ADDRESSES.rari_oneuni_token.toLowerCase()) {
-        rewardSpeed = Number(secondaryData[3][i]);
-        break;
-      }
-    }
-
-    let data = await lensContract.callStatic.getPoolAssetsWithData(ADDRESSES.rari_comptroller);
-
-    let combinedAPR = 0;
-    let reserve0 = 0;
-    let poolLP = '';
-    for (let item of data) {
-      if (item['underlyingSymbol'] == 'oneUNI') {
-        const apr = convertMantissaToAPR(item['supplyRatePerBlock']);
-
-        reserve0 = Number(item['totalSupply']);
-        poolLP = item['totalSupply'].toString();
-
-        const newRewardUSDPerBlock = Number(tokenPrices['ichi']) * (rewardSpeed / 10 ** 9);
-        const newUnderlyingTotalSupplyUSD = reserve0 / 10 ** 18;
-        const newMantissa = (newRewardUSDPerBlock * 1e18) / newUnderlyingTotalSupplyUSD;
-
-        const rewardsAPR = convertMantissaToAPR(newMantissa);
-        //combinedAPR = apr + rewardsAPR;
-        combinedAPR = 0; // hardcode APR as 0
-      }
-    }
-
-    let reserve0Raw = reserve0 / 10 ** 18; //oneUNI
-    let reserve1Raw = 0;
-
-    let TVL = reserve0Raw + reserve1Raw;
-
-    let farmTVL = TVL;
-
-    let yearlyAPY = combinedAPR;
-    let dailyAPY = yearlyAPY / 365;
-
-    let poolRecord = {
-      pool: poolID,
-      lpAddress: TOKENS['oneuni']['address'],
-      dailyAPY: dailyAPY,
-      weeklyAPY: dailyAPY * 7,
-      monthlyAPY: dailyAPY * 30,
-      yearlyAPY: yearlyAPY,
-      totalPoolLP: poolLP,
-      totalFarmLP: poolLP,
-      tvl: TVL,
-      farmTVL: farmTVL,
-      reserve0Raw: reserve0Raw,
-      reserve1Raw: reserve1Raw,
-      address0: TOKENS['oneuni']['address'],
-      address1: '',
-      decimals0: 18,
-      decimals1: 0,
-      token0: 'oneUNI',
-      token1: ''
-    };
-
-    return poolRecord;
-  }
-  if (poolID === 10006) {
-    let poolRecord = await getPoolRecord(1016, tokenPrices, knownIchiPerBlock, false);
-    let lpPrice = poolRecord.tvl / Number(poolRecord.totalPoolLP);
-
-    const lensContract = new ethers.Contract(ADDRESSES.rari_pool_lens, RARI_POOL_LENS_ABI, provider);
-
-    const lensContractSecondary = new ethers.Contract(
-      ADDRESSES.rari_pool_lens_secondary,
-      RARI_POOL_LENS_SECONDARY_ABI,
-      provider
+    let secondaryData = await lensContractSecondary.callStatic.getRewardSpeedsByPool(
+      getAddress(AddressName.RARI_COMPTROLLER, chainId)
     );
-
-    // get rewardSpeed from the secondary lens contract
-    let secondaryData = await lensContractSecondary.callStatic.getRewardSpeedsByPool(ADDRESSES.rari_comptroller);
-
-    let rewardSpeed = 0;
-    // make sure rewardSpeed matched the index of the VAULT LP cToken address
-    // cToken addresses are in array 0, rewardSpeeds are in array 3
-    for (let i = 0; i < secondaryData[0].length; i++) {
-      if (secondaryData[0][i].toString().toLowerCase() == ADDRESSES.rari_ichi_vault_lp_token.toLowerCase()) {
-        rewardSpeed = Number(secondaryData[3][i]);
-        break;
-      }
-    }
-
-    let data = await lensContract.callStatic.getPoolAssetsWithData(ADDRESSES.rari_comptroller);
-
-    let combinedAPR = 0;
-    let reserve0 = 0;
-    for (let item of data) {
-      if (
-        item['underlyingSymbol'] == 'ICHI_Vault_LP' &&
-        item['cToken'].toLowerCase() == ADDRESSES.rari_ichi_vault_lp_token.toLowerCase()
-      ) {
-        // no base APR on Rari, because LPs can't be borrowed
-        const apr = 0;
-        //const apr = convertMantissaToAPR(item['supplyRatePerBlock'])
-
-        reserve0 = Number(item['totalSupply']);
-
-        const newRewardUSDPerBlock = Number(tokenPrices['ichi']) * (rewardSpeed / 10 ** 9);
-        const newUnderlyingTotalSupplyUSD = reserve0 * lpPrice;
-        const newMantissa = (newRewardUSDPerBlock * 1e18) / newUnderlyingTotalSupplyUSD;
-
-        const rewardsAPR = convertMantissaToAPR(newMantissa);
-        //combinedAPR = apr + rewardsAPR;
-        combinedAPR = 0; // hardcode APR as 0
-      }
-    }
-
-    let farmTVL = reserve0 * lpPrice;
-
-    let yearlyAPY = combinedAPR;
-    let dailyAPY = yearlyAPY / 365;
-
-    poolRecord.pool = poolID;
-    poolRecord.dailyAPY = dailyAPY;
-    poolRecord.weeklyAPY = dailyAPY * 7;
-    poolRecord.monthlyAPY = dailyAPY * 30;
-    poolRecord.yearlyAPY = yearlyAPY;
-    poolRecord.farmTVL = farmTVL;
-
-    return poolRecord;
-  }
-  if (poolID === 10007) {
-    let dodoPool = await getDodoPools(LABELS[poolID]['externalAddress'], 'bsc');
-    let info = dodoPool.data['data']['mining_info'];
-    let lpAddress = info['lp_token'];
-    let lpTotal = info['total_supply'];
-    let lpFarm = info['balance'];
-    let blocks_year = Number(info['blocks_count_perYear']);
-    let ichi_reward_usd = Number(info['mining_reward_usd']);
-    //console.log(info);
-
-    if (!lpAddress) {
-      return { pool: null };
-    }
-
-    const poolContract = await getDLPContract(lpAddress, ChainId.bsc);
-
-    let reserve = await getPoolReserves(poolID, poolContract);
-    let reserve0 = reserve._reserve0;
-    let reserve1 = reserve._reserve1;
-    let reserve0Raw = reserve0 / 10 ** 18; //oneDODO
-    let reserve1Raw = reserve1 / 10 ** 18; //USDC
-
-    let TVL = reserve0Raw + reserve1Raw;
-
-    let farmTVL = (TVL / Number(lpTotal)) * Number(lpFarm);
-
-    const bscProvider = await getProvider(ChainId.bsc);
-
-    const farmContract = new ethers.Contract(LABELS[poolID]['externalAddress'], DODO_FARM_ABI, bscProvider);
-
-    let dodo_reward_info = await farmContract.rewardTokenInfos('0');
-    let dodo_reward_per_block = Number(dodo_reward_info['rewardPerBlock']) / 10 ** 18; // in DODOs
-    let dodo_reward_usd = dodo_reward_per_block * blocks_year * tokenPrices['dodo'];
-    let total_reward_usd = dodo_reward_usd + ichi_reward_usd;
-
-    let yearlyAPY = (total_reward_usd / farmTVL) * 100;
-    let dailyAPY = yearlyAPY / 365;
-
-    let poolRecord = {
-      pool: poolID,
-      lpAddress: lpAddress,
-      dailyAPY: dailyAPY,
-      weeklyAPY: dailyAPY * 7,
-      monthlyAPY: dailyAPY * 30,
-      yearlyAPY: yearlyAPY,
-      totalPoolLP: lpTotal,
-      totalFarmLP: lpFarm,
-      tvl: TVL,
-      farmTVL: farmTVL,
-      reserve0Raw: reserve0Raw,
-      reserve1Raw: reserve1Raw,
-      address0: BSC_ADDRESSES.oneDodo,
-      address1: BSC_ADDRESSES.usdc,
-      decimals0: 18,
-      decimals1: 18,
-      token0: 'oneDODO',
-      token1: 'USDC'
-    };
-
-    return poolRecord;
-  }
-  if (poolID === 10008) {
-    let poolRecord = await getPoolRecord(1023, tokenPrices, knownIchiPerBlock, false);
-    let lpPrice = poolRecord.tvl / Number(poolRecord.totalPoolLP);
-
-    const lensContract = new ethers.Contract(ADDRESSES.rari_pool_lens, RARI_POOL_LENS_ABI, provider);
-
-    const lensContractSecondary = new ethers.Contract(
-      ADDRESSES.rari_pool_lens_secondary,
-      RARI_POOL_LENS_SECONDARY_ABI,
-      provider
-    );
-
-    // get rewardSpeed from the secondary lens contract
-    let secondaryData = await lensContractSecondary.callStatic.getRewardSpeedsByPool(ADDRESSES.rari_comptroller);
-
-    let rewardSpeed = 0;
-    // make sure rewardSpeed matched the index of the VAULT LP cToken address
-    // cToken addresses are in array 0, rewardSpeeds are in array 3
-    for (let i = 0; i < secondaryData[0].length; i++) {
-      if (secondaryData[0][i].toString().toLowerCase() == ADDRESSES.rari_onebtc_vault_lp_token.toLowerCase()) {
-        rewardSpeed = Number(secondaryData[3][i]);
-        break;
-      }
-    }
-
-    let data = await lensContract.callStatic.getPoolAssetsWithData(ADDRESSES.rari_comptroller);
-
-    let combinedAPR = 0;
-    let reserve0 = 0;
-    for (let item of data) {
-      if (
-        item['underlyingSymbol'] == 'ICHI_Vault_LP' &&
-        item['cToken'].toLowerCase() == ADDRESSES.rari_onebtc_vault_lp_token.toLowerCase()
-      ) {
-        // no base APR on Rari, because LPs can't be borrowed
-        const apr = 0;
-        //const apr = convertMantissaToAPR(item['supplyRatePerBlock'])
-
-        reserve0 = Number(item['totalSupply']);
-
-        const newRewardUSDPerBlock = Number(tokenPrices['ichi']) * (rewardSpeed / 10 ** 9);
-        const newUnderlyingTotalSupplyUSD = reserve0 * lpPrice;
-        const newMantissa = (newRewardUSDPerBlock * 1e18) / newUnderlyingTotalSupplyUSD;
-
-        const rewardsAPR = convertMantissaToAPR(newMantissa);
-        //combinedAPR = apr + rewardsAPR;
-        combinedAPR = 0; // hardcode APR as 0
-      }
-    }
-
-    let farmTVL = reserve0 * lpPrice;
-
-    let yearlyAPY = combinedAPR;
-    let dailyAPY = yearlyAPY / 365;
-
-    poolRecord.pool = poolID;
-    poolRecord.dailyAPY = dailyAPY;
-    poolRecord.weeklyAPY = dailyAPY * 7;
-    poolRecord.monthlyAPY = dailyAPY * 30;
-    poolRecord.yearlyAPY = yearlyAPY;
-    poolRecord.farmTVL = farmTVL;
-
-    return poolRecord;
-  }
-  if (poolID === 10009) {
-    const lensContract = new ethers.Contract(ADDRESSES.rari_pool_lens, RARI_POOL_LENS_ABI, provider);
-
-    const lensContractSecondary = new ethers.Contract(
-      ADDRESSES.rari_pool_lens_secondary,
-      RARI_POOL_LENS_SECONDARY_ABI,
-      provider
-    );
-
-    // get rewardSpeed from the secondary lens contract
-    let secondaryData = await lensContractSecondary.callStatic.getRewardSpeedsByPool(ADDRESSES.rari_comptroller);
 
     let rewardSpeed = 0;
     // make sure rewardSpeed matched the index of the oneBTC cToken address
     // cToken addresses are in array 0, rewardSpeeds are in array 3
     for (let i = 0; i < secondaryData[0].length; i++) {
-      if (secondaryData[0][i].toString().toLowerCase() == ADDRESSES.rari_onebtc.toLowerCase()) {
+      if (
+        secondaryData[0][i].toString().toLowerCase() == getAddress(AddressName.RARI_ONEUNI_TOKEN, chainId).toLowerCase()
+      ) {
         rewardSpeed = Number(secondaryData[3][i]);
         break;
       }
     }
 
-    let data = await lensContract.callStatic.getPoolAssetsWithData(ADDRESSES.rari_comptroller);
+    let data = await lensContract.callStatic.getPoolAssetsWithData(getAddress(AddressName.RARI_COMPTROLLER, chainId));
 
     let combinedAPR = 0;
     let reserve0 = 0;
     let poolLP = '';
     for (let item of data) {
-      if (item['underlyingSymbol'] == 'oneBTC') {
+      if (item['underlyingSymbol'] == getToken(TokenName.ONE_UNI, chainId).symbol) {
         const apr = convertMantissaToAPR(item['supplyRatePerBlock']);
 
         reserve0 = Number(item['totalSupply']);
@@ -1031,10 +699,12 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
         const newMantissa = (newRewardUSDPerBlock * 1e18) / newUnderlyingTotalSupplyUSD;
 
         const rewardsAPR = convertMantissaToAPR(newMantissa);
-        //combinedAPR = apr + rewardsAPR;
+        //console.log(rewradsAPR.toString());
+        // combinedAPR = apr + rewardsAPR;
         combinedAPR = 0; // hardcode APR as 0
       }
     }
+    //console.log(combinedAPR.toString());
 
     let reserve0Raw = reserve0 / 10 ** 18; //oneBTC
     let reserve1Raw = 0;
@@ -1046,9 +716,9 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
     let yearlyAPY = combinedAPR;
     let dailyAPY = yearlyAPY / 365;
 
-    let poolRecord = {
-      pool: poolID,
-      lpAddress: TOKENS['onebtc']['address'],
+    const poolRecord: PoolRecord = {
+      pool: poolId,
+      lpAddress: getToken(TokenName.ONE_UNI, chainId).address,
       dailyAPY: dailyAPY,
       weeklyAPY: dailyAPY * 7,
       monthlyAPY: dailyAPY * 30,
@@ -1059,7 +729,292 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
       farmTVL: farmTVL,
       reserve0Raw: reserve0Raw,
       reserve1Raw: reserve1Raw,
-      address0: TOKENS['onebtc']['address'],
+      address0: getToken(TokenName.ONE_UNI, chainId).address,
+      address1: '',
+      decimals0: 18,
+      decimals1: 0,
+      token0: 'oneUNI',
+      token1: ''
+    };
+
+    return poolRecord;
+  }
+  if (poolId === MainnetPoolNumbers.ONE_UNI_VAULT) {
+    let poolRecord = await getPoolRecord(
+      MainnetPoolNumbers.ONE_UNI_VAULT_LP,
+      tokenPrices,
+      knownIchiPerBlock,
+      false,
+      chainId
+    );
+    let lpPrice = poolRecord.tvl / Number(poolRecord.totalPoolLP);
+
+    const lensContract = getRariPoolLensContract(getAddress(AddressName.RARI_POOL_LENS, chainId), provider);
+
+    const lensContractSecondary = getRariPoolLensSecondaryContract(
+      getAddress(AddressName.RARI_POOL_LENS_SECONDARY, chainId),
+      provider
+    );
+
+    // get rewardSpeed from the secondary lens contract
+    let secondaryData = await lensContractSecondary.callStatic.getRewardSpeedsByPool(
+      getAddress(AddressName.RARI_COMPTROLLER, chainId)
+    );
+
+    let rewardSpeed = 0;
+    // make sure rewardSpeed matched the index of the VAULT LP cToken address
+    // cToken addresses are in array 0, rewardSpeeds are in array 3
+    for (let i = 0; i < secondaryData[0].length; i++) {
+      if (
+        secondaryData[0][i].toString().toLowerCase() ==
+        getAddress(AddressName.RARI_ICHI_VAULT_LP_TOKEN, chainId).toLowerCase()
+      ) {
+        rewardSpeed = Number(secondaryData[3][i]);
+        break;
+      }
+    }
+
+    let data = await lensContract.callStatic.getPoolAssetsWithData(getAddress(AddressName.RARI_COMPTROLLER, chainId));
+
+    let combinedAPR = 0;
+    let reserve0 = 0;
+    for (let item of data) {
+      if (
+        item['underlyingSymbol'] == 'ICHI_Vault_LP' &&
+        item['cToken'].toLowerCase() == getAddress(AddressName.RARI_ICHI_VAULT_LP_TOKEN, chainId).toLowerCase()
+      ) {
+        // no base APR on Rari, because LPs can't be borrowed
+        const apr = 0;
+        //const apr = convertMantissaToAPR(item['supplyRatePerBlock'])
+
+        reserve0 = Number(item['totalSupply']);
+
+        const newRewardUSDPerBlock = Number(tokenPrices[TokenName.ICHI]) * (rewardSpeed / 10 ** 9);
+        const newUnderlyingTotalSupplyUSD = reserve0 * lpPrice;
+        const newMantissa = (newRewardUSDPerBlock * 1e18) / newUnderlyingTotalSupplyUSD;
+
+        const rewardsAPR = convertMantissaToAPR(newMantissa);
+        // combinedAPR = apr + rewardsAPR;
+        combinedAPR = 0; // hardcode APR as 0
+      }
+    }
+
+    let farmTVL = reserve0 * lpPrice;
+
+    let yearlyAPY = combinedAPR;
+    let dailyAPY = yearlyAPY / 365;
+
+    poolRecord.pool = poolId;
+    poolRecord.dailyAPY = dailyAPY;
+    poolRecord.weeklyAPY = dailyAPY * 7;
+    poolRecord.monthlyAPY = dailyAPY * 30;
+    poolRecord.yearlyAPY = yearlyAPY;
+    poolRecord.farmTVL = farmTVL;
+
+    return poolRecord;
+  }
+  if (poolId === MainnetPoolNumbers.ONE_DODO_USDC_BSC_MAINNET) {
+    let dodoPool = await getDodoPools(poolLabel.externalAddress, 'bsc');
+    let info = dodoPool.data['data']['mining_info'];
+    let lpAddress = info['lp_token'];
+    let lpTotal = info['total_supply'];
+    let lpFarm = info['balance'];
+    let blocks_year = Number(info['blocks_count_perYear']);
+    let ichi_reward_usd = Number(info['mining_reward_usd']);
+    //console.log(info);
+
+    if (!lpAddress) {
+      return;
+    }
+
+    const bscProvider = await getProvider(ChainId.Bsc);
+    const poolContract = getDodoLiquidityPoolContract(lpAddress, bscProvider);
+
+    let reserve = await getPoolReserves(poolContract, chainId, { poolId });
+    let reserve0 = reserve._reserve0;
+    let reserve1 = reserve._reserve1;
+    let reserve0Raw = reserve0 / 10 ** 18; //oneDODO
+    let reserve1Raw = reserve1 / 10 ** 18; //USDC
+
+    let TVL = reserve0Raw + reserve1Raw;
+
+    let farmTVL = (TVL / Number(lpTotal)) * Number(lpFarm);
+
+    const farmContract = getDodoFarmContract(poolLabel.externalAddress, bscProvider);
+
+    let dodo_reward_info = await farmContract.rewardTokenInfos('0');
+    let dodo_reward_per_block = Number(dodo_reward_info['rewardPerBlock']) / 10 ** 18; // in DODOs
+    let dodo_reward_usd = dodo_reward_per_block * blocks_year * tokenPrices['dodo'];
+    let total_reward_usd = dodo_reward_usd + ichi_reward_usd;
+
+    let yearlyAPY = (total_reward_usd / farmTVL) * 100;
+    let dailyAPY = yearlyAPY / 365;
+
+    const poolRecord: PoolRecord = {
+      pool: poolId,
+      lpAddress: lpAddress,
+      dailyAPY: dailyAPY,
+      weeklyAPY: dailyAPY * 7,
+      monthlyAPY: dailyAPY * 30,
+      yearlyAPY: yearlyAPY,
+      totalPoolLP: lpTotal,
+      totalFarmLP: lpFarm,
+      tvl: TVL,
+      farmTVL: farmTVL,
+      reserve0Raw: reserve0Raw,
+      reserve1Raw: reserve1Raw,
+      address0: getAddress(AddressName.ONE_DODO, ChainId.Bsc),
+      address1: getAddress(AddressName.USDC, ChainId.Bsc),
+      decimals0: 18,
+      decimals1: 18,
+      token0: 'oneDODO',
+      token1: 'USDC'
+    };
+
+    return poolRecord;
+  }
+  if (poolId === MainnetPoolNumbers.ONE_BTC_VAULT_RARI) {
+    let poolRecord = await getPoolRecord(
+      MainnetPoolNumbers.ONE_BTC_VAULT_LEGACY,
+      tokenPrices,
+      knownIchiPerBlock,
+      false,
+      chainId
+    );
+    let lpPrice = poolRecord.tvl / Number(poolRecord.totalPoolLP);
+
+    const lensContract = getRariPoolLensContract(getAddress(AddressName.RARI_POOL_LENS, chainId), provider);
+    const lensContractSecondary = getRariPoolLensSecondaryContract(
+      getAddress(AddressName.RARI_POOL_LENS_SECONDARY, chainId),
+      provider
+    );
+
+    // get rewardSpeed from the secondary lens contract
+    let secondaryData = await lensContractSecondary.callStatic.getRewardSpeedsByPool(
+      getAddress(AddressName.RARI_COMPTROLLER, chainId)
+    );
+
+    let rewardSpeed = 0;
+    // make sure rewardSpeed matched the index of the VAULT LP cToken address
+    // cToken addresses are in array 0, rewardSpeeds are in array 3
+    for (let i = 0; i < secondaryData[0].length; i++) {
+      if (
+        secondaryData[0][i].toString().toLowerCase() ==
+        getAddress(AddressName.RARI_ONEBTC_VAULT_LP_TOKEN, chainId).toLowerCase()
+      ) {
+        rewardSpeed = Number(secondaryData[3][i]);
+        break;
+      }
+    }
+
+    let data = await lensContract.callStatic.getPoolAssetsWithData(getAddress(AddressName.RARI_COMPTROLLER, chainId));
+
+    let combinedAPR = 0;
+    let reserve0 = 0;
+    for (let item of data) {
+      if (
+        item['underlyingSymbol'] == 'ICHI_Vault_LP' &&
+        item['cToken'].toLowerCase() == getAddress(AddressName.RARI_ONEBTC_VAULT_LP_TOKEN, chainId).toLowerCase()
+      ) {
+        // no base APR on Rari, because LPs can't be borrowed
+        const apr = 0;
+        //const apr = convertMantissaToAPR(item['supplyRatePerBlock'])
+
+        reserve0 = Number(item['totalSupply']);
+
+        const newRewardUSDPerBlock = Number(tokenPrices[TokenName.ICHI]) * (rewardSpeed / 10 ** 9);
+        const newUnderlyingTotalSupplyUSD = reserve0 * lpPrice;
+        const newMantissa = (newRewardUSDPerBlock * 1e18) / newUnderlyingTotalSupplyUSD;
+
+        const rewardsAPR = convertMantissaToAPR(newMantissa);
+        combinedAPR = apr + rewardsAPR;
+      }
+    }
+
+    let farmTVL = reserve0 * lpPrice;
+
+    let yearlyAPY = combinedAPR;
+    let dailyAPY = yearlyAPY / 365;
+
+    poolRecord.pool = poolId;
+    poolRecord.dailyAPY = dailyAPY;
+    poolRecord.weeklyAPY = dailyAPY * 7;
+    poolRecord.monthlyAPY = dailyAPY * 30;
+    poolRecord.yearlyAPY = yearlyAPY;
+    poolRecord.farmTVL = farmTVL;
+
+    return poolRecord;
+  }
+  if (poolId === 10009) {
+    const lensContract = getRariPoolLensContract(getAddress(AddressName.RARI_POOL_LENS, chainId), provider);
+
+    const lensContractSecondary = getRariPoolLensSecondaryContract(
+      getAddress(AddressName.RARI_POOL_LENS_SECONDARY, chainId),
+      provider
+    );
+
+    // get rewardSpeed from the secondary lens contract
+    let secondaryData = await lensContractSecondary.callStatic.getRewardSpeedsByPool(
+      getAddress(AddressName.RARI_COMPTROLLER, chainId)
+    );
+
+    let rewardSpeed = 0;
+    // make sure rewardSpeed matched the index of the oneUNI cToken address
+    // cToken addresses are in array 0, rewardSpeeds are in array 3
+    for (let i = 0; i < secondaryData[0].length; i++) {
+      if (secondaryData[0][i].toString().toLowerCase() == getAddress(AddressName.RARI_ONEBTC, chainId).toLowerCase()) {
+        rewardSpeed = Number(secondaryData[3][i]);
+        break;
+      }
+    }
+
+    let data = await lensContract.callStatic.getPoolAssetsWithData(getAddress(AddressName.RARI_COMPTROLLER, chainId));
+
+    let combinedAPR = 0;
+    let reserve0 = 0;
+    let poolLP = '';
+    for (let item of data) {
+      if (item['underlyingSymbol'] == getToken(TokenName.ONE_BTC, chainId).symbol) {
+        const apr = convertMantissaToAPR(item['supplyRatePerBlock']);
+
+        reserve0 = Number(item['totalSupply']);
+        poolLP = item['totalSupply'].toString();
+
+        const newRewardUSDPerBlock = Number(tokenPrices['ichi']) * (rewardSpeed / 10 ** 9);
+        const newUnderlyingTotalSupplyUSD = reserve0 / 10 ** 18;
+        const newMantissa = (newRewardUSDPerBlock * 1e18) / newUnderlyingTotalSupplyUSD;
+
+        const rewardsAPR = convertMantissaToAPR(newMantissa);
+        // combinedAPR = apr + rewardsAPR;
+        combinedAPR = 0; // hardcode APR as 0
+      }
+    }
+    //console.log(combinedAPR.toString());
+
+    let reserve0Raw = reserve0 / 10 ** 18; //oneUNI
+    let reserve1Raw = 0;
+
+    let TVL = reserve0Raw + reserve1Raw;
+
+    let farmTVL = TVL;
+
+    let yearlyAPY = combinedAPR;
+    let dailyAPY = yearlyAPY / 365;
+
+    const poolRecord: PoolRecord = {
+      pool: poolId,
+      lpAddress: getToken(TokenName.ONE_BTC, chainId).address,
+      dailyAPY: dailyAPY,
+      weeklyAPY: dailyAPY * 7,
+      monthlyAPY: dailyAPY * 30,
+      yearlyAPY: yearlyAPY,
+      totalPoolLP: poolLP,
+      totalFarmLP: poolLP,
+      tvl: TVL,
+      farmTVL: farmTVL,
+      reserve0Raw: reserve0Raw,
+      reserve1Raw: reserve1Raw,
+      address0: getToken(TokenName.ONE_BTC, chainId).address,
       address1: '',
       decimals0: 18,
       decimals1: 0,
@@ -1069,20 +1024,22 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
 
     return poolRecord;
   }
-  if (poolID === 10010) {
-    let token0 = TOKENS.bnt.address;
-    let token1 = TOKENS.ichi.address;
+  if (poolId === MainnetPoolNumbers.ICHI_BNT_V3) {
+    let token0 = getToken(TokenName.BNT, chainId).address;
+    let token1 = getToken(TokenName.ICHI, chainId).address;
 
-    const poolContract = await getICHIBNTV3Contract();
+    const poolContract = getIchiBntV3Contract(getAddress(AddressName.ICHI_BNT_V3, chainId), provider);
 
-    let totalPoolLP = await getTotalSupply(poolID, poolContract, null);
+    let totalPoolLP = await getTotalSupply(poolId, poolContract, null, chainId);
 
-    let prices = {};
-    prices[token0] = tokenPrices['bnt'];
-    prices[token1] = tokenPrices['ichi'];
+    let prices: PartialRecord<TokenName, number> = {};
+    prices[token0] = tokenPrices[TokenName.BNT];
+    prices[token1] = tokenPrices[TokenName.ICHI];
 
-    let reserve1Raw = totalPoolLP / 10 ** 9; //ICHI
-    let reserve0Raw = reserve1Raw * prices[token1] / prices[token0]; //bnt
+    // TODO: Logic change, cast to Number added
+    let reserve1Raw = Number(totalPoolLP) / 10 ** 9; //ICHI
+    // let reserve1Raw = totalPoolLP.div(10).pow(9); //ICHI
+    let reserve0Raw = (reserve1Raw * prices[token1]) / prices[token0]; //bnt
 
     let TVL = reserve1Raw * prices[token1] * 2;
 
@@ -1094,26 +1051,26 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
       let ichiPool = {};
       for (let index = 0; index < allPools['data']['data'].length; index++) {
         const pool = allPools['data']['data'][index];
-        if (pool['poolTokenDltId'] == ADDRESSES.ICHI_BNT_V3) {
+        if (pool['poolTokenDltId'] == getAddress(AddressName.ICHI_BNT_V3, chainId)) {
           ichiPool = pool;
           break;
         }
       }
       if (ichiPool['fees7d']) {
         const fees = Number(ichiPool['fees7d']['tkn']);
-        dailyAPY = fees * 100 / farmTVL / 7;
+        dailyAPY = (fees * 100) / farmTVL / 7;
       }
     }
-    
-    let poolRecord = {
-      pool: poolID,
-      lpAddress: ADDRESSES.ICHI_BNT_V3,
+
+    const poolRecord: PoolRecord = {
+      pool: poolId,
+      lpAddress: getAddress(AddressName.ICHI_BNT_V3, chainId),
       dailyAPY: dailyAPY,
       weeklyAPY: dailyAPY * 7,
       monthlyAPY: dailyAPY * 30,
       yearlyAPY: dailyAPY * 365,
-      totalPoolLP: totalPoolLP,
-      totalFarmLP: totalPoolLP,
+      totalPoolLP: totalPoolLP.toString(),
+      totalFarmLP: totalPoolLP.toString(),
       tvl: TVL,
       farmTVL: farmTVL,
       reserve0Raw: reserve0Raw,
@@ -1128,5 +1085,5 @@ async function getExternalPoolRecord(poolID, tokenPrices, knownIchiPerBlock) {
 
     return poolRecord;
   }
-  return {};
+  return undefined;
 }
