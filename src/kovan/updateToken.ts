@@ -57,7 +57,7 @@ export const updateToken = async (
     TableName: tableName,
     Key: {
       name: {
-        S: tokenName
+        S: getToken(tokenName, chainId).tableName
       }
     },
     UpdateExpression:
