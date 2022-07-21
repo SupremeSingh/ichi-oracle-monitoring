@@ -894,7 +894,7 @@ export const updateTreasuryItem = async (
     TableName: tableName,
     Key: {
       name: {
-        S: tokenName.toLowerCase()
+        S: getToken(tokenName, chainId).tableName
       }
     },
     UpdateExpression:
