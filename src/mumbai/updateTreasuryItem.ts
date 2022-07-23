@@ -31,9 +31,9 @@ export const updateTreasuryItem = async (
   const usdcName = attr.collateral_name;
   const decimals = attr.decimals;
   const baseName = attr.base_name;
-  const displayName = attr.display_name;
   const tradeUrl = attr.tradeUrl;
   const isV2 = attr.isV2;
+  const displayName = getToken(tokenName, chainId).displayName;
 
   const provider = await getProvider(chainId);
   const stimulusToken = getErc20Contract(stimulusTokenAddress, provider);
@@ -225,7 +225,7 @@ export const updateTreasuryItem = async (
 
   let res = {
     name: tokenName.toLowerCase(),
-    displayName: tokenName,
+    displayName: displayName,
     base: baseName,
     usdc: (oneToken_USDC + strategy_balance_usdc) / 10 ** 6,
     circulation: Number(oneToken_SUPPLY) / 10 ** decimals,

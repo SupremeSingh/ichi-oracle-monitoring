@@ -86,6 +86,7 @@ export const updateTreasuryItem = async (
   const decimals = attr.decimals;
   const tradeUrl = attr.tradeUrl;
   const isV2 = attr.isV2;
+  const displayName = getToken(tokenName, chainId).displayName;
 
   const isLegacy = getLegacyTreasuries(chainId).includes(tokenName);
 
@@ -866,7 +867,7 @@ export const updateTreasuryItem = async (
 
   let res = {
     name: tokenName.toLowerCase(),
-    displayName: tokenName,
+    displayName: displayName,
     base: baseName,
     usdc: totalUSDC,
     circulation: Number(oneToken_SUPPLY) / 10 ** decimals,
@@ -928,7 +929,7 @@ export const updateTreasuryItem = async (
       ':baseName': { S: baseName },
       ':address': { S: oneTokenAddress },
       ':strategy': { S: strategyAddress },
-      ':displayName': { S: tokenName },
+      ':displayName': { S: displayName },
       ':usdc': { N: Number(totalUSDC).toString() },
       ':circulation': { N: (Number(oneToken_SUPPLY) / 10 ** decimals).toString() },
       ':collateral': { L: oneToken_collateral_list },

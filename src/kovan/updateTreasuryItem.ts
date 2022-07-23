@@ -24,6 +24,7 @@ const getOneTokenAttributes = async function (tokenName: TokenName, chainId: Cha
     decimals: token.decimals,
     strategy: token.strategy,
     tradeUrl: token.tradeUrl,
+    display_name: token.displayName,
     ally_swap: token.allySwap ? token.allySwap : '',
     stimulus_address: '',
     stimulus_name: token.stimulusName,
@@ -78,9 +79,9 @@ export const updateTreasuryItem = async (
   const usdcName = attr.collateral_name;
   const decimals = attr.decimals;
   const baseName = attr.base_name;
-  const displayName = attr.display_name;
   const tradeUrl = attr.tradeUrl;
   const isV2 = attr.isV2;
+  const displayName = getToken(tokenName, chainId).displayName;
   // const oneTokenABI = await getABI(attr.abi_type);
 
   const provider = await getProvider(ChainId.Kovan);
@@ -307,7 +308,7 @@ export const updateTreasuryItem = async (
 
   let res = {
     name: tokenName.toLowerCase(),
-    displayName: tokenName,
+    displayName: displayName,
     base: baseName,
     usdc: (oneToken_USDC + strategy_balance_usdc) / 10 ** 6,
     circulation: Number(oneToken_SUPPLY) / 10 ** decimals,

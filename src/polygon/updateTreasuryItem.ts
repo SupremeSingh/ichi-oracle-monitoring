@@ -82,10 +82,10 @@ export const updateTreasuryItem = async (
   const stimulusTokenName = attr.stimulus_name;
   const stimulusDecimals = attr.stimulus_decimals;
   const baseName = attr.base_name;
-  const displayName = attr.displayName;
   const decimals = attr.decimals;
   const tradeUrl = attr.tradeUrl;
   const isV2 = attr.isV2;
+  const displayName = getToken(tokenName, chainId).displayName;
   // const oneTokenABI = await getABI();
 
   const ichi = getErc20Contract(ichiV2Token.address, provider);
