@@ -34,9 +34,12 @@ import {
   get1InchStakingContract,
   getBmiStakingContract,
   getPoolLabel,
-  PartialRecord
+  PartialRecord,
+  VaultName
 } from '@ichidao/ichi-sdk';
 import { getAllyContract } from '@ichidao/ichi-sdk/dist/src/utils/contracts';
+import { VAULTS } from '@ichidao/ichi-sdk/dist/src/constants/vaults';
+import { TOKENS } from '@ichidao/ichi-sdk/dist/src/constants/tokens';
 
 // const BSC_RPC_HOST = BSC_APIS.rpcHost;
 
@@ -124,6 +127,7 @@ export const updateTreasuryItem = async (
   let strategy_balance_one_oja = 0;
   let strategy_balance_oja = 0;
   let strategy_balance_ichi = 0;
+  let strategy_balance_one_ichi = 0;
   let strategy_balance_wbtc = 0;
   let strategy_balance_bmi_usdt = 0;
   let strategy_balance_st1inch = 0;
@@ -230,6 +234,38 @@ export const updateTreasuryItem = async (
         }
       } else {
         console.log('no risk harbor data');
+      }
+
+      // special case of oneUNI investing into OneICHI vault
+      if (tokenName.toLowerCase() === TokenName.ONE_UNI.toLowerCase()) {
+        const oneICHIVault = getIchiVaultContract(VAULTS[VaultName.ONEICHI_ICHI][chainId].address, provider);
+
+        let strategy_balance_vault_lp = Number(await oneICHIVault.balanceOf(auxStrategyAddress));
+
+        const vault_total_lp = Number(await oneICHIVault.totalSupply());
+        const vault_total_amounts = await oneICHIVault.getTotalAmounts();
+        if (strategy_balance_vault_lp > 0) {
+          const vault_ratio = strategy_balance_vault_lp / vault_total_lp;
+          strategy_balance_ichi += (Number(vault_total_amounts.total0) * vault_ratio) / 
+            10 ** (TOKENS[TokenName.ICHI_V2][chainId].decimals - TOKENS[TokenName.ICHI][chainId].decimals);
+          strategy_balance_one_ichi += Number(vault_total_amounts.total1) * vault_ratio;
+        }
+      }
+
+      // special case of oneUNI investing into USDC vault
+      if (tokenName.toLowerCase() === TokenName.ONE_UNI.toLowerCase()) {
+        const USDCVault = getIchiVaultContract(VAULTS[VaultName.USDC_ICHI][chainId].address, provider);
+
+        let strategy_balance_vault_lp = Number(await USDCVault.balanceOf(auxStrategyAddress));
+
+        const vault_total_lp = Number(await USDCVault.totalSupply());
+        const vault_total_amounts = await USDCVault.getTotalAmounts();
+        if (strategy_balance_vault_lp > 0) {
+          const vault_ratio = strategy_balance_vault_lp / vault_total_lp;
+          strategy_balance_ichi += (Number(vault_total_amounts.total0) * vault_ratio) / 
+            10 ** (TOKENS[TokenName.ICHI_V2][chainId].decimals - TOKENS[TokenName.ICHI][chainId].decimals);
+          strategy_balance_usdc += Number(vault_total_amounts.total1) * vault_ratio;
+        }
       }
     }
   }
@@ -586,6 +622,7 @@ export const updateTreasuryItem = async (
   let usdt_price = 1;
   let oneToken_price = 1;
   let onebtc_price = 1;
+  let oneichi_price = 1;
   let oneuni_price = 1;
   /*onebtc_price = tokenPrices['onebtc'];
   oneuni_price = tokenPrices['oneuni'];
@@ -636,6 +673,7 @@ export const updateTreasuryItem = async (
     (strategy_balance_one_uni * oneuni_price) / 10 ** 18 +
     (strategy_balance_one_btc * onebtc_price) / 10 ** 18 +
     strategy_balance_one_oja / 10 ** 18 +
+    (strategy_balance_one_ichi * oneichi_price) / 10 ** 18 +
     usdc_price * (strategy_balance_usdc / 10 ** getToken(TokenName.USDC, chainId).decimals) +
     usdc_price * (aux_strategy_balance_riskharbor_usdc / 10 ** getToken(TokenName.USDC, chainId).decimals) +
     usdt_price * (strategy_balance_bmi_usdt / 10 ** 18);
@@ -672,6 +710,7 @@ export const updateTreasuryItem = async (
     strategy_balance_onetoken > 0 ||
     strategy_balance_one_uni > 0 ||
     strategy_balance_one_btc > 0 ||
+    strategy_balance_one_ichi ||
     strategy_balance_one_oja > 0 ||
     aux_strategy_balance_riskharbor_usdc > 0 ||
     strategy_balance_bmi_usdt > 0
@@ -731,6 +770,14 @@ export const updateTreasuryItem = async (
           name: { S: 'oneOJA' },
           balance: { N: Number(strategy_balance_one_oja / 10 ** 18).toString() }
         }
+      });
+    }
+    if (strategy_balance_one_ichi > 0) {
+      assets.push({
+        M: {
+          name: { S: 'oneICHI' },
+          balance: { N: Number(strategy_balance_one_ichi / 10 ** 18).toString() },
+        },
       });
     }
     if (strategy_balance_bmi_usdt > 0) {
