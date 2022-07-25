@@ -10,7 +10,8 @@ import {
   MumbaiPoolNumbers,
   Pools,
   TokenName,
-  isOneToken
+  isOneToken,
+  adjustedPid
 } from '@ichidao/ichi-sdk';
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
@@ -48,14 +49,14 @@ export const updateFarm = async (
   let pool = await getPoolRecord(poolId, tokenPrices, knownIchiPerBlock, chainId);
   const poolLabel = getPoolLabel(poolId, chainId);
 
-  let farmPoolId = poolId;
+  let farmPoolId = adjustedPid(poolId);
   let farmName = 'V2';
   let searchName = '';
 
   let tokens = [];
 
   if (pool.token0 == '') {
-    searchName = `${farmName.toLowerCase()}-multi-${farmPoolId}`;
+    searchName = `${farmName.toLowerCase()}-multi-${poolId}`;
   } else {
     let token0 = {
       name: { S: pool.token0.toLowerCase() },
@@ -69,16 +70,10 @@ export const updateFarm = async (
     tokens.push({ M: token0 });
 
     if (pool.token1 == '') {
-      searchName = farmName.toLowerCase() + '-' + pool.token0.toLowerCase() + '-' + farmPoolId;
+      searchName = farmName.toLowerCase() + '-' + pool.token0.toLowerCase() + '-' + poolId;
     } else {
       searchName =
-        farmName.toLowerCase() +
-        '-' +
-        pool.token0.toLowerCase() +
-        '-' +
-        pool.token1.toLowerCase() +
-        '-' +
-        farmPoolId;
+        farmName.toLowerCase() + '-' + pool.token0.toLowerCase() + '-' + pool.token1.toLowerCase() + '-' + poolId;
 
       let token1 = {
         name: { S: pool.token1.toLowerCase() },

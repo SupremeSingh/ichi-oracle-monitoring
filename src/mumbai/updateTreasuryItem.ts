@@ -1,6 +1,5 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 import AWS from 'aws-sdk';
-import { ethers } from 'ethers';
 import { dbClient } from '../configMainnet';
 import {
   ChainId,
@@ -298,10 +297,12 @@ export const updateTreasuryItem = async (
       ':collateralPositionsUSD': { N: Number(collateralPositionsUSDValue).toString() },
       ':collateralUSD': { N: Number(oneToken_collateral_only).toString() },
       ':stimulus': { L: oneToken_stimulus_list },
-      ':stimulusUSD': { N: Number(oneToken_stimulus_usd).toString() },
+      // NOTE: This is coming through as NaN and throwing an error
+      ':stimulusUSD': { N: Number(oneToken_stimulus_usd || -1).toString() },
       ':stimulusPositions': { L: oneTokenStimulusPostions },
       ':stimulusPositionsAPY': { N: stimulusPositionsAPY.toString() },
-      ':stimulusPositionsUSD': { N: Number(stimulusPositionsUSDValue).toString() },
+      // NOTE: This is coming through as NaN and throwing an error
+      ':stimulusPositionsUSD': { N: Number(stimulusPositionsUSDValue || -1).toString() },
       ':withdrawFee': { N: oneToken_withdrawFee.toString() },
       ':mintFee': { N: oneToken_mintFee.toString() },
       ':mintingRatio': { N: oneToken_mintingRatio.toString() },

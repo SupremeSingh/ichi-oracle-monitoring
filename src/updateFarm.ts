@@ -40,21 +40,15 @@ export const updateFarm = async (
   tokenPrices: PartialRecord<TokenName, number>,
   tokenNames: PartialRecord<TokenName, string>,
   knownIchiPerBlock: PartialRecord<MainnetPoolNumbers | PolygonPoolNumbers, number>,
-  farm_subgraph: GraphFarm | false,
-  dub_vault: any | false,
+  farmSubgraph: GraphFarm | false,
+  dubVault: any | false,
   chainId: ChainId
 ): Promise<APIGatewayProxyResult> => {
   const provider = await getProvider(chainId);
   let pool =
     chainId === ChainId.Mainnet
-      ? await getPoolRecordMainnet(poolId as MainnetPoolNumbers, tokenPrices, knownIchiPerBlock, farm_subgraph, chainId)
-      : await getPoolRecordPolygon(
-          poolId as PolygonPoolNumbers,
-          tokenPrices,
-          knownIchiPerBlock,
-          farm_subgraph,
-          chainId
-        );
+      ? await getPoolRecordMainnet(poolId as MainnetPoolNumbers, tokenPrices, knownIchiPerBlock, farmSubgraph, chainId)
+      : await getPoolRecordPolygon(poolId as PolygonPoolNumbers, tokenPrices, knownIchiPerBlock, farmSubgraph, chainId);
   if (pool.pool == null) {
     // failed to get pool's data, not updating
     console.log(`Can't get pool's data: ${poolId}`);
@@ -264,10 +258,10 @@ export const updateFarm = async (
   pool.poolAddress = '';
   let vaultAPR = 0;
   let vaultIRR = 0;
-  if (dub_vault) {
-    baseTokenTVL = Number(dub_vault['Attributes']['baseTokenTVL']['N']);
-    vaultAPR = Number(dub_vault['Attributes']['vaultAPR']['N']);
-    vaultIRR = Number(dub_vault['Attributes']['vaultIRR']['N']);
+  if (dubVault) {
+    baseTokenTVL = Number(dubVault['Attributes']['baseTokenTVL']['N']);
+    vaultAPR = Number(dubVault['Attributes']['vaultAPR']['N']);
+    vaultIRR = Number(dubVault['Attributes']['vaultIRR']['N']);
   } else if (isVault) {
     let isHodl = poolLabel.isHodl;
     let vaultName = poolLabel.vaultName;

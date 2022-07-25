@@ -63,8 +63,6 @@ async function getTokenData(tokenAddress: string, chainId: ChainId) {
     const provider = await getProvider(chainId);
     const tokenContract = getErc20Contract(tokenAddress, provider);
 
-    console.log('======= SHOULD NOT BE HERE, make sure to add missing token to tokens table');
-
     tokenSymbol = await tokenContract.symbol();
     tokenDecimals = await tokenContract.decimals();
   }
@@ -172,7 +170,7 @@ export async function getPoolRecord(
     token1Symbol = token1data.symbol;
     token1Decimals = token1data.decimals;
 
-    const reserve = await getPoolReserves(poolContract, chainId);
+    const reserve = await getPoolReserves(poolContract, chainId, { poolId });
 
     let reserve0 = reserve._reserve0;
     let reserve1 = reserve._reserve1;

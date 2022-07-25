@@ -4,8 +4,9 @@ import { ChainId, getTokens } from '@ichidao/ichi-sdk';
 
 export const updateTokens = async (tableName: string, chainId: ChainId) => {
   for (let token of getTokens(chainId)) {
+    console.log(`Updating ${token.displayName}`);
     const res = await updateToken(tableName, token.tokenName, chainId);
-    console.log(`update ${token} results:`, res);
+    console.log(`\tDone updating ${token.displayName}`, res);
   }
 };
 

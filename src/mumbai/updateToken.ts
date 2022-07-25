@@ -8,10 +8,11 @@ export const updateToken = async (
   tokenName: TokenName,
   chainId: ChainId
 ): Promise<APIGatewayProxyResult> => {
-  const address = getToken(tokenName, chainId).address;
-  const decimals = getToken(tokenName, chainId).decimals;
-  const isOneToken = getToken(tokenName, chainId).isOneToken;
-  const displayName = getToken(tokenName, chainId).displayName;
+  const token = getToken(tokenName, chainId);
+  const address = token.address;
+  const decimals = token.decimals;
+  const isOneToken = token.isOneToken;
+  const displayName = token.displayName;
   let price = 0;
   let priceChange = 0;
 
@@ -54,11 +55,12 @@ export const updateToken = async (
     TableName: tableName,
     Key: {
       name: {
-        S: getToken(tokenName, chainId).tableName
+        S: token.tableName
       }
     },
     UpdateExpression:
       'set ' +
+      'tokenName = :tokenName,' +
       'circulating = :circulating, ' +
       'address = :address, ' +
       'decimals = :decimals, ' +
@@ -69,6 +71,7 @@ export const updateToken = async (
       'chainId = :chainId, ' +
       'supply = :supply',
     ExpressionAttributeValues: {
+      ':tokenName': { S: token.tokenName },
       ':circulating': { N: circulating.toString() },
       ':address': { S: address },
       ':decimals': { N: decimals.toString() },

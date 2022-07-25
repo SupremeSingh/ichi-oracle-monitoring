@@ -73,8 +73,6 @@ async function getTokenData(tokenAddress: string, chainId: ChainId) {
 
     let tokenContract = getErc20Contract(tokenAddress, provider);
 
-    console.log('======= SHOULD NOT BE HERE, make sure to add missing token to tokens table');
-
     tokenSymbol = await tokenContract.symbol();
     tokenDecimals = await tokenContract.decimals();
   }

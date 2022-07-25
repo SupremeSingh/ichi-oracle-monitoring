@@ -1,6 +1,6 @@
 import { updateFarm } from './updateFarm';
 import { APIGatewayProxyResult } from 'aws-lambda';
-import { ChainId, PartialRecord, KovanPoolNumbers, Pools, TokenName } from '@ichidao/ichi-sdk';
+import { ChainId, PartialRecord, KovanPoolNumbers, Pools, TokenName, getPoolLabel } from '@ichidao/ichi-sdk';
 
 export const updateFarms = async (
   tableName: string,
@@ -10,10 +10,14 @@ export const updateFarms = async (
   chainId: ChainId
 ) => {
   for (const poolId of Pools.ACTIVE_POOLS[chainId]) {
+    console.log(`Attempting to update farm from active pools ${poolId} which is ${getPoolLabel(poolId, chainId).name}`);
     const res = await updateFarm(tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, chainId);
     console.log(`update ${poolId} results:`, res);
   }
   for (const poolId of Pools.ACTIVE_VAULTS[chainId]) {
+    console.log(
+      `Attempting to update farm from active vaults ${poolId} which is ${getPoolLabel(poolId, chainId).name}`
+    );
     const res = await updateFarm(tableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, chainId);
     console.log(`update ${poolId} results:`, res);
   }

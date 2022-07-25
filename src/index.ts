@@ -5,11 +5,9 @@ import { updateFarms } from './updateFarms';
 import { updateTokens as updateTokensPolygon } from './polygon/updateTokens';
 import { updateTreasury as updateTreasuryPolygon } from './polygon/updateTreasury';
 import { updateFarms as updateFarmsPolygon } from './polygon/updateFarms';
-import AWS from 'aws-sdk';
 import { updateFarm } from './updateFarm';
 import { updateFarm as updateFarmKovan } from './kovan/updateFarm';
 import { updateFarm as updateFarmMumbai } from './mumbai/updateFarm';
-import { dbClient } from './configMainnet';
 import {
   ChainId,
   EnvUtils,
@@ -19,6 +17,7 @@ import {
   PartialRecord,
   TokenName
 } from '@ichidao/ichi-sdk';
+import { getAllData, getDynamoTokens } from './dynamo';
 
 const tokenTableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
 const treasuryTableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
@@ -26,30 +25,6 @@ const farmsTableName = process.env.FARMS_TABLE_NAME || 'farms-dev';
 const ichiPerBlockTableName = process.env.ICHI_PER_BLOCK_TABLE_NAME || 'ichi-per-block';
 
 EnvUtils.validateEnvironment();
-
-AWS.config.update({
-  region: process.env.AWS_REGION || 'us-east-1'
-});
-
-const getAllData = async (params) => {
-  const _getAllData = async (params, startKey) => {
-    if (startKey) {
-      params.ExclusiveStartKey = startKey;
-    }
-    return dbClient.scan(params).promise();
-  };
-
-  let lastEvaluatedKey = null;
-  let rows = [];
-
-  do {
-    const result = await _getAllData(params, lastEvaluatedKey);
-    rows = rows.concat(result.Items);
-    lastEvaluatedKey = result.LastEvaluatedKey;
-  } while (lastEvaluatedKey);
-
-  return rows;
-};
 
 export const handler = async (event: APIGatewayProxyEvent) => {
   let poolId = -1;
@@ -65,44 +40,26 @@ export const handler = async (event: APIGatewayProxyEvent) => {
   }
 
   const tokenPrices: PartialRecord<TokenName, number> = {};
-  const tokenNames = {};
-  tokenNames['eth'] = 'ETH';
+  const tokenNames: PartialRecord<TokenName, string> = {};
+  tokenNames[TokenName.ETH] = 'ETH';
 
-  let params = {
-    TableName: tokenTableName,
-    FilterExpression: '#isOneToken = :is_one_token',
-    ExpressionAttributeNames: {
-      '#isOneToken': 'isOneToken'
-    },
-    ExpressionAttributeValues: { ':is_one_token': { BOOL: false } }
-  };
   try {
-    const result = await getAllData(params);
-    for (let i = 0; i < result.length; i++) {
-      let item = result[i];
-      let name = item['name']['S'].toLowerCase();
-      tokenPrices[name] = Number(item['price']['N']);
-      tokenNames[name] = item['displayName']['S'];
+    const results = await getDynamoTokens(tokenTableName, false, ChainId.Mainnet);
+    for (const item of results) {
+      const tokenName = item['tokenName']['S'];
+      tokenPrices[tokenName] = Number(item['price']['N']);
+      tokenNames[tokenName] = item['displayName']['S'];
     }
   } catch (error) {
     throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
   }
 
-  params = {
-    TableName: tokenTableName,
-    FilterExpression: '#isOneToken = :is_one_token',
-    ExpressionAttributeNames: {
-      '#isOneToken': 'isOneToken'
-    },
-    ExpressionAttributeValues: { ':is_one_token': { BOOL: true } }
-  };
   try {
-    const result = await getAllData(params);
-    for (let i = 0; i < result.length; i++) {
-      let item = result[i];
-      let name = item['name']['S'].toLowerCase();
-      tokenPrices[name] = Number(item['price']['N']);
-      tokenNames[name] = item['displayName']['S'];
+    const results = await getDynamoTokens(tokenTableName, true, ChainId.Mainnet);
+    for (const item of results) {
+      const tokenName = item['tokenName']['S'];
+      tokenPrices[tokenName] = Number(item['price']['N']);
+      tokenNames[tokenName] = item['displayName']['S'];
     }
   } catch (error) {
     throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
@@ -110,14 +67,13 @@ export const handler = async (event: APIGatewayProxyEvent) => {
 
   const knownIchiPerBlock = {};
 
-  let params_ipb = {
+  const params = {
     TableName: ichiPerBlockTableName
   };
   try {
-    const result = await getAllData(params_ipb);
-    for (let i = 0; i < result.length; i++) {
-      let item = result[i];
-      let poolId = item['poolId']['N'];
+    const results = await getAllData(params);
+    for (const item of results) {
+      const poolId = item['poolId']['N'];
       knownIchiPerBlock[poolId] = item['ichiPerBlock']['N'];
     }
   } catch (error) {

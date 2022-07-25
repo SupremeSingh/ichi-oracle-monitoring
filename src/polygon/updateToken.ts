@@ -63,6 +63,7 @@ export const updateToken = async (
     },
     UpdateExpression:
       'set ' +
+      'tokenName = :tokenName,' +
       'circulating = :circulating, ' +
       'address = :address, ' +
       'decimals = :decimals, ' +
@@ -73,6 +74,7 @@ export const updateToken = async (
       'isOneToken = :isOneToken, ' +
       'supply = :supply',
     ExpressionAttributeValues: {
+      ':tokenName': { S: token.tokenName },
       ':circulating': { N: circulating.toString() },
       ':address': { S: address },
       ':decimals': { N: decimals.toString() },

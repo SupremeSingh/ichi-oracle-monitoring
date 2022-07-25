@@ -17,7 +17,7 @@ import {
   getIchiVaultContract
 } from '@ichidao/ichi-sdk';
 
-const getOneTokenAttributes = async function (tokenName: TokenName, chainId: ChainId) {
+const getOneTokenAttributes = function (tokenName: TokenName, chainId: ChainId): OneTokenTemplate {
   const token = getToken(tokenName, chainId);
   let template: OneTokenTemplate = {
     address: token.address,
@@ -33,7 +33,7 @@ const getOneTokenAttributes = async function (tokenName: TokenName, chainId: Cha
     abi_type: 'ONETOKEN',
     base_name: tokenName,
     // TODO: Logic change
-    collateral_name: chainId === ChainId.Mumbai ? TokenName.USDC : undefined, // 'test_usdc'
+    collateral_name: TokenName.USDC,
     isV2: token.isV2,
     ichiVault: {
       address: token.ichiVault ? token.ichiVault.address : '',
@@ -69,7 +69,7 @@ export const updateTreasuryItem = async (
   tokenPrices: PartialRecord<TokenName, number>,
   chainId: ChainId
 ): Promise<APIGatewayProxyResult> => {
-  const attr = await getOneTokenAttributes(tokenName, chainId);
+  const attr = getOneTokenAttributes(tokenName, chainId);
   const oneTokenAddress = attr.address;
   const strategyAddress = attr.strategy;
   const stimulusTokenAddress = attr.stimulus_address;
