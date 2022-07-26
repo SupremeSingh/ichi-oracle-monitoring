@@ -8,16 +8,10 @@ import { updateFarms as updateFarmsPolygon } from './polygon/updateFarms';
 import { updateFarm } from './updateFarm';
 import { updateFarm as updateFarmKovan } from './kovan/updateFarm';
 import { updateFarm as updateFarmMumbai } from './mumbai/updateFarm';
-import {
-  ChainId,
-  EnvUtils,
-  isFarmV2Kovan,
-  isFarmV2Mumbai,
-  isFarmV2Polygon,
-  PartialRecord,
-  TokenName
-} from '@ichidao/ichi-sdk';
-import { getAllData, getDynamoTokens } from './dynamo';
+import { ChainId, EnvUtils, isFarmV2Kovan, isFarmV2Mumbai, isFarmV2Polygon } from '@ichidao/ichi-sdk';
+import { getTokenPrices } from './utils/tokenPrices';
+import { getTokenNames } from './utils/tokenNames';
+import { getIchiPerBlock } from './utils/ichiPerBlock';
 
 const tokenTableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
 const treasuryTableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
@@ -39,67 +33,44 @@ export const handler = async (event: APIGatewayProxyEvent) => {
     await updateTokensPolygon(tokenTableName, ChainId.Polygon);
   }
 
-  const tokenPrices: PartialRecord<TokenName, number> = {};
-  const tokenNames: PartialRecord<TokenName, string> = {};
-  tokenNames[TokenName.ETH] = 'ETH';
+  const mainnetTokenPrices = await getTokenPrices(tokenTableName, ChainId.Mainnet);
+  const mainnetTokenNames = await getTokenNames(tokenTableName, ChainId.Mainnet);
 
-  try {
-    const results = await getDynamoTokens(tokenTableName, false, ChainId.Mainnet);
-    for (const item of results) {
-      const tokenName = item['tokenName']['S'];
-      tokenPrices[tokenName] = Number(item['price']['N']);
-      tokenNames[tokenName] = item['displayName']['S'];
-    }
-  } catch (error) {
-    throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
-  }
+  const polygonTokenPrices = await getTokenPrices(tokenTableName, ChainId.Polygon);
+  const polygonTokenNames = await getTokenNames(tokenTableName, ChainId.Polygon);
 
-  try {
-    const results = await getDynamoTokens(tokenTableName, true, ChainId.Mainnet);
-    for (const item of results) {
-      const tokenName = item['tokenName']['S'];
-      tokenPrices[tokenName] = Number(item['price']['N']);
-      tokenNames[tokenName] = item['displayName']['S'];
-    }
-  } catch (error) {
-    throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
-  }
-
-  const knownIchiPerBlock = {};
-
-  const params = {
-    TableName: ichiPerBlockTableName
-  };
-  try {
-    const results = await getAllData(params);
-    for (const item of results) {
-      const poolId = item['poolId']['N'];
-      knownIchiPerBlock[poolId] = item['ichiPerBlock']['N'];
-    }
-  } catch (error) {
-    throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
-  }
+  let knownIchiPerBlock = await getIchiPerBlock(ichiPerBlockTableName);
 
   //console.log(tokenPrices);
   //console.log(tokenNames);
   //console.log(knownIchiPerBlock);
 
   if (poolId === -1) {
-    await updateFarmsPolygon(farmsTableName, tokenPrices, tokenNames, knownIchiPerBlock, ChainId.Polygon);
-    await updateTreasuryPolygon(treasuryTableName, tokenPrices, ChainId.Polygon);
-    await updateFarms(farmsTableName, tokenPrices, tokenNames, knownIchiPerBlock, ChainId.Mainnet);
-    await updateTreasury(treasuryTableName, tokenPrices, tokenNames, ChainId.Mainnet);
+    await updateFarmsPolygon(farmsTableName, polygonTokenPrices, polygonTokenNames, knownIchiPerBlock, ChainId.Polygon);
+    await updateTreasuryPolygon(treasuryTableName, polygonTokenPrices, ChainId.Polygon);
+
+    await updateFarms(farmsTableName, mainnetTokenPrices, mainnetTokenNames, knownIchiPerBlock, ChainId.Mainnet);
+    await updateTreasury(treasuryTableName, mainnetTokenPrices, mainnetTokenNames, ChainId.Mainnet);
   } else {
     if (isFarmV2Kovan(poolId)) {
       // Kovan farms
-      await updateFarmKovan(farmsTableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, ChainId.Kovan);
+      const kovanTokenPrices = await getTokenPrices(tokenTableName, ChainId.Kovan);
+      const kovanTokenNames = await getTokenNames(tokenTableName, ChainId.Kovan);
+      await updateFarmKovan(
+        farmsTableName,
+        poolId,
+        kovanTokenPrices,
+        kovanTokenNames,
+        knownIchiPerBlock,
+        ChainId.Kovan
+      );
     } else if (isFarmV2Polygon(poolId)) {
       // Polygon farms
       await updateFarm(
         farmsTableName,
         poolId,
-        tokenPrices,
-        tokenNames,
+        polygonTokenPrices,
+        polygonTokenNames,
         knownIchiPerBlock,
         false,
         false,
@@ -107,14 +78,23 @@ export const handler = async (event: APIGatewayProxyEvent) => {
       );
     } else if (isFarmV2Mumbai(poolId)) {
       // Mumbai farms
-      await updateFarmMumbai(farmsTableName, poolId, tokenPrices, tokenNames, knownIchiPerBlock, ChainId.Mumbai);
+      const mumbaiTokenPrices = await getTokenPrices(tokenTableName, ChainId.Mumbai);
+      const mumbaiTokenNames = await getTokenNames(tokenTableName, ChainId.Mumbai);
+      await updateFarmMumbai(
+        farmsTableName,
+        poolId,
+        mumbaiTokenPrices,
+        mumbaiTokenNames,
+        knownIchiPerBlock,
+        ChainId.Mumbai
+      );
     } else {
       // Mainnet farms
       await updateFarm(
         farmsTableName,
         poolId,
-        tokenPrices,
-        tokenNames,
+        mainnetTokenPrices,
+        mainnetTokenNames,
         knownIchiPerBlock,
         false,
         false,

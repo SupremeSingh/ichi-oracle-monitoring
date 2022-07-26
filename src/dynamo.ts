@@ -26,15 +26,17 @@ export const getAllData = async (params) => {
   return rows;
 };
 
-export async function getDynamoTokens(tableName: string, isOneToken: boolean, chainId: ChainId): Promise<any[]> {
+export async function getDynamoTokens(tableName: string, chainId: ChainId): Promise<any[]> {
   let params = {
     TableName: tableName,
-    FilterExpression: '#isOneToken = :is_one_token AND #chainId = :chain_id',
+    // FilterExpression: '#isOneToken = :is_one_token AND #chainId = :chain_id',
+    FilterExpression: '#chainId = :chain_id',
     ExpressionAttributeNames: {
-      '#isOneToken': 'isOneToken',
+      // '#isOneToken': 'isOneToken',
       '#chainId': 'chainId'
     },
-    ExpressionAttributeValues: { ':is_one_token': { BOOL: isOneToken }, ':chain_id': { N: chainId.toString() } }
+    // ExpressionAttributeValues: { ':is_one_token': { BOOL: isOneToken }, ':chain_id': { N: chainId.toString() } }
+    ExpressionAttributeValues: { ':chain_id': { N: chainId.toString() } }
   };
   try {
     const results = await getAllData(params);

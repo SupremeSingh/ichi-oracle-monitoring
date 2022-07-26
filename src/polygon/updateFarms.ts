@@ -1,13 +1,22 @@
 import { getSubgraphPoolRecords, GraphFarm } from '../subgraph/farm_v2';
 import { APIGatewayProxyResult } from 'aws-lambda';
-import { adjustedPid, ChainId, isFarmV2, Pools } from '@ichidao/ichi-sdk';
+import {
+  adjustedPid,
+  ChainId,
+  isFarmV2,
+  MainnetPoolNumbers,
+  PartialRecord,
+  PolygonPoolNumbers,
+  Pools,
+  TokenName
+} from '@ichidao/ichi-sdk';
 import { updateFarm } from '../updateFarm';
 
 export const updateFarms = async (
   tableName: string,
-  tokenPrices: { [name: string]: number },
-  tokenNames: { [name: string]: string },
-  knownIchiPerBlock: { [poolId: string]: string },
+  tokenPrices: PartialRecord<TokenName, number>,
+  tokenNames: PartialRecord<TokenName, string>,
+  knownIchiPerBlock: PartialRecord<MainnetPoolNumbers | PolygonPoolNumbers, number>,
   chainId: ChainId
 ) => {
   let graph_farm = await getSubgraphPoolRecords();

@@ -2,9 +2,10 @@ import { APIGatewayProxyEvent } from 'aws-lambda';
 import { updateTreasury } from './updateTreasury';
 import { updateFarms } from './updateFarms';
 import { updateTokens } from './updateTokens';
-import { ChainId, EnvUtils, PartialRecord, TokenName } from '@ichidao/ichi-sdk';
+import { ChainId, EnvUtils } from '@ichidao/ichi-sdk';
 import { updateFarm } from '../updateFarm';
-import { getDynamoTokens } from '../dynamo';
+import { getTokenPrices } from '../utils/tokenPrices';
+import { getTokenNames } from '../utils/tokenNames';
 
 const tokenTableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
 const treasuryTableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
@@ -24,31 +25,8 @@ export const handler = async (event: APIGatewayProxyEvent) => {
     await updateTokens(tokenTableName, ChainId.Polygon);
   }
 
-  const tokenPrices: PartialRecord<TokenName, number> = {};
-  const tokenNames: PartialRecord<TokenName, string> = {};
-  tokenNames[TokenName.ETH] = 'ETH';
-
-  try {
-    const results = await getDynamoTokens(tokenTableName, false, ChainId.Polygon);
-    for (const item of results) {
-      const tokenName = item['tokenName']['S'].toLowerCase();
-      tokenPrices[tokenName] = Number(item['price']['N']);
-      tokenNames[tokenName] = item['displayName']['S'];
-    }
-  } catch (error) {
-    throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
-  }
-
-  try {
-    const results = await getDynamoTokens(tokenTableName, true, ChainId.Polygon);
-    for (const item of results) {
-      const tokenName = item['tokenName']['S'];
-      tokenPrices[tokenName] = Number(item['price']['N']);
-      tokenNames[tokenName] = item['displayName']['S'];
-    }
-  } catch (error) {
-    throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
-  }
+  const tokenPrices = await getTokenPrices(tokenTableName, ChainId.Polygon);
+  const tokenNames = await getTokenNames(tokenTableName, ChainId.Polygon);
 
   //console.log(tokenPrices);
   //console.log(tokenNames);

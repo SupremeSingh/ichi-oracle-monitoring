@@ -3,9 +3,10 @@ import { updateTokens } from './updateTokens';
 import { updateTreasury } from './updateTreasury';
 import { updateFarms } from './updateFarms';
 import { updateFarm } from './updateFarm';
-import { dbClient } from '../configMainnet';
-import { ChainId, EnvUtils, PartialRecord, TokenName } from '@ichidao/ichi-sdk';
-import { getAllData, getDynamoTokens } from '../dynamo';
+import { ChainId, EnvUtils } from '@ichidao/ichi-sdk';
+import { getTokenPrices } from '../utils/tokenPrices';
+import { getTokenNames } from '../utils/tokenNames';
+import { getIchiPerBlock } from '../utils/ichiPerBlock';
 
 const tokenTableName = process.env.TOKEN_TABLE_NAME || 'token-dev';
 const treasuryTableName = process.env.TREASURY_TABLE_NAME || 'treasury-dev';
@@ -24,46 +25,9 @@ export const handler = async (event: APIGatewayProxyEvent) => {
 
   await updateTokens(tokenTableName, ChainId.Mumbai);
 
-  const tokenPrices: PartialRecord<TokenName, number> = {};
-  const tokenNames: PartialRecord<TokenName, string> = {};
-  tokenNames[TokenName.ETH] = 'ETH';
-
-  try {
-    const results = await getDynamoTokens(tokenTableName, false, ChainId.Polygon);
-    for (const item of results) {
-      const tokenName = item['tokenName']['S'];
-      tokenPrices[tokenName] = Number(item['price']['N']);
-      tokenNames[tokenName] = item['displayName']['S'];
-    }
-  } catch (error) {
-    throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
-  }
-
-  try {
-    const results = await getDynamoTokens(tokenTableName, true, ChainId.Polygon);
-    for (const item of results) {
-      const tokenName = item['tokenName']['S'];
-      tokenPrices[tokenName] = Number(item['price']['N']);
-      tokenNames[tokenName] = item['displayName']['S'];
-    }
-  } catch (error) {
-    throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
-  }
-
-  const knownIchiPerBlock = {};
-
-  let params_ipb = {
-    TableName: ichiPerBlockTableName
-  };
-  try {
-    const results = await getAllData(params_ipb);
-    for (const item of results) {
-      const poolId = item['poolId']['N'];
-      knownIchiPerBlock[poolId] = item['ichiPerBlock']['N'];
-    }
-  } catch (error) {
-    throw new Error(`Error in dynamoDB: ${JSON.stringify(error)}`);
-  }
+  const tokenPrices = await getTokenPrices(tokenTableName, ChainId.Mumbai);
+  const tokenNames = await getTokenNames(tokenTableName, ChainId.Mumbai);
+  let knownIchiPerBlock = await getIchiPerBlock(ichiPerBlockTableName);
 
   //console.log(tokenPrices);
   //console.log(tokenNames);
