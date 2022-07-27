@@ -50,6 +50,8 @@ export const updateToken = async (
     const ichiAllyBalance = Number(await ichiV2Contract.balanceOf(getAddress(AddressName.ALLY, chainId))) / 10 ** 18;
     const ichiInV2Balance =
       Number(await tokenContract.balanceOf(getToken(TokenName.ICHI_V2, chainId).address)) / 10 ** 9;
+    const ichiV2GSRBalance = Number(await ichiV2Contract.balanceOf(getAddress(AddressName.GSR, chainId))) / 10 ** 18
+
     circulating =
       totalTokens +
       ichiV2TotalSupply -
@@ -59,7 +61,10 @@ export const updateToken = async (
       ichiInV2Balance -
       communityGnosisBalance -
       ichiV2GnosisBalance -
-      ichiAllyBalance;
+      ichiAllyBalance - 
+      ichiV2GSRBalance;
+
+      // console.log(circulating);
   }
 
   if (tokenName == TokenName.ICHI_V2) {
@@ -76,6 +81,8 @@ export const updateToken = async (
     const ichiAllyBalance = Number(await tokenContract.balanceOf(getAddress(AddressName.ALLY, chainId))) / 10 ** 18;
     const ichiInV2Balance =
       Number(await ichiContract.balanceOf(getToken(TokenName.ICHI_V2, chainId).address)) / 10 ** 9;
+    const ichiGSRBalance = Number(await ichiContract.balanceOf(getAddress(AddressName.GSR, chainId))) / 10 ** 18
+
     circulating =
       totalTokens +
       ichiTotalSupply -
@@ -85,7 +92,10 @@ export const updateToken = async (
       ichiInV2Balance -
       communityGnosisBalance -
       ichiV2GnosisBalance -
-      ichiAllyBalance;
+      ichiAllyBalance - 
+      ichiGSRBalance;
+
+      // console.log(circulating);
   }
 
   console.log(tokenName);

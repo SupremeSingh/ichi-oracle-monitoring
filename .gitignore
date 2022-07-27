@@ -10,6 +10,7 @@ build/
 dist/
 node_modules/
 aws-exports.js
+package-lock.json
 awsconfiguration.json
 amplifyconfiguration.json
 amplifyconfiguration.dart
