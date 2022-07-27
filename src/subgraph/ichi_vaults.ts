@@ -559,8 +559,13 @@ export async function getOneTokenPriceFromVault(
 ): Promise<number> {
   let vaultAddress = '';
   let inverted = true;
+  let ichiDecimals = 9;
   if (name == TokenName.ONE_BTC) {
     vaultAddress = getToken(TokenName.ONE_BTC, chainId).ichiVault.address;
+  }
+  if (name == TokenName.ALLY) {
+    vaultAddress = getVault(VaultName.ALLY, chainId).address;
+    ichiDecimals = 18;
   }
   if (name == TokenName.ONE_UNI) {
     vaultAddress = getToken(TokenName.ONE_UNI, chainId).ichiVault.address;
@@ -577,7 +582,7 @@ export async function getOneTokenPriceFromVault(
   const slot0 = await poolContract.slot0();
 
   const sqrtPrice = slot0[0];
-  const price = getPrice(inverted, sqrtPrice, 18, 9, 5);
+  const price = getPrice(inverted, sqrtPrice, 18, ichiDecimals, 5);
   //console.log(price);
   //console.log(ichi_price / price);
 

@@ -99,18 +99,14 @@ export const updateToken = async (
   }
 
   console.log(tokenName);
-  /*  if (parentOneToken && parentOneToken != "") {
-    price = await lookUpMemberTokenPrice(TOKENS[parentOneToken]['address'], address, decimals);
-  } else if (isOneToken) {*/
-  if (token.isOneToken) {
+  if (tokenName == 'onebtc' || tokenName == 'oneuni' || tokenName == 'ally') {
+    // special case - get price from oneToken/ICHI vault's pool
+    const ichiV2Token = getToken(TokenName.ICHI_V2, chainId);
+    let tokenPrices = await lookUpTokenPrices([ichiV2Token.address.toLowerCase()]);
+    let ichiPrice = tokenPrices[ichiV2Token.address.toLowerCase()].usd;
+    price = await getOneTokenPriceFromVault(tokenName, ichiPrice, provider, chainId);
+  } else if (token.isOneToken) {
     price = 1;
-    if (tokenName == 'onebtc' || tokenName == 'oneuni') {
-      // special case - get price from oneToken/ICHI vault's pool
-      const ichiV2Token = getToken(TokenName.ICHI_V2, chainId);
-      let tokenPrices = await lookUpTokenPrices([ichiV2Token.address.toLowerCase()]);
-      let ichiPrice = tokenPrices[ichiV2Token.address.toLowerCase()].usd;
-      price = await getOneTokenPriceFromVault(tokenName, ichiPrice, provider, chainId);
-    }
   } else {
     switch (tokenName) {
       case TokenName.USDC:
