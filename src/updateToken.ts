@@ -81,7 +81,7 @@ export const updateToken = async (
     const ichiAllyBalance = Number(await tokenContract.balanceOf(getAddress(AddressName.ALLY, chainId))) / 10 ** 18;
     const ichiInV2Balance =
       Number(await ichiContract.balanceOf(getToken(TokenName.ICHI_V2, chainId).address)) / 10 ** 9;
-    const ichiGSRBalance = Number(await ichiContract.balanceOf(getAddress(AddressName.GSR, chainId))) / 10 ** 18
+    const ichiGSRBalance = Number(await tokenContract.balanceOf(getAddress(AddressName.GSR, chainId))) / 10 ** 18
 
     circulating =
       totalTokens +
