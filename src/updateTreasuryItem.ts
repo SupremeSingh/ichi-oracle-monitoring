@@ -105,6 +105,7 @@ export const updateTreasuryItem = async (
   const bmiStaking = getBmiStakingContract(getAddress(AddressName.BMI_STAKING, chainId), provider);
   const _1InchStaking = get1InchStakingContract(getAddress(AddressName._1INCH_STAKING, chainId), provider);
   const st1INCH = getErc20Contract(getAddress(AddressName.ST1INCH, chainId), provider);
+  const _1Inch = getOneTokenV1Contract(getToken(TokenName['1INCH'], chainId).address, provider);
   // const riskHarbor = new ethers.Contract(ADDRESSES.risk_harbor, RISKHARBOR_ABI, provider);
 
   const oneTokenUsdc = Number(await usdc.balanceOf(oneTokenAddress));
@@ -131,6 +132,7 @@ export const updateTreasuryItem = async (
   let strategy_balance_wbtc = 0;
   let strategy_balance_bmi_usdt = 0;
   let strategy_balance_st1inch = 0;
+  let strategy_balance_1inch = 0;
   let uni_v3_positions = 0;
   let aux_strategy_balance_riskharbor_usdc = 0;
   let aux_strategy_balance_usdc = 0;
@@ -404,6 +406,26 @@ export const updateTreasuryItem = async (
     }
   }
 
+  // special case of one1Inch investing into 1Inch-ICHI vault
+  if (tokenName.toLowerCase() === TokenName.ONE_1INCH.toLowerCase()) {
+
+      const oneInchVault = getIchiVaultContract(VAULTS[VaultName['1INCH']][chainId].address, provider);
+    
+      let strategy_balance_vault_lp = Number(await oneInchVault.balanceOf(strategyAddress));
+      const vault_total_lp = Number(await oneInchVault.totalSupply());
+      const vault_total_amounts = await oneInchVault.getTotalAmounts();
+      
+      if (strategy_balance_vault_lp > 0) {
+          const vault_ratio = strategy_balance_vault_lp / vault_total_lp;
+          strategy_balance_1inch += (Number(vault_total_amounts.total0) * vault_ratio); 
+          strategy_balance_ichi += Number(vault_total_amounts.total1) * vault_ratio / 
+            10 ** (TOKENS[TokenName.ICHI_V2][chainId].decimals - TOKENS[TokenName.ICHI][chainId].decimals);
+      }
+  }
+  // console.log(`ICHI Balance ${strategy_balance_ichi}`);
+  // console.log(`1INCH Balance ${strategy_balance_1inch}`);
+  
+
   // TODO: Logic change, review
   // if (tokenName == 'oneDODO') {
   if (tokenName == TokenName.ONE_DODO) {
@@ -643,7 +665,8 @@ export const updateTreasuryItem = async (
   // TODO: Logic change, review
   // if (tokenName == 'one1INCH') {
   if (tokenName == TokenName.ONE_1INCH) {
-    stimulusPositionsUSDValue += Number(oneToken_stimulus_price) * (strategy_balance_st1inch / 10 ** stimulusDecimals);
+    stimulusPositionsUSDValue += Number(oneToken_stimulus_price) * (strategy_balance_st1inch / 10 ** stimulusDecimals) + 
+    Number(oneToken_stimulus_price) * (strategy_balance_1inch / 10 ** stimulusDecimals);
   }
 
   // TODO: Logic change, review
@@ -825,7 +848,8 @@ export const updateTreasuryItem = async (
     strategy_balance_ally > 0 ||
     strategy_balance_oja > 0 ||
     //strategy_balance_usdc_treasury > 0 ||
-    strategy_balance_st1inch > 0
+    strategy_balance_st1inch > 0 ||
+    strategy_balance_1inch
   ) {
     const assets = [];
     if (strategy_balance_stimulus > 0) {
@@ -886,6 +910,14 @@ export const updateTreasuryItem = async (
         M: {
           name: { S: 'st1INCH' },
           balance: { N: Number(strategy_balance_st1inch / 10 ** stimulusDecimals).toString() }
+        }
+      });
+    }
+    if (tokenName === TokenName.ONE_1INCH && Number(strategy_balance_1inch) > 0) {
+      assets.push({
+        M: {
+          name: { S: '1INCH' },
+          balance: { N: Number(strategy_balance_1inch / 10 ** stimulusDecimals).toString() }
         }
       });
     }
