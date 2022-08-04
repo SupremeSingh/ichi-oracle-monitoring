@@ -111,6 +111,7 @@ export const updateToken = async (
     switch (tokenName) {
       case TokenName.USDC:
       case TokenName.DAI:
+      case TokenName.HOME:
         price = 1;
         break;
       case TokenName.XICHI:
