@@ -101,6 +101,7 @@ export const updateTreasuryItem = async (
   const oneTokenContract = getOneTokenContract(oneTokenAddress as TokenName);
   const oneToken = oneTokenContract.connect(oneTokenAddress, provider);
   const oneUNI = getOneTokenV1Contract(getToken(TokenName.ONE_UNI, chainId).address, provider);
+  const oneGIV = getOneTokenV1Contract(getToken(TokenName.ONE_GIV, chainId).address, provider);
   const giv = getOneTokenV1Contract(getToken(TokenName.GIV, chainId).address, provider);
   const oneBTC = getOneTokenV1Contract(getToken(TokenName.ONE_BTC, chainId).address, provider);
   const bmiStaking = getBmiStakingContract(getAddress(AddressName.BMI_STAKING, chainId), provider);
@@ -157,6 +158,12 @@ export const updateTreasuryItem = async (
       strategy_balance_one_btc += Number(await oneBTC.balanceOf(strategyAddress));
     }
     strategy_balance_ichi += Number(await ichi.balanceOf(strategyAddress));
+    
+    /*
+    if (tokenName.toLowerCase() !== TokenName.ONE_GIV.toLowerCase()) {
+      strategy_balance_one_giv += Number(await oneGIV.balanceOf(strategyAddress));
+    }
+    */
 
     let strategy_balance_vault_lp = 0;
     if (attr.ichiVault.farm > 0 && attr.ichiVault.externalFarm === '') {
@@ -241,14 +248,9 @@ export const updateTreasuryItem = async (
         console.log('no risk harbor data');
       }
 
-      // special case of EOA holding Giveth 
-      if (tokenName.toLowerCase() === TokenName.ONE_GIV.toLowerCase()) {
-        strategy_balance_giv += Number(await giv.balanceOf(auxStrategyAddress));
-      }
-
-      console.log(`Strategy is ${auxStrategyAddress}`)
-      console.log(`OneGIV Balance is ${strategy_balance_giv}`)
-
+      strategy_balance_stimulus += Number(await stimulusToken.balanceOf(auxStrategyAddress));
+      strategy_balance_onetoken += Number(await oneToken.balanceOf(auxStrategyAddress));
+      
       // special case of oneUNI investing into OneICHI vault
       if (tokenName.toLowerCase() === TokenName.ONE_UNI.toLowerCase()) {
         const oneICHIVault = getIchiVaultContract(VAULTS[VaultName.ONEICHI_ICHI][chainId].address, provider);
@@ -710,6 +712,7 @@ export const updateTreasuryItem = async (
     strategy_balance_one_oja / 10 ** 18 +
     (strategy_balance_one_giv * onegiv_price) / 10 ** 18 +
     (strategy_balance_one_ichi * oneichi_price) / 10 ** 18 +
+    (strategy_balance_one_giv * onegiv_price) / 10 ** 18 +
     usdc_price * (strategy_balance_usdc / 10 ** getToken(TokenName.USDC, chainId).decimals) +
     usdc_price * (aux_strategy_balance_riskharbor_usdc / 10 ** getToken(TokenName.USDC, chainId).decimals) +
     usdt_price * (strategy_balance_bmi_usdt / 10 ** 18);
