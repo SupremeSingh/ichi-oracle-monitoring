@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.5.8",
-    "@ichidao/ichi-sdk": "^0.0.33",
+    "@ichidao/ichi-sdk": "^0.0.34",
     "@thanpolas/univ3prices": "^3.0.2",
     "@uniswap/sdk": "^3.0.3",
     "axios": "^0.20.0",

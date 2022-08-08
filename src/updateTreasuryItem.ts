@@ -101,6 +101,7 @@ export const updateTreasuryItem = async (
   const oneTokenContract = getOneTokenContract(oneTokenAddress as TokenName);
   const oneToken = oneTokenContract.connect(oneTokenAddress, provider);
   const oneUNI = getOneTokenV1Contract(getToken(TokenName.ONE_UNI, chainId).address, provider);
+  const giv = getOneTokenV1Contract(getToken(TokenName.GIV, chainId).address, provider);
   const oneBTC = getOneTokenV1Contract(getToken(TokenName.ONE_BTC, chainId).address, provider);
   const bmiStaking = getBmiStakingContract(getAddress(AddressName.BMI_STAKING, chainId), provider);
   const _1InchStaking = get1InchStakingContract(getAddress(AddressName._1INCH_STAKING, chainId), provider);
@@ -126,7 +127,9 @@ export const updateTreasuryItem = async (
   let strategy_balance_one_btc = 0;
   let strategy_balance_one_uni = 0;
   let strategy_balance_one_oja = 0;
+  let strategy_balance_one_giv = 0;
   let strategy_balance_oja = 0;
+  let strategy_balance_giv = 0;
   let strategy_balance_ichi = 0;
   let strategy_balance_one_ichi = 0;
   let strategy_balance_wbtc = 0;
@@ -237,6 +240,14 @@ export const updateTreasuryItem = async (
       } else {
         console.log('no risk harbor data');
       }
+
+      // special case of EOA holding Giveth 
+      if (tokenName.toLowerCase() === TokenName.ONE_GIV.toLowerCase()) {
+        strategy_balance_giv += Number(await giv.balanceOf(auxStrategyAddress));
+      }
+
+      console.log(`Strategy is ${auxStrategyAddress}`)
+      console.log(`OneGIV Balance is ${strategy_balance_giv}`)
 
       // special case of oneUNI investing into OneICHI vault
       if (tokenName.toLowerCase() === TokenName.ONE_UNI.toLowerCase()) {
@@ -645,6 +656,7 @@ export const updateTreasuryItem = async (
   let oneToken_price = 1;
   let onebtc_price = 1;
   let oneichi_price = 1;
+  let onegiv_price = 1;
   let oneuni_price = 1;
   /*onebtc_price = tokenPrices['onebtc'];
   oneuni_price = tokenPrices['oneuni'];
@@ -696,6 +708,7 @@ export const updateTreasuryItem = async (
     (strategy_balance_one_uni * oneuni_price) / 10 ** 18 +
     (strategy_balance_one_btc * onebtc_price) / 10 ** 18 +
     strategy_balance_one_oja / 10 ** 18 +
+    (strategy_balance_one_giv * onegiv_price) / 10 ** 18 +
     (strategy_balance_one_ichi * oneichi_price) / 10 ** 18 +
     usdc_price * (strategy_balance_usdc / 10 ** getToken(TokenName.USDC, chainId).decimals) +
     usdc_price * (aux_strategy_balance_riskharbor_usdc / 10 ** getToken(TokenName.USDC, chainId).decimals) +
@@ -734,6 +747,7 @@ export const updateTreasuryItem = async (
     strategy_balance_one_uni > 0 ||
     strategy_balance_one_btc > 0 ||
     strategy_balance_one_ichi ||
+    strategy_balance_one_giv ||
     strategy_balance_one_oja > 0 ||
     aux_strategy_balance_riskharbor_usdc > 0 ||
     strategy_balance_bmi_usdt > 0
@@ -803,6 +817,14 @@ export const updateTreasuryItem = async (
         },
       });
     }
+    if (strategy_balance_one_giv > 0) {
+      assets.push({
+        M: {
+          name: { S: 'oneGIV' },
+          balance: { N: Number(strategy_balance_one_giv / 10 ** 18).toString() },
+        },
+      });
+    }
     if (strategy_balance_bmi_usdt > 0) {
       assets.push({
         M: {
@@ -847,6 +869,7 @@ export const updateTreasuryItem = async (
     strategy_balance_wbtc > 0 ||
     strategy_balance_ally > 0 ||
     strategy_balance_oja > 0 ||
+    strategy_balance_giv > 0 ||
     //strategy_balance_usdc_treasury > 0 ||
     strategy_balance_st1inch > 0 ||
     strategy_balance_1inch
@@ -899,6 +922,14 @@ export const updateTreasuryItem = async (
         M: {
           name: { S: 'OJA' },
           balance: { N: Number(strategy_balance_oja / 10 ** 18).toString() }
+        }
+      });
+    }
+    if (strategy_balance_giv > 0) {
+      assets.push({
+        M: {
+          name: { S: 'GIV' },
+          balance: { N: Number(strategy_balance_giv / 10 ** 18).toString() }
         }
       });
     }
