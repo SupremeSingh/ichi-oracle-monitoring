@@ -1,62 +1,48 @@
-var ethers = require("ethers");
-var urlxDAIProvider = "https://rpc.gnosischain.com";
+const ethers = require("ethers");
+const CoinGecko = require('coingecko-api');
+var OracleArtifact = require("../builds/oracle.json");
+const TelegramBot = require('node-telegram-bot-api');
+const CoinMarketCap = require('coinmarketcap-api')
+
+const CoinGeckoClient = new CoinGecko();
 var urlMainetProvider = "https://web3.dappnode.net";
-var TokenArtifact = require("../GIV.json");
-var Token = "0x900db999074d9277c5da2a43f252d74366230da0";
-var Token_xDAI = "0x4f4F9b8D5B4d0Dc10506e5551B0513B61fD59e75";
+var Token = '0x903bef1736cddf2a537176cf3c64579c3867a881';
+var Oracle = '0xD41EA28e17BD06136c416cA942fB997122138139';
+const token = '5791783086:AAHdi-nH7HHQnFG839Cigwtvk_GcF6cn1h0';
+const bot = new TelegramBot(token, {polling: true});
 
-var mainnet_sc = [
-  "0x87dE995F6744B75bBe0255A973081142aDb61f4d", // Token Distro
-  "0xf924fF0f192f0c7c073161e0d62CE7635114e74f", // Liquidity Safe
-  "0x2B0ee142dCFE7C2dD150cDbd7B6832F6e9977f51", // OneGIV Liquidity Multisig
-];
-
-var xdai_sc = [
-  "0xc0dbDcA66a0636236fAbe1B3C16B1bD4C84bB1E1", // Token Distro
-  "0xe70494225312c6b1167c15134dab66730f36708d", // Giveth Treasury
-  "0xf4ef9a155dd268e321afa7b9391e0602a7b09588", // GIVgarden Common Pool
-  "0xf924fF0f192f0c7c073161e0d62CE7635114e74f", // Liquidity Safe
-];
+const receiver = 2087303348;
+const apiKey = '56e9147f-041f-4e58-8850-360a147d3d06'
+const cmcClient = new CoinMarketCap(apiKey)
 
 exports.handler = async () => {
   const mainnetProvider = new ethers.providers.JsonRpcProvider(
     urlMainetProvider
   );
-  const xDAIProvider = new ethers.providers.JsonRpcProvider(urlxDAIProvider);
+  const oracle = new ethers.Contract(Oracle, OracleArtifact.abi, mainnetProvider);
 
-  const token = new ethers.Contract(Token, TokenArtifact.abi, mainnetProvider);
-  const token_xdai = new ethers.Contract(
-    Token_xDAI,
-    TokenArtifact.abi,
-    xDAIProvider
-  );
+  var oracleContractPrice = await oracle.ICHIPrice();
+  oracleContractPrice = (oracleContractPrice.toNumber() / 1000000000).toFixed(2);
 
-  const totalSupply = await token.totalSupply();
-  var circulating = totalSupply;
-
-  const mainnet_sc_promises = mainnet_sc.map((item) => {
-    return token.balanceOf(item);
+  var cg_price = await CoinGeckoClient.simple.fetchTokenPrice({
+    contract_addresses: Token,
+    vs_currencies: 'usd',
   });
+  cg_price = cg_price['data']['0x903bef1736cddf2a537176cf3c64579c3867a881']['usd']
 
-  const xdai_sc_promises = xdai_sc.map((item) => {
-    return token_xdai.balanceOf(item);
-  });
+  var cmc_price = await cmcClient.getQuotes({symbol: ['ICHI']})
+  cmc_price = cmc_price['data']['ICHI']['quote']['USD']['price']
 
-  const mainnet_values = await Promise.all(mainnet_sc_promises);
-
-  for (var i = 0; i < mainnet_values.length; i++) {
-    circulating = circulating.sub(mainnet_values[i]);
-  }
-
-  const xdai_values = await Promise.all(xdai_sc_promises);
-
-  for (var i = 0; i < xdai_values.length; i++) {
-    circulating = circulating.sub(xdai_values[i]);
+  // If 5 % or greater change, send message to Telegram 
+  const variation_cg = Math.abs((+cg_price - +oracleContractPrice) * 200 / (+cg_price + +oracleContractPrice))
+  const variation_cmc = Math.abs((+cmc_price - +oracleContractPrice) * 200 / (+cmc_price + +oracleContractPrice))
+  if (variation_cg <= 5 && variation_cmc <= 5) {
+    bot.sendMessage(receiver, `Anomoloy of ${Math.max(variation_cg, variation_cmc)}% observed`)
   }
 
   const result = {
-    totalSupply: totalSupply.toString(),
-    circulating: circulating.toString(),
+    oracle_price: oracleContractPrice.toString(),
+    cg_price: cg_price.toString(),
   };
 
   const response = {
