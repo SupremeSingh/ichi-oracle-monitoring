@@ -1,6 +1,6 @@
 const ethers = require("ethers");
 const CoinGecko = require('coingecko-api');
-var OracleArtifact = require("../builds/oracle.json");
+var OracleArtifact = require("../oracle.json");
 const TelegramBot = require('node-telegram-bot-api');
 const CoinMarketCap = require('coinmarketcap-api')
 
