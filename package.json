@@ -4,12 +4,21 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "node-lambda run",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "ethers": "^5.4.1"
+    "big-number": "^2.0.0",
+    "coinbase-pro-node-api": "^4.0.1",
+    "coingecko-api": "^1.0.10",
+    "coinmarketcap-api": "^3.1.1",
+    "discord.js": "^14.3.0",
+    "dotenv": "^16.0.2",
+    "ethers": "^5.4.1",
+    "messaging-api-telegram": "^1.1.0",
+    "node-telegram-bot-api": "^0.59.0"
   },
   "devDependencies": {
     "node-lambda": "^1.0.0"

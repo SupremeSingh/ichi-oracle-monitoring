@@ -1,37 +1,38 @@
-# GIV Circulating Supply Lambda Function
+# ICHI Price Oracle  Monitoring
 
-This lambda function returns the current GIV token circulating and total supply. The lambda function has two variations to meet the [CoinGecko](https://www.coingecko.com/en/coins/giveth) and [CoinMarketCap](https://coinmarketcap.com/currencies/giveth/) circulating supply criteria.
+## 1 - ICHI Oracle Aggregator 
 
-- [CoinGecko's GIV supply API.](https://circulating.giveth.io/token-supply)
-- [CoinMarketCap's GIV supply API.](https://supply.giveth.io/giv-supply-cmc?q=circulating)
+This [contract](https://github.com/ichifarm/util-contracts/blob/94a50c0d5d09a2d6b092cc309976634ffaa409bd/contracts/oracles/ICHIOracleAggregator.sol)   is used to handle the oracles being used by the ICHI DeFi System. It uses the following functions - 
 
+- setOracles()
+- ICHIPrice()
+- xICHIPrice()
+- normalizedToTokens()
 
-## Installing the dependencies
-```
-npm install
-```
+Importantly, `ICHIPrice()` can accept upto 3 total oracles. They return a price for the ICHI tokens if the deviation between the price feeds from the input oracles is less than a threshold. 
 
-## Running the Lambda function locally
-To select the CoinGecko function:
+As of now, we are using the following oracles - 
 
-```
-cd coingecko
-```
-Or to select the CoinMarketCap function:
-```
-cd coinmarketcap
-```
-Then running the lambda function locally:
-```
-node-lambda run
-```
+- ICHI/USD - [Uniswap](https://etherscan.io/address/0x1f8340Aef6B33d12C89e901DDe312467c2F146E2)
+- ICHI/USD - [Bancor](https://etherscan.io/address/0xE0191c950B2c19D7A470B00c59969c17fCD9a150)
 
-## Deploying to AWS
-Create `token-supply` AWS Lambda function, then:
-```
-npm i
-zip -r function.zip NODE.json index.js node_modules
-aws lambda update-function-code --function-name token-supply --zip-file fileb://function.zip
-```
+## Additional Sources - 
 
-After that, API Gateway needs to be set up manually.
+We could use a set of off-chain price sources for the ICHI token such as
+
+- Coin Gecko (https://www.coingecko.com/en/coins/ichi)
+- Coin Base (https://www.coinbase.com/price/ichi)
+- Kraken (https://www.kraken.com/en-us)
+
+We could use their API to get 3rd party price feed on the ICHI oracle 
+
+## Architecture - 
+
+We can set up an AWS Lambda function along with a configured custom web hook. 
+
+The AWS function would call `ICHIPrice` (a free read-only function) every 30 minutes. It would also simultaneously get the prices from the above mentioned additional sources. 
+
+For greater redundancy, we can aggregate all this data into a datadog monitor, which allows us to visualise data feeds from oracle systems effectively. 
+
+Finally, we could set up a discord alert within the Lambda to notify the `DMA Devs` channel when the price difference between the contract's values and the 3rd party values is more than a threshold.
+
