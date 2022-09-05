@@ -19,16 +19,19 @@ async function oracleTracker (): Promise<OracleResponse> {
   );
   const oracle: any = new ethers.Contract(Oracle, OracleArtifact, mainnetProvider);
 
-  const oracleContractPriceBN: BigNumber = await oracle.ICHIPrice();
-  const oracleContractPrice: string = (oracleContractPriceBN.toNumber() / 1000000000).toFixed(2);
+  try {
+    var oracleContractPriceBN: BigNumber = await oracle.ICHIPrice();
+    var cg_price: any = await CoinGeckoClient.simple.fetchTokenPrice({
+      contract_addresses: Token,
+      vs_currencies: 'usd',
+    });
+    var cmc_price: any = await cmcClient.getQuotes({symbol: ['ICHI']})
+  } catch (error) {
+      console.error(error)
+  }
 
-  var cg_price: any = await CoinGeckoClient.simple.fetchTokenPrice({
-    contract_addresses: Token,
-    vs_currencies: 'usd',
-  });
+  var oracleContractPrice: string = (oracleContractPriceBN.toNumber() / 1000000000).toFixed(2);
   cg_price = cg_price['data']['0x903bef1736cddf2a537176cf3c64579c3867a881']['usd']
-
-  var cmc_price: any = await cmcClient.getQuotes({symbol: ['ICHI']})
   cmc_price = cmc_price['data']['ICHI']['quote']['USD']['price']
 
   const variation_cg: number = Math.abs((+cg_price - +oracleContractPrice) * 200 / (+cg_price + +oracleContractPrice))
