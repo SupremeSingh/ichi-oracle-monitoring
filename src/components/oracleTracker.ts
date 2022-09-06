@@ -1,9 +1,9 @@
 import { ethers } from "ethers";
 import CoinGecko from 'coingecko-api';
-import OracleArtifact from "../../builds/oracle.json";
 import { OracleResponse } from "../utils/lambdaTypes";
 import CoinMarketCap from 'coinmarketcap-api';
 import {BigNumber} from "@ethersproject/bignumber"
+import { getIchiOracleAggregatorContract } from "@ichidao/ichi-sdk";
 
 var urlMainetProvider: string = "https://web3.dappnode.net";
 var Token: string  = '0x903bef1736cddf2a537176cf3c64579c3867a881';
@@ -13,19 +13,23 @@ const CoinGeckoClient: any = new CoinGecko();
 const cmcAPIKey: string = '56e9147f-041f-4e58-8850-360a147d3d06'
 const cmcClient: any = new CoinMarketCap(cmcAPIKey)
 
-async function oracleTracker (): Promise<OracleResponse> {
+async function oracleTracker (urlMainetProvider: string): Promise<OracleResponse> {
   const mainnetProvider: any = new ethers.providers.JsonRpcProvider(
     urlMainetProvider
   );
-  const oracle: any = new ethers.Contract(Oracle, OracleArtifact, mainnetProvider);
+
+  const oracle: any = getIchiOracleAggregatorContract(Oracle, mainnetProvider);
+  var oracleContractPriceBN: BigNumber;
+  var cg_price: any;
+  var cmc_price: any;
 
   try {
-    var oracleContractPriceBN: BigNumber = await oracle.ICHIPrice();
-    var cg_price: any = await CoinGeckoClient.simple.fetchTokenPrice({
+    oracleContractPriceBN = await oracle.ICHIPrice();
+    cg_price = await CoinGeckoClient.simple.fetchTokenPrice({
       contract_addresses: Token,
       vs_currencies: 'usd',
     });
-    var cmc_price: any = await cmcClient.getQuotes({symbol: ['ICHI']})
+    cmc_price = await cmcClient.getQuotes({symbol: ['ICHI']})
   } catch (error) {
       console.error(error)
   }
