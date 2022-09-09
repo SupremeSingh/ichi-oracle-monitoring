@@ -1,12 +1,14 @@
 import { ethers } from 'ethers';
 import { VaultResponse } from '../utils/lambdaTypes';
+import { vaultReader, vaultUpdater } from "../utils/updateDynamo";
 import { BigNumber } from '@ethersproject/bignumber';
-import { getIchiVaultContract, getVaults } from "@ichidao/ichi-sdk";
+import { getIchiVaultContract, getVaults, Vault } from "@ichidao/ichi-sdk";
 
 const zeroBN: BigNumber = BigNumber.from(0);
 
 async function vaultStatusTracker(urlMainetProvider: string, chainId: any): Promise<VaultResponse> {
   const mainnetProvider: any = new ethers.providers.JsonRpcProvider(urlMainetProvider);
+  const vaultsTableName = process.env.MON_VAULT_TABLE_NAME || 'monitor-vaults-dev';
   var VaultObject =  getVaults(chainId);
 
   var result: VaultResponse = {
@@ -14,9 +16,10 @@ async function vaultStatusTracker(urlMainetProvider: string, chainId: any): Prom
     timestamp: new Date().toISOString(),
   };
 
-  for (var vault in VaultObject) {
+  for (let i = 0; i < VaultObject.length; i++) {
+    let vault: Vault =  VaultObject[i];
     const ichiVaultInstance: any = getIchiVaultContract(vault['address'], mainnetProvider);
-    var ichiVaultStatus: boolean = vault['depositStatus']
+    var ichiVaultStatus: boolean = await vaultReader(vaultsTableName, vault);
     
     var deposit0Max: BigNumber;
     var deposit1Max: BigNumber;
@@ -36,7 +39,10 @@ async function vaultStatusTracker(urlMainetProvider: string, chainId: any): Prom
     } else {
       ichiVaultStatus = true;
     }
+
+    await vaultUpdater(vaultsTableName, vault, ichiVaultStatus);
   }
+
   return result;
 }
 

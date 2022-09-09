@@ -8,6 +8,11 @@ export type VaultResponse = {
     timestamp: string;
 };
 
+export type DynamoResponse = {
+    statusCode: number;
+    body: string;
+};
+
 export type OracleResponse = {
     oracle_price: string;
     cg_price: string;
